@@ -1,17 +1,13 @@
 <?xml version='1.0' encoding='utf-8'?>
 <note default='true' class='icon' xmlns='http://www.lotus.com/dxl' version='9.0'
  maintenanceversion='1.8' replicaid='862580E50071C5D2'>
-<noteinfo noteid='116' unid='A34093C1A68AE91D8525604C005BE783' sequence='406'>
+<noteinfo noteid='116' unid='A34093C1A68AE91D8525604C005BE783' sequence='416'>
 <created><datetime dst='true'>19940511T124350,43-04</datetime></created>
-<modified><datetime dst='true'>20170316T154243,54-05</datetime></modified>
-<revised><datetime dst='true'>20170316T011023,92-05</datetime></revised>
-<lastaccessed><datetime dst='true'>20170316T154243,53-05</datetime></lastaccessed>
+<modified><datetime dst='true'>20170317T150524,71-05</datetime></modified>
+<revised><datetime dst='true'>20170317T150524,70-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170317T150524,70-05</datetime></lastaccessed>
 <addedtofile><datetime dst='true'>20170316T154243,53-05</datetime></addedtofile></noteinfo>
-<updatedby><name>CN=Mike Brown/O=Teamhuber</name><name>CN=enterpol.teamhuber.com/O=Teamhuber</name><name
->CN=Doug Brammer/O=Teamhuber</name><name>CN=enterpol.teamhuber.com/O=Teamhuber</name><name
->CN=Andrew Thompson/O=Teamhuber</name><name>CN=enterpol.teamhuber.com/O=Teamhuber</name><name
->CN=Doug Brammer/O=Teamhuber</name><name>CN=enterpol.teamhuber.com/O=Teamhuber</name><name
->CN=Lawrence Woods/O=Teamhuber</name><name>CN=enterpol.teamhuber.com/O=Teamhuber</name></updatedby>
+<updatedby><name>CN=Doug Brammer/O=Teamhuber</name></updatedby>
 <item name='$DefaultNavigator'><text>1. Occurrences</text></item>
 <item name='IconBitmap' summary='true'>
 <rawitemdata type='6'>
@@ -28,17 +24,19 @@ wOTu7uTk4e7u7RHwAA9vbMDkRO7kROHu7u0fHf7m9vbA7u7u7u7h7u7tER3u7u7u7u7u7u7u4e7u
 6q7qqu6qruqu7u7h7u6q7uqu6q7u6q7qruqu4e7uqqqq7uqu7uqu7qqq7uHu7u7u7u7u7u7u7u7u
 7u7h7u7u7u7u7u7u7u7u7u7u7g==
 </rawitemdata></item>
-<item name='$DefaultFrameset'><text>Default</text></item>
-<item name='$UpdatedByLimit'><number>10</number></item>
-<item name='$RevisionsLimit'><number>10</number></item>
 <item name='$TemplateServerName'><text>CN=enterpol.teamhuber.com/O=Teamhuber</text></item>
 <item name='$LaunchXPageRunOnServer'><text>0</text></item>
-<item name='$FlagsNoRefresh'><text/></item>
 <item name='$AllowPost8HTML'><text>1</text></item>
 <item name='$TemplateFileName'><text>C:\IBM\Domino\data\demo\Mike Brown\KS\KSLEARMSTmpl.nsf</text></item>
 <item name='$TemplateModTime'><datetime dst='true'>20170315T010147,84-05</datetime></item>
-<item name='$Flags'><text>F4Z7z</text></item>
 <item name='$PIRCRefreshModTime'><datetime dst='true'>20170316T011022,78-05</datetime></item>
 <item name='$Daos'><text>0</text></item>
-<item name='$LargeSummary'><text>0</text></item></note>
+<item name='$LargeSummary'><text>0</text></item>
+<item name='$UpdatedByLimit'><number>10</number></item>
+<item name='$RevisionsLimit'><number>10</number></item>
+<item name='$DefaultFrameset'><text>Default</text></item>
+<item name='$TITLE'><text>KS LEA RMS
+#2KS LEA RMS Template</text></item>
+<item name='$Flags'><text>z47ZF</text></item>
+<item name='$FlagsNoRefresh'><text>rv</text></item></note>
 
