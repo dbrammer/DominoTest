@@ -1,0 +1,645 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+Option Public
+Option Declare
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Sub Initialize
+Declare Sub EQuerydocumentdeleteDARIN(Source As Notesuidatabase, Continue As Variant)
+Declare Sub EQuerydocumentundeleteDARIN(Source As Notesuidatabase, Continue As Variant)
+Declare Function deletedoc(doc As notesdocument)
+Declare Function restoredoc(db As Notesdatabase, doc As notesdocument)
+Declare Sub EQueryMarkdocumentdeleteDARIN()
+Declare Sub EQueryMarkdocumentundeleteDARIN()
+Declare Function markdoc(doc As notesdocument)
+Declare Function unmarkdoc(db As Notesdatabase, doc As notesdocument)
+Declare Sub EQuerydocumentdelete(Source As Notesuidatabase, Continue As Variant)
+Declare Sub CheckOrphans(pdoc As notesdocument)
+Declare Sub EQuerydocumentundelete(Source As Notesuidatabase, Continue As Variant)
+Declare Sub CheckParents(rdoc As notesdocument)
+Declare Sub EQueryMarkdocumentdelete()
+Declare Sub EQueryMarkdocumentundelete()
+Declare Sub CheckParentsUnMark(rdoc As notesdocument)
+Declare Sub CheckOrphansUnMark(pdoc As notesdocument)
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+
+Dim note As NotesDocument
+Dim collection As NotesDocumentCollection
+Dim ws As notesuiworkspace
+Dim session As NotesSession
+Dim v As Variant
+Dim db As notesdatabase
+Dim nextnote As NotesDocument
+Dim tflag As Variant
+Dim e As Variant
+Dim rdoc As notesdocument
+Dim rcollection As notesdocumentcollection
+
+Dim parent As NotesDocument
+Dim orphans As Boolean 
+Dim col As notesdocumentcollection
+Dim unidlist List As String
+'++LotusScript Development Environment:2:2:Initialize:1:10
+Sub Initialize
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:EQuerydocumentdeleteDARIN:1:8
+Sub EQuerydocumentdeleteDARIN(Source As Notesuidatabase, Continue As Variant)
+	Dim ws As New notesuiworkspace	
+	Dim session As New NotesSession
+	Dim doc As NotesDocument
+	Dim e As Variant
+	
+	e =  Evaluate( "@IsSoftDeleteEnabled")
+	If e(0) <> 1 Then 
+		Messagebox "You must have Soft Delete turned on to delete" 
+		continue = False
+	End If
+	
+'The next step is to have the user verify that Yes they want the documents deleted.  The messagebox statement is nested in the If statement.
+'If the user answers No to the question, no processing is performed on the selected documents.
+	Dim collection As notesdocumentcollection
+	Set collection= source.Documents
+	
+	Beep
+	If Messagebox("You have Selected " & collection.Count & " document(s) to be deleted.  Are you sure you want to delete these documents and any response documents?" , _
+	36 , "Confirm Document Deletion") = 6 Then
+		
+		Set doc=collection.getlastdocument
+		While Not doc Is Nothing
+			Call deletedoc(doc)
+			Call Collection.DeleteDocument(doc)
+			Call doc.remove(True)
+			Set doc=collection.getlastdocument
+		Wend	
+		
+		ws.viewrefresh		
+		Continue = False
+	Else 
+		Continue = False
+	End If
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:EQuerydocumentundeleteDARIN:1:8
+Sub EQuerydocumentundeleteDARIN(Source As Notesuidatabase, Continue As Variant)
+	Dim v As Variant
+	Dim db As notesdatabase
+	Dim nextnote As NotesDocument
+	
+	On Error 1024 Goto PreRNext
+	Dim tflag As Variant
+	Dim e As Variant
+	e =  Evaluate( "@IsSoftDeleteEnabled")
+	If e(0) <> 1 Then Goto PreRNext
+	
+	Goto Main
+	
+PreRnext:
+	Exit Sub
+	
+Main:	
+	If ws Is Nothing Then	
+		Set ws = New notesuiworkspace
+	End If
+	
+	If session Is Nothing Then		
+		Set session = New NotesSession
+	End If
+	Set db = session.CurrentDatabase
+	
+	Set collection = source.documents
+	Set note = collection.GetFirstDocument
+	'Once gets 1st level Parents
+	While Not note Is Nothing
+		Set nextnote = collection.GetNextDocument(note)
+		tflag = restoredoc(db, note)
+		If tflag = False Then
+			'There was no Parent found
+			Set note = nextnote
+		Else
+			Call Collection.DeleteDocument(note)
+			v =  Evaluate( "@UndeleteDocument", note)
+			Set note= nextnote
+		End If
+	Wend
+	'Then get 2nd level parents
+	Set note = collection.GetFirstDocument
+	While Not note Is Nothing
+		Set nextnote = collection.GetNextDocument(note)
+		tflag = restoredoc(db, note)
+		If tflag = False Then
+			'There was no Parent found
+			Set note = nextnote
+		Else
+			Call Collection.DeleteDocument(note)
+			v =  Evaluate( "@UndeleteDocument", note)
+			Set note= nextnote
+		End If
+	Wend
+	'Get what is left
+	Set note = collection.GetFirstDocument
+	While Not note Is Nothing
+		Set nextnote = collection.GetNextDocument(note)
+		tflag = restoredoc(db, note)
+		If tflag = False Then
+			'There was no Parent found
+			Set note = nextnote
+		Else
+			Call Collection.DeleteDocument(note)
+			v =  Evaluate( "@UndeleteDocument", note)
+			Set note= nextnote
+		End If
+	Wend
+	If Collection.Count >0 Then
+		Messagebox "Restore the Parent first" 
+	End If
+	continue = False
+End Sub
+'++LotusScript Development Environment:2:1:deletedoc:1:8
+Function deletedoc(doc As notesdocument)
+	On Error Resume Next
+	Dim rdoc As notesdocument
+	Dim rcollection As notesdocumentcollection
+	Set rcollection=doc.responses
+	'Print "Response Docs: " + Cstr(rcollection.Count)
+	Set rdoc=rcollection.getlastdocument
+	'Print "here 2"
+	While Not rdoc Is Nothing
+	'	Print "Loop"
+		Call deletedoc(rdoc)
+		Call rCollection.DeleteDocument(rdoc)
+		Call rdoc.remove(True)
+		Set rdoc=rcollection.getlastdocument
+	'	Print "end Loop"
+	Wend
+	'Print "end function"
+End Function
+'++LotusScript Development Environment:2:1:restoredoc:1:8
+Function restoredoc(db As Notesdatabase, doc As notesdocument)
+	Dim v As Variant
+	On Error Resume Next
+	Dim rdoc As notesdocument
+	'Dim rcollection As notesdocumentcollection
+	'Set rcollection=doc.responses
+	Dim parent As NotesDocument
+	Set parent = db.GetDocumentByUNID( doc.ParentDocumentUNID )
+	If parent Is Nothing And doc.HasItem("$Ref") Then
+		restoredoc = False
+	Else
+		restoredoc = True
+		Print parent.OccurrenceNumber(0)
+	End If
+	
+End Function
+'++LotusScript Development Environment:2:2:EQueryMarkdocumentdeleteDARIN:1:8
+Sub EQueryMarkdocumentdeleteDARIN()
+	Dim Continue As Variant
+	Dim ws As New NotesUIWorkspace	
+	Dim session As New NotesSession	
+	Dim db As NotesDatabase	
+	Dim uidoc As NotesUIDocument	
+	Dim dc As NotesDocumentCollection
+	Set db = session.CurrentDatabase
+	Dim doc As NotesDocument
+	Dim e As Variant
+	
+'The next step is to have the user verify that Yes they want to mark document for deletion.  The messagebox statement is nested in the If statement.
+'If the user answers No to the question, no processing is performed on the selected documents.
+	Dim collection As notesdocumentcollection
+	Set collection= db.Unprocesseddocuments	
+	
+	Beep
+	If Messagebox("You have Selected " & collection.Count & " document(s) to be marked for deletion.  Are you sure you want to mark the selected documents and any response documents?" , _
+	36 , "Confirm mark for  Deletion") = 6 Then
+		
+		Set doc=collection.getlastdocument
+		While Not doc Is Nothing
+			Call markdoc(doc)
+			Call Collection.DeleteDocument(Doc)
+			doc.Delete="Delete"
+			Call doc.Save( False, False )
+			Set doc=collection.getlastdocument
+		Wend	
+		
+		ws.viewrefresh		
+		Continue = False
+	Else 
+		Continue = False
+	End If
+End Sub
+
+'++LotusScript Development Environment:2:2:EQueryMarkdocumentundeleteDARIN:1:8
+Sub EQueryMarkdocumentundeleteDARIN()
+	Dim v As Variant
+	Dim nextnote As NotesDocument
+	Dim Continue As Variant
+	Dim ws As New NotesUIWorkspace	
+	Dim session As New NotesSession	
+	Dim db As NotesDatabase	
+	Dim uidoc As NotesUIDocument	
+	Dim dc As NotesDocumentCollection
+	Set db = session.CurrentDatabase
+	Dim doc As NotesDocument
+	Dim e As Variant
+	Dim collection As notesdocumentcollection
+	Set collection= db.Unprocesseddocuments	
+	Set note = collection.GetFirstDocument
+	
+	'Once gets 1st level Parents
+	While Not note Is Nothing
+		Set nextnote = collection.GetNextDocument(note)
+		tflag = unmarkdoc(db, note)
+		If tflag = False Then
+			'There was no Parent found
+			Set note = nextnote
+		Else
+			Call Collection.DeleteDocument(note)
+			Dim item As NotesItem
+			Set item = note.GetFirstItem( "Delete" )
+			Call item.Remove
+			Call note.Save( False, False )
+			Set note= nextnote
+		End If
+	Wend
+	'Then get 2nd level parents
+	Set note = collection.GetFirstDocument
+	While Not note Is Nothing
+		Set nextnote = collection.GetNextDocument(note)
+		tflag = unmarkdoc(db, note)
+		If tflag = False Then
+			'There was no Parent found
+			Set note = nextnote
+		Else
+			Call Collection.DeleteDocument(note)
+			note.Delete=""
+			Call note.Save(True, False)
+			Set note= nextnote
+		End If
+	Wend
+	'Get what is left
+	Set note = collection.GetFirstDocument
+	While Not note Is Nothing
+		Set nextnote = collection.GetNextDocument(note)
+		tflag = unmarkdoc(db, note)
+		If tflag = False Then
+			'There was no Parent found
+			Set note = nextnote
+		Else
+			Call Collection.DeleteDocument(note)
+			note.Delete=""
+			Call note.Save(True, False)
+			Set note= nextnote
+		End If
+	Wend
+	If Collection.Count >0 Then
+		Messagebox "Un-Mark the Parent first" 
+	End If
+	ws.viewrefresh	
+	continue = False
+End Sub
+
+'++LotusScript Development Environment:2:1:markdoc:1:8
+Function markdoc(doc As notesdocument)
+	On Error Resume Next
+	Dim rdoc As notesdocument
+	Dim rcollection As notesdocumentcollection
+	Set rcollection=doc.responses
+	'Print "Response Docs: " + Cstr(rcollection.Count)
+	Set rdoc=rcollection.getlastdocument
+	'Print "here 2"
+	While Not rdoc Is Nothing
+	'	Print "Loop"
+		Call deletedoc(rdoc)
+		Call rCollection.DeleteDocument(rdoc)
+		rdoc.Delete="Delete"
+		Call rdoc.save(True,False)
+		Set rdoc=rcollection.getlastdocument
+	'	Print "end Loop"
+	Wend
+	'Print "end function"
+End Function
+
+'++LotusScript Development Environment:2:1:unmarkdoc:1:8
+Function unmarkdoc(db As Notesdatabase, doc As notesdocument)
+	Dim v As Variant
+	On Error Resume Next
+	Dim rdoc As notesdocument
+	Dim parent As NotesDocument
+	Set parent = db.GetDocumentByUNID( doc.ParentDocumentUNID )
+	If parent Is Nothing And doc.HasItem("$Ref") Then
+		unmarkdoc = False
+	Else
+		unmarkdoc = True		
+	End If
+End Function
+'++LotusScript Development Environment:2:2:EQuerydocumentdelete:1:8
+Sub EQuerydocumentdelete(Source As Notesuidatabase, Continue As Variant)
+	Dim ws As New notesuiworkspace	
+	Dim session As New NotesSession
+	Dim doc As NotesDocument
+	Dim e As Variant
+	
+	e =  Evaluate( "@IsSoftDeleteEnabled")
+	If e(0) <> 1 Then 
+		Messagebox "You must have Soft Delete turned on to delete" 
+		continue = False
+		Exit Sub
+	End If
+	
+	'Pre-process the users selected documents to determine if this will create any orphans
+	Set col= source.Documents
+	orphans = False
+	Set doc = col.getfirstdocument
+	While Not doc Is Nothing
+		Call CheckOrphans(doc)
+		Set doc = col.getnextdocument(doc)
+	Wend
+	
+	If Orphans Then
+		Messagebox("Document deletion cannot be performed since it would create orphaned response documents.  Please delete responses first, or highlight ALL response documents as well.")
+		continue = False
+		Exit Sub
+	End If
+	
+	Beep
+	If Messagebox("You have Selected " & col.Count & " document(s) to be deleted.  Are you sure you want to delete these documents?" , _
+	36 , "Confirm Document Deletion") = 6 Then
+		Call col.RemoveAll(True)
+		ws.viewrefresh
+	End If
+	
+	'already deleted, so don't let Notes try to mark for deletion
+	continue = False
+End Sub
+
+'++LotusScript Development Environment:2:2:CheckOrphans:1:8
+Sub CheckOrphans(pdoc As notesdocument)
+	Dim rcol As NotesDocumentCollection, rdoc As NotesDocument, finddoc As notesdocument
+	
+	Set rcol = pdoc.Responses 
+	If rcol.count >0 Then
+		Set rdoc = rcol.GetFirstDocument
+		While Not rdoc Is Nothing
+			If rdoc.IsDeleted = False  And rdoc.IsValid Then
+				Set finddoc = col.GetDocument(rdoc)
+				If finddoc Is Nothing Then
+				'response not found in original deletion
+					orphans = True
+					Exit Sub
+				End If
+				Call CheckOrphans(rdoc)
+				If orphans = True Then
+					Exit Sub
+				End If
+			End If
+			Set rdoc = rcol.GetNextDocument(rdoc)
+		Wend
+	End If
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:EQuerydocumentundelete:1:8
+Sub EQuerydocumentundelete(Source As Notesuidatabase, Continue As Variant)
+	Dim ws As New notesuiworkspace	
+	Dim session As New NotesSession
+	Dim doc As NotesDocument
+	Dim e As Variant
+	
+	Set db = session.CurrentDatabase 
+	
+	e =  Evaluate( "@IsSoftDeleteEnabled")
+	If e(0) <> 1 Then 
+		Messagebox "You must have Soft Delete turned on to delete" 
+		continue = False
+		Exit Sub
+	End If
+	
+	'in case the agent fails
+	continue = False
+'	Print "Starting..."
+	
+	'Pre-load collection of unids into list
+	Erase unidlist
+	Set col= source.Documents
+	Set doc = col.getfirstdocument
+	While Not doc Is Nothing
+		'Print "Populating list: " + doc.UniversalID
+		unidlist(doc.UniversalID) = doc.UniversalID 
+		Set doc = col.getnextdocument(doc)
+	Wend
+	
+	'Pre-process the users selected documents to determine if all parents are valid documents (Don't want to create orphans)
+	orphans = False
+	Set doc = col.getfirstdocument
+	While Not doc Is Nothing
+		Call CheckParents(doc)
+		Set doc = col.getnextdocument(doc)
+	Wend
+	
+	If Orphans Then
+		Messagebox("Document restore cannot be performed since it would create orphaned response documents.  Please restore parent documents first, or highlight ALL documents before restoring.")
+		continue = False
+		Exit Sub
+	Else
+		continue = True
+	End If
+End Sub
+'++LotusScript Development Environment:2:2:CheckParents:1:8
+Sub CheckParents(rdoc As notesdocument)
+	Dim pdocunid As String, pdoc As NotesDocument, finddoc As notesdocument
+	Dim found As Boolean
+	
+	On Error Goto errhandler
+	
+	pdocunid = rdoc.ParentDocumentUNID
+	If pdocunid<>"" Then
+		Forall i In unidlist
+			found = False
+			If Listtag(i) = pdocunid Then
+				found = True
+				Exit Forall
+			End If
+		End Forall
+'		If Iselement(unidlist(pdocunid)) Then
+		If found = True Then
+			'parent is in the restore collection, so no orphan
+			'Print "In the restore collection"
+		Else
+			Set pdoc = db.GetDocumentByUNID(pdocunid)
+			If pdoc.IsDeleted Then
+			'If the parent document is deleted, then make sure it is in the collection to restore
+				Set finddoc = col.GetDocument(rdoc)
+				If finddoc Is Nothing Then
+					orphans = True
+					Exit Sub
+				End If
+			End If
+		End If
+	End If
+	Exit Sub
+	
+errhandler:
+	'Invalid parent document
+	orphans = True
+	Exit Sub
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:EQueryMarkdocumentdelete:1:8
+Sub EQueryMarkdocumentdelete()
+	Dim ws As New notesuiworkspace	
+	Dim session As New NotesSession
+	Dim doc As NotesDocument
+	Dim uiview As NotesUIView, askme As Variant, reason As String
+	
+	'Pre-process the users selected documents to determine if this will create any orphans
+	Set db=session.CurrentDatabase
+	Set col= db.Unprocesseddocuments	
+	orphans = False
+	Set doc = col.getfirstdocument
+	While Not doc Is Nothing
+		Call CheckOrphansUnMark(doc)
+		Set doc = col.getnextdocument(doc)
+	Wend
+	
+	If Orphans Then
+		Messagebox("These documents cannot be marked for deletion since it would create orphaned response documents.  Please mark responses first, or highlight ALL response documents as well.")
+		Exit Sub
+	End If
+	
+	If Messagebox("You have selected " & col.Count & " document(s) to be marked for deletion.  Are you sure you want to mark these documents for deletion?" , _
+	36 , "Confirm Mark for Deletion") = 6 Then
+		
+		'Ask the user why deleting
+		askme = ws.Prompt (PROMPT_OKCANCELEDIT, "Mark Document(s) for deletion", "Enter the reason you are requesting this document be deleted")
+		If Not Isempty (askme) Then
+			reason = "By: " + session.CommonUserName + " - " + askme
+			Set doc = col.getfirstdocument
+			While Not doc Is Nothing
+				doc.Delete="Delete"
+				doc.DeletionReason = reason
+				Call doc.Save( False, False )
+				Set doc = col.getnextdocument(doc)
+			Wend
+		Else
+			Messagebox "Mark Delete cancelled."
+		End If
+		
+		ws.viewrefresh
+		Set uiview = ws.CurrentView
+		Call uiview.DeselectAll
+	End If
+	
+End Sub
+'++LotusScript Development Environment:2:2:EQueryMarkdocumentundelete:1:8
+Sub EQueryMarkdocumentundelete()
+	Dim ws As New notesuiworkspace	
+	Dim session As New NotesSession
+	Dim doc As NotesDocument
+	Dim item As NotesItem
+	Dim uiview As NotesUIView
+	
+	Set db = session.CurrentDatabase 
+	
+	'Pre-load collection of unids into list
+	Erase unidlist
+	Set col= db.Unprocesseddocuments
+	Set doc = col.getfirstdocument
+	While Not doc Is Nothing
+		unidlist(doc.UniversalID) = doc.UniversalID
+		Set doc = col.getnextdocument(doc)
+	Wend
+	
+	'Pre-process the users selected documents to determine if all parents are valid documents (Don't want to create orphans)
+	orphans = False
+	Set doc = col.getfirstdocument
+	While Not doc Is Nothing
+		Call CheckParentsUnMark(doc)
+		Set doc = col.getnextdocument(doc)
+	Wend
+	
+	If Orphans Then
+		Messagebox("Document unmark cannot be performed since it would create orphaned response documents.  Please unmark parent documents first, or highlight ALL documents before unmarking.")
+		Exit Sub
+	Else
+		'Remove the "Delete" field indicator
+		Set doc = col.getfirstdocument
+		While Not doc Is Nothing
+			If doc.HasItem("Delete") Then
+				Set item = doc.GetFirstItem( "Delete" )
+				Call item.Remove
+				If doc.HasItem("DeletionReason") Then
+					Set item = doc.GetFirstItem( "DeletionReason" )
+					Call item.Remove
+				End If
+				Call doc.save(False,False)
+			End If
+			Set doc = col.getnextdocument(doc)
+		Wend
+		ws.viewrefresh
+		Set uiview = ws.CurrentView
+		Call uiview.DeselectAll
+	End If
+End Sub
+'++LotusScript Development Environment:2:2:CheckParentsUnMark:1:8
+Sub CheckParentsUnMark(rdoc As notesdocument)
+	Dim pdocunid As String, pdoc As NotesDocument, finddoc As notesdocument
+	Dim found As Boolean
+	
+	On Error Goto errhandler
+	
+	pdocunid = rdoc.ParentDocumentUNID
+	If pdocunid<>"" Then
+		Forall i In unidlist
+			found = False
+			If Listtag(i) = pdocunid Then
+				found = True
+				Exit Forall
+			End If
+		End Forall
+		If found = True Then
+			'parent is in the unmark collection, so no orphan
+			'Print "In the unmark collection"
+		Else
+			Set pdoc = db.GetDocumentByUNID(pdocunid)
+			If pdoc.hasitem("Delete") Then
+				'If the parent document is marked deleted, then orphan 
+				orphans = True
+				Exit Sub
+			End If
+		End If
+	End If
+	Exit Sub
+	
+errhandler:
+	'Invalid parent document
+	orphans = True
+	Exit Sub
+	
+End Sub
+'++LotusScript Development Environment:2:2:CheckOrphansUnMark:1:8
+Sub CheckOrphansUnMark(pdoc As notesdocument)
+	Dim rcol As NotesDocumentCollection, rdoc As NotesDocument, finddoc As notesdocument
+	
+	Set rcol = pdoc.Responses 
+	If rcol.count >0 Then
+		Set rdoc = rcol.GetFirstDocument
+		While Not rdoc Is Nothing
+			If Not rdoc.HasItem("Delete") Then
+				Set finddoc = col.GetDocument(rdoc)
+				If finddoc Is Nothing Then
+				'response not found in original deletion
+					orphans = True
+					Exit Sub
+				End If
+				Call CheckOrphans(rdoc)
+				If orphans = True Then
+					Exit Sub
+				End If
+			End If
+			Set rdoc = rcol.GetNextDocument(rdoc)
+		Wend
+	End If
+End Sub

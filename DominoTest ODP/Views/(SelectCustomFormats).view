@@ -1,0 +1,48 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='view' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='782' unid='000A90A8492B5CFC8625711B006B2D42' sequence='8'>
+<created><datetime>20060220T133039,38-06</datetime></created>
+<modified><datetime dst='true'>20170316T154455,61-05</datetime></modified>
+<revised><datetime dst='true'>20160527T120255,96-04</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154455,60-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154455,60-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Jesse Peters/O=Teamhuber</name><name>CN=Rodney Viessman/O=Teamhuber</name><name
+>CN=Brian Henry/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name='$FormulaClass' sign='true'><text>1</text></item>
+<item name='$TITLE' sign='true'><text>(SelectCustomFormats)</text></item>
+<item name='$Index' sign='true'><text/></item>
+<item name='$Formula' summary='true' sign='true'><formula compiled='true'>
+tAACACAACgBGb3JtYXRUeXBlBQAKAEZvcm1hdFR5cGUDAAUAOgA2AAUACgAHAAoACQAEAGZvcm1h
+dE5hbWVDb21tZW50Rm9ybWF0VHlwZSRDb25mbGljdCRSRUYEAAQAAAA+AAUABABGb3JtAQANACRJ
+UEZvcm1hdEZvcm0ACgIFAAoARm9ybWF0VHlwZQAAAAAAAABAWUALAhwCAwAHABYAEAAJTDFTMlMz
+UzRTNVM2UzdT
+</formula></item>
+<item name='$Collation' summary='true'>
+<rawitemdata type='2'>
+FwABAABEAGYAAAAKAGZvcm1hdE5hbWU=
+</rawitemdata></item>
+<item name='$ViewFormat' summary='true' sign='true'>
+<rawitemdata type='5'>
+AQADAAAAiAgAAFZDAQAKAAsAAAAAAJMAAQEACgAAAAAAAAAAAAACAAAgVkMAAAcABwAAAAAA4AAB
+AAAKAAAAAAAAAAAAAgIAAABWQwAACgAEACIAAAAiAAEAAAqCAAAAAAAAAAACAgAAAGZvcm1hdE5h
+bWVGb3JtYXQgTmFtZUNvbW1lbnRDb21tZW50Rm9ybWF0VHlwZVR5cGUiAAIAIAAKAEZvcm1hdFR5
+cGUFAAoARm9ybWF0VHlwZQMAJgABAAAAAQEACQEAAAoBAAAKAAAYAK0rCQABAAEAAAAAAAAAAABX
+QwEBAAkAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAD//wAAAAAAAAAAAAAAAAAAV0MBAQAJAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAA//8AAAAAAAAAAAAAAAAAAFdDAQEACQAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAP//AAAAAAAAAAAAAAAAAABCAAAAAAABAP///wABAODx/wABAAAAAAAAAAAAAAAAAAEA
+////AAEA////AAAAAQAAAAAAAQAAAAAAAAAAAAAAAAAIAAAAAAABAA==
+</rawitemdata></item>
+<item name='$Comment' sign='true'><text>Custom IntelliPrint Formats</text></item>
+<item name='$DesignerVersion'><text>6.5</text></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+i/8oAAEABSZBcmlhbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0cLwAAAAAAAAAAAAEDAAAA
+AAAABQEACRQAAAB5/2wAAQD39/cAAQAAAAAAAQAAAAAAAQDv7+8AAwAYAAAAAAAAAAAAAwAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAD8/zoAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAA
+AAAAAAAA
+</rawitemdata></item>
+<item name='$Flags'><text>Y</text></item></note>
+

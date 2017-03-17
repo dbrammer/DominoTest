@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="form" maintenanceversion="1.8" replicaid="862580E50071C5D2" version="9.0" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="1376" sequence="12" unid="F4D07A7D06C8E5118625711B006D776C">
+<created><datetime>20060220T135539,96-06</datetime></created>
+<modified><datetime dst="true">20170316T154608,06-05</datetime></modified>
+<revised><datetime dst="true">20100921T094713,42-05</datetime></revised>
+<lastaccessed><datetime dst="true">20170316T154608,05-05</datetime></lastaccessed>
+<addedtofile><datetime dst="true">20170316T154608,05-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Andrew Thompson/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Andrew Thompson/O=Teamhuber</name></wassignedby>
+<item name="$FlagsExt"><text>D</text></item>
+<item name="$TITLE" sign="true"><text>Theme2.css</text></item>
+<item name="$DesignerVersion"><text>7</text></item>
+
+<item name="$FileModDT" sign="true"><datetime dst="true">20100921T094231,64-05</datetime></item>
+
+<item name="$FileNames" sign="true"><text>Theme2.css</text></item>
+<item name="$Flags"><text>34C=Q</text></item></note>

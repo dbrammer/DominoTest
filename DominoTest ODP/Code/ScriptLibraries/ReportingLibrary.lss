@@ -1,0 +1,834 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+Option Public
+Option Declare
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Public Class FormDocs
+Declare Public Class DocTree
+Declare Public Sub SelectReports(Choices As Variant, currentDoc As NotesDocument)
+Declare Public Sub PrintReport(doc As NotesDocument, reportInfoUNID As String)
+Declare Public Function CalculateAge(fromDate As Variant, DOB As Variant) As String
+Declare Public Function ConvertDate(fieldValue As Variant, dateFormat As String) As String
+Declare Public Function ExtractFile(doc As NotesDocument, attachmentName As String) As String
+Declare Public Function StartFormTool() As Variant
+Declare Public Function HighestDoc(doc As NotesDocument) As NotesDocument
+Declare Public Sub CollectFormType(formName As String, startDoc As NotesDocument, docList List As NotesDocument)
+Declare Public Function InArray(v As Variant, value As String) As Integer
+Declare Sub Initialize
+Declare Public Function GetReportDocuments(thisDoc As NotesDocument, curDoc As NotesDocument, reportDoc As NotesDocument) As Integer
+Declare Public Function GetOccurrenceDocuments(doc As NotesDocument) As DocTree
+Declare Public Sub CollectDocuments(doc As NotesDocument, dt As DocTree)
+Declare Public Sub ShowStatus(Source As NotesUIDocument)
+Declare Sub Terminate
+Declare Function GetIPReportDocuments(thisDoc As NotesDocument, curDoc As NotesDocument) As Integer
+Declare Function getPersonDisplayName(personDoc As NotesDocument) As String
+Declare Function LookupKeywords(keyword As String, keydocfield As String) As Variant
+Declare Function getAddressStreetWithLocation(doc As NotesDocument) As String
+Declare Function getAddressLocation(doc As NotesDocument) As String
+Declare Function getAddressStreet(doc As NotesDocument) As String
+Declare Function getAddress(doc As NotesDocument) As String
+Declare Function getAddressWithLocation(doc As NotesDocument) As String
+Declare Public Function getKeywordvalues(LookupKeyword As String,LookupField As String,Lookupalias As String) As String	
+Declare Function getAddressCityStateZip(doc As NotesDocument) As String
+Declare Function getAddressWithLocationMultiLine(doc As NotesDocument) As String
+Declare Function GetSsnDisplay(inputText As String) As String
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+Public strTitle As String
+Public strORINumber As String
+Public agencyName As String
+Public agencyMainTelephone As String
+Public agencyCounty As String
+
+Const LOOKUP_VIEW = "DatabaseLU"
+
+Public Class FormDocs
+	Public Docs List As NotesDocument
+End Class
+
+Public Class DocTree
+	Public OccDoc As NotesDocument
+	Public FormTypes List As FormDocs
+End Class
+Dim dup%
+
+' Paper Bin Constants
+Public Const binUpper = 1
+Public Const binLower = 2 
+Public Const binMiddle = 3
+Public Const binManual = 4
+Public Const binEnvelope =  5
+Public Const binEnvManual = 6
+Public Const binAuto = 7
+Public Const binTractor = 8
+Public Const binSmallFmt = 9
+Public Const binLargeFmt = 10
+Public Const binLargeCapacity = 11
+Public Const binCassette = 14
+Public Const binFormSource = 15
+Public Const binUser = 256
+
+' Paper Size Constants
+Public Const pprLetter = 1
+Public Const pprLetterSmall = 2
+Public Const pprTabloid = 3 ' Tabloid, 11 x 17 in. 
+Public Const pprLedger = 4  ' Ledger, 17 x 11 in. 
+Public Const pprLegal = 5
+Public Const pprStatement = 6 ' Statement, 5 1/2 x 8 1/2 in. 
+Public Const pprExecutive = 7  ' Executive, 7 1/2 x 10 1/2 in. 
+Public Const pprA3 = 8  ' A3, 297 x 420 mm 
+Public Const pprA4 = 9   ' A4, 210 x 297 mm 
+Public Const pprA4Small = 10  ' A4 Small, 210 x 297 mm 
+Public Const pprA5 = 11  ' A5, 148 x 210 mm 
+Public Const pprB4 = 12  ' B4, 250 x 354 mm 
+Public Const pprB5 = 13  ' B5, 182 x 257 mm 
+Public Const pprFolio = 14  ' Folio, 8 ½ x 13 in. 
+Public Const pprQuarto = 15  ' Quarto, 215 x 275 mm 
+Public Const ppr10x14 = 16  ' 10 x 14 in.
+Public Const ppr11x17 = 17 ' 11 x 17 in. 
+Public Const pprNote = 18  ' Note, 8 ½ x 11 in. 
+Public Const pprEnv9 = 19  ' Envelope #9, 3 7/8 x 8 7/8 in. 
+Public Const pprEnv10 = 20  ' Envelope #10, 4 1/8 x 9 ½ in. 
+Public Const pprEnv11 = 21  ' Envelope #11, 4 ½ x 10 3/8 in. 
+Public Const pprEnv12 = 22  ' Envelope #12, 4 ½ x 11 in. 
+Public Const pprEnv14 = 23  ' Envelope #14, 5 x 11 ½ in. 
+Public Const pprCSheet = 24  ' C size sheet 
+Public Const pprDSheet = 25  ' D size sheet 
+Public Const pprESheet = 26  ' E size sheet 
+Public Const pprEnvDL = 27  ' Envelope DL, 110 x 220 mm 
+Public Const pprEnvC5 = 28  ' Envelope C5, 162 x 229 mm 
+Public Const pprEnvC3 = 29  ' Envelope C3, 324 x 458 mm 
+Public Const pprEnvC4 = 30  ' Envelope C4, 229 x 324 mm 
+Public Const pprEnvC6 = 31  ' Envelope C6, 114 x 162 mm 
+Public Const pprEnvC65 = 32  ' Envelope C65, 114 x 229 mm 
+Public Const pprEnvB4 = 33  ' Envelope B4, 250 x 353 mm 
+Public Const pprEnvB5 = 34  ' Envelope B5, 176 x 250 mm 
+Public Const pprEnvB6 = 35  ' Envelope B6, 176 x 125 mm 
+Public Const pprEnvItaly = 36  ' Envelope, 110 x 230 mm 
+Public Const pprEnvMonarch = 37  ' Envelope Monarch, 3 7/8 x 7 ½ in. 
+Public Const pprEnvPersonal = 38  ' Envelope, 3 5/8 x 6 ½ in. 
+Public Const pprFanfoldUS = 39  ' U.S. Standard Fanfold, 14 7/8 x 11 in. 
+Public Const pprFanfoldStdGerman = 40  ' German Standard Fanfold, 8 ½ x 12 in. 
+Public Const pprFanfoldLglGerman = 41  ' German Legal Fanfold, 8 1/2 x 13 in. 
+'ppr* 42 - 68 Less-common international sizes.
+Public Const pprUser = 256  ' Custom size. Set dimensions with the PaperWidth and PaperHeight properties.
+'++LotusScript Development Environment:2:2:SelectReports:1:8
+Public Sub SelectReports(Choices As Variant, currentDoc As NotesDocument)
+	
+	Dim ns As New NotesSession
+	Dim ws As New NotesUIWorkspace
+	Dim doc As NotesDocument
+	Dim v, i%, posn%     
+	
+	Set doc = ns.CurrentDatabase.CreateDocument
+	doc.Choices = Choices
+	doc.Prompt = "Select Report(s) to Print"
+	doc.PrintPreview = "1"
+	If ws.DialogBox("SelectReports", True, True, False, False, False, False, "Print Reports", doc) Then
+		v = doc.ReturnValue
+		For i = 0 To Ubound(v)     
+			PrintReport currentDoc, v(i)
+			On Error Resume Next
+			Appactivate "FormTool Print Jobs"
+		Next
+	End If
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:PrintReport:1:8
+Public Sub PrintReport(doc As NotesDocument, reportInfoUNID As String)
+	
+	Dim ws As New NotesUIWorkspace
+	Dim reportInfoDoc As NotesDocument
+	Dim reportDoc As NotesDocument
+	Dim ui As NotesUIDocument
+	
+     ' Will only print as many forms as there are available notes windows
+	
+	On Error Resume Next
+	Set reportInfoDoc =  doc.ParentDatabase.GetDocumentByUNID(reportInfoUNID)
+	If Not reportInfoDoc Is Nothing Then
+		With reportInfoDoc
+			Set reportDoc = .ParentDatabase.CreateDocument
+			reportDoc.Form = .FormName
+			reportDoc.FormInfoUNID = reportInfoUNID
+			reportDoc.CurrentDocumentUNID = doc.UniversalID
+			On Error Goto ErrPrint
+			Set ui = ws.EditDocument(True, reportDoc)
+			On Error Resume Next
+			ui.Close
+			Set ui = Nothing
+			Set ws = Nothing
+			Doevents
+			Doevents
+			Doevents
+			Doevents
+			Doevents
+			Doevents
+			Doevents
+			Doevents
+			Doevents
+		End With
+	End If
+	Exit Sub
+	
+ErrPrint:
+	
+	Msgbox Error, 48, strTitle
+	Exit Sub
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:CalculateAge:1:8
+Public Function CalculateAge(fromDate As Variant, DOB As Variant) As String
+	
+	Dim y1%, m1%, d1%, y2%, m2%, d2%
+	Dim age%
+	
+	If Isdate(fromDate) And Isdate(DOB) Then
+		y1 = Year(fromDate)
+		m1 = Month(fromDate)
+		d1 = Day(fromDate)
+		y2 = Year(DOB)
+		m2 = Month(DOB)
+		d2 = Day(DOB)
+		age = y1 - y2
+		If m1 < m2 Then
+			age = age -1               
+		Elseif m1 = m2 Then
+			If d1 < d2 Then
+				age = age - 1
+			End If
+		End If
+		If age > 0 Then
+			CalculateAge = Cstr(age)
+		Else
+			If m1>m2 Then
+				age =  m1- m2
+			Else
+				age = m1+12-m2
+			End If
+			If  y1 = y2  And m1 = m2 Then
+				age = 0
+			End If
+			If age > 0 Then
+				CalculateAge = Cstr(age) & "mos."
+			Else
+				age = d1 - d2
+				If age > 0 Then
+					CalculateAge = Cstr(age) & "days"
+				End If
+			End If
+		End If
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:ConvertDate:1:8
+Public Function ConvertDate(fieldValue As Variant, dateFormat As String) As String
+	
+	Dim v
+	On Error Goto ErrConvert
+	
+	If Isarray(fieldValue) Then
+		v = fieldValue(0)
+	Else
+		v = fieldValue
+	End If
+	If Isdate(Cstr(v)) Then
+		ConvertDate = Format(v, dateFormat)
+	End If
+	
+ErrConvert:
+	
+	Exit Function
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:ExtractFile:1:8
+Public Function ExtractFile(doc As NotesDocument, attachmentName As String) As String
+	
+	Dim eo As NotesEmbeddedObject
+	Dim filePath As String
+	
+	On Error Goto ErrExtract
+	If Not doc Is Nothing Then
+		Set eo = doc.GetAttachment(attachmentName)
+		If eo Is Nothing Then
+			Msgbox "Unable to extract form file '" & attachmentName & "' from Report Info document.", 48, strTitle
+		Else
+			filePath = Environ$("Temp") & "\" & attachmentName
+			eo.ExtractFile filePath
+			ExtractFile = filePath
+		End If
+	End If
+	Exit Function
+	
+ErrExtract:
+	
+	Msgbox Error & " in ExtractFile", 48, strTitle
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:1:StartFormTool:1:8
+Public Function StartFormTool() As Variant
+	
+	Dim ole As Variant
+	
+	On Error Resume Next
+	
+	Set ole = Nothing
+	Set ole = GetObject("", "FormTool.PrintJob")
+	If ole Is Nothing Then
+		Set ole = CreateObject("FormTool.PrintJob")
+	End If
+	If ole Is Nothing Then
+		Msgbox "Unable to Create Form Tool Automation Object.  Enterpol Form Tool not installed.", 48, strTitle
+	End If
+	Set StartFormTool = ole
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:HighestDoc:1:8
+Public Function HighestDoc(doc As NotesDocument) As NotesDocument
+	
+	Dim pDoc As NotesDocument
+	
+	On Error Goto ErrHighest
+	
+	Set pDoc = doc
+	Do While pDoc.ParentDocumentUNID <> ""
+		Set pDoc = pDoc.ParentDatabase.GetDocumentByUNID( pDoc.ParentDocumentUNID )
+		If pDoc Is Nothing Then
+			Set pDoc = doc
+			Exit Do
+		End If
+	Loop
+	Set HighestDoc = pDoc
+	
+ErrHighest:
+	
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:2:CollectFormType:1:8
+Public Sub CollectFormType(formName As String, startDoc As NotesDocument, docList List As NotesDocument)
+	
+	Dim dc As NotesDocumentCollection
+	Dim rDoc As NotesDocument
+	
+	Set dc = startDoc.Responses
+	If Not dc Is Nothing Then
+		Set rDoc = dc.GetFirstDocument
+		While Not rDoc Is Nothing
+			If Lcase( rDoc.Form(0) ) = Lcase( formName ) Then
+				If Iselement( docList( rDoc.NoteID ) ) Then
+                         ' Endless Loop?!
+					Exit Sub
+				Else
+					Set docList( rDoc.NoteID ) = rDoc
+				End If
+			End If
+               ' Recurse
+			CollectFormType formName, rDoc, docList
+			Set rDoc = dc.GetNextDocument( rDoc )
+		Wend
+	End If
+	
+End Sub
+'++LotusScript Development Environment:2:1:InArray:1:8
+Public Function InArray(v As Variant, value As String) As Integer
+	
+	Dim i%
+	
+	For i = 0 To Ubound(v)
+		If Lcase(v(i)) = Lcase(value) Then
+			InArray = True
+			Exit For
+		End If
+	Next
+	
+End Function
+
+'++LotusScript Development Environment:2:2:Initialize:1:10
+Sub Initialize
+'	Dim ns As New NotesSession
+'	Dim doc As NotesDocument
+'	Dim v
+'	Dim db As NotesDatabase
+'	Dim controldoc As notesdocument
+'	Dim controlview As NotesView	
+'	Dim luid As String, LUItem As String
+'	Dim eval As String
+	Dim keydocfield As String
+	Dim keyword As String
+	
+'	Set db = ns.CurrentDatabase
+'	Set controlview = db.GetView("(Control)")
+'	Set controldoc = controlview.GetFirstDocument
+'	Set doc = ns.CurrentDatabase.CreateDocument
+	
+	
+	
+	keydocfield = "Field1"
+	keyword = "Agency ORI Number"
+	strORINumber = LookupKeywords(keyword, keydocfield)
+'	keyword = "Agency Name"
+	keyword = "Agency"   ' 06/19/2006 SR6J9JCO
+	agencyName = LookupKeywords(keyword, keydocfield)
+	keyword = "Agency Main Telephone"
+	agencyMainTelephone = LookupKeywords(keyword, keydocfield)
+	keyword = "Agency County"
+	agencyCounty = LookupKeywords(keyword, keydocfield)
+	
+	strTitle =  "Print Report"
+	
+End Sub
+'++LotusScript Development Environment:2:1:GetReportDocuments:1:8
+Public Function GetReportDocuments(thisDoc As NotesDocument, curDoc As NotesDocument, reportDoc As NotesDocument) As Integer
+	
+	Dim unid$
+	
+     ' Returns document objects for the current document and the report document in the passed object variables.
+     ' Returns true if successful
+	
+     ' This can cause a Notes Crash if the UniqueIDs do not exist
+	With thisDoc
+		unid = .FormInfoUNID(0)
+		If Len(unid) = 32 Then
+			Set reportDoc = .ParentDatabase.GetDocumentByUNID(unid)
+		End If
+		If reportDoc Is Nothing Then
+			Msgbox "Unable to find Report Information Document", 48
+			Exit Function
+		End If
+		unid = .CurrentDocumentUNID(0)
+		If Len(unid) = 32 Then
+			Set curDoc =  .ParentDatabase.GetDocumentByUNID(unid)
+		End If
+		If curDoc Is Nothing Then
+			Msgbox "The current document must be saved before you can print reports from it.", 48, strTitle
+			Exit Function
+		End If
+	End With
+	
+	GetReportDocuments = True
+	
+End Function
+'++LotusScript Development Environment:2:1:GetOccurrenceDocuments:1:8
+Public Function GetOccurrenceDocuments(doc As NotesDocument) As DocTree
+	
+	Dim dt As New DocTree
+	Dim occDoc As NotesDocument
+	
+	Set occDoc= HighestDoc(doc)
+	
+	If occDoc.Form(0) = "OccurrenceReport" Then
+		CollectDocuments occDoc, dt
+	End If
+	Set GetOccurrenceDocuments = dt
+	
+End Function
+
+
+
+'++LotusScript Development Environment:2:2:CollectDocuments:1:8
+Public Sub CollectDocuments(doc As NotesDocument, dt As DocTree)
+	
+	Dim dc As NotesDocumentCollection
+	Dim rDoc As NotesDocument
+	Dim ft As FormDocs
+	Dim form$, key$
+	
+	
+	On Error Resume Next
+	
+	form = doc.Form(0)
+	If  form = "OccurrenceReport" Then
+		Set dt.OccDoc = doc
+	Else
+		If  form = "Person/Property" Then               
+			key = Trim(Trim(Trim(doc.Given1(0) & " " & doc.Given2(0)) & " " & doc.Given3(0)) & " " & doc.Surname(0))
+			If key = "" Then
+				key = doc.CompanyName(0)
+			End If
+		Else
+			key = doc.UniversalID
+		End If
+		If Iselement(dt.FormTypes(form)) Then
+			Set ft = dt.FormTypes(form)
+		Else
+			Set ft = New FormDocs
+			Set dt.FormTypes(form) = ft
+		End If
+		If Iselement(ft.Docs(key)) Then
+			Set ft.Docs(key & " " & Cstr(dup)) = doc
+			dup = dup + 1
+		Else
+			Set ft.Docs(key) = doc
+		End If
+	End If
+	
+	Set dc = doc.Responses
+	If Not dc Is Nothing Then
+		Set rDoc = dc.GetFirstDocument
+		While Not rDoc Is Nothing
+			If Not rDoc.IsDeleted Then
+				CollectDocuments rDoc, dt
+			End If
+			Set rDoc = dc.GetNextDocument(rDoc)
+		Wend
+	End If
+	
+End Sub
+'++LotusScript Development Environment:2:2:ShowStatus:1:8
+Public Sub ShowStatus(Source As NotesUIDocument)
+	
+	Static ndx%
+	Dim schar$
+	
+	ndx = ndx + 1
+	
+	Select Case ndx
+	Case 1
+		schar = "|"
+	Case 2
+		schar = "/"
+	Case 3
+		schar = "—"
+	Case 4
+		schar = "\"
+	Case Else
+		ndx = 0
+		schar = "—"
+	End Select
+	Source.Document.Status = schar
+'     Source.Refresh
+	Doevents
+	
+End Sub
+'++LotusScript Development Environment:2:2:Terminate:1:10
+Sub Terminate
+	
+	On Error Resume Next
+	Appactivate "FormTool"
+End Sub
+'++LotusScript Development Environment:2:1:GetIPReportDocuments:1:8
+Function GetIPReportDocuments(thisDoc As NotesDocument, curDoc As NotesDocument) As Integer
+	
+	Dim unid$
+	
+     ' Returns document objects for the current document and the report document in the passed object variables.
+     ' Returns true if successful
+	
+     ' This can cause a Notes Crash if the UniqueIDs do not exist
+	With thisDoc
+		
+		unid = .CurrentDocumentUNID(0)
+		If Len(unid) = 32 Then
+			Set curDoc =  .ParentDatabase.GetDocumentByUNID(unid)
+		End If
+		If curDoc Is Nothing Then
+			Msgbox "The current document must be saved before you can print reports from it.", 48, strTitle
+			Exit Function
+		End If
+	End With
+	
+	GetIPReportDocuments = True
+	
+	
+End Function
+'++LotusScript Development Environment:2:1:getPersonDisplayName:1:8
+Function getPersonDisplayName(personDoc As NotesDocument) As String
+	Dim buildName As String
+	
+	If Len(Fulltrim(personDoc.CompanyName(0))) > 0 Then
+		buildName = personDoc.CompanyName(0)
+	Else
+		buildName = personDoc.Given1(0) & " " & personDoc.Given2(0) & " " & personDoc.Given3(0) & " " & personDoc.Surname(0)
+	End If
+	
+	getPersonDisplayName = Fulltrim(buildName)
+End Function
+'++LotusScript Development Environment:2:1:LookupKeywords:1:8
+Function LookupKeywords(keyword As String, keydocfield As String) As Variant
+	Dim controldoc As notesdocument
+	Dim controlview As NotesView	
+	Dim ludb As New NotesDatabase( "", "" )
+	Dim lkupvalue As String	
+	Dim lucoll As NotesDocumentCollection
+	Dim ludoc As NotesDocument
+	Dim dbFile As String
+	Dim pos As Integer
+	Dim k As String
+	Dim luview As NotesView
+	
+	Dim s As New NotesSession
+	Dim db As NotesDatabase
+	Set db = s.CurrentDatabase
+	
+	
+	
+	'Convert Lookup types to Keyword
+	Set controlview = db.GetView("(Control)")
+	Set controldoc = controlview.GetFirstDocument
+	If Not controldoc Is Nothing Then
+		If Instr(controldoc.LUPath(0),"\") <> 0 Then
+			'Path provided in file name
+			dbFile = controldoc.LUPath(0)
+		Else
+			'no path provided, so append path of current database
+			dbFile = Strleftback(db.FilePath,"\") + "\" + controldoc.LUPath(0)
+		End If
+		ludb.Open db.Server,dbFile
+		If ludb.IsOpen Then
+			Set luview = ludb.GetView(LOOKUP_VIEW)
+'			Set lucoll = luview.GetAllDocumentsByKey(controldoc.LUName(0) + keyword,True)
+'			Set ludoc = lucoll.GetFirstDocument
+			Set ludoc = luview.GetDocumentByKey(controldoc.LUName(0) + keyword,True)
+			If Not ludoc Is Nothing Then
+				k = ludoc.Field1(0)
+				pos = Instr(k,"|")
+				If pos > 0 Then
+					If Trim$(Right$(k,Len(k)-pos)) = Trim$(keydocfield) Then
+						lkupvalue = Trim$(Left$(k,pos-1))
+					End If
+				Else
+					lkupvalue = k
+				End If
+'				Set ludoc = lucoll.GetNextDocument(ludoc)
+			End If
+			
+			LookupKeywords = lkupvalue
+		Else
+			Print "Lookup database could not be located using the path provided in the control document!"
+'			Call agentLog.LogAction("Lookup database could not be located using the replica id provided in the control document!")
+		End If
+	Else
+		Print "Control Document is not setup!"
+'		Call agentLog.LogAction("Control Document is not setup!")
+		Exit Function
+	End If
+End Function
+'++LotusScript Development Environment:2:1:getAddressStreetWithLocation:1:8
+Function getAddressStreetWithLocation(doc As NotesDocument) As String
+	' Return standard display format for complete address street and location data.
+	Dim returnValue As String
+	Dim t As String
+	
+	t = getAddressLocation(doc)
+	If Len(t) > 0 Then
+		t = ", " & t
+	End If
+	returnValue = getAddressStreet(doc) & t
+	
+	getAddressStreetWithLocation = returnValue
+End Function
+'++LotusScript Development Environment:2:1:getAddressLocation:1:8
+Function getAddressLocation(doc As NotesDocument) As String
+	' Return standard display format for address location data.
+	' Function tests for Address field differences, some customers will have newer more detailed fields/format.
+	
+	Dim newAddressTestItem As NotesItem
+	Dim returnValue As String
+	Dim testValue As String
+	
+	Set newAddressTestItem = doc.GetFirstItem("LocDisplay")
+	If newAddressTestItem Is Nothing Then
+		' Use old fields.
+		returnValue = Trim(doc.LocationDetail(0))
+	Else
+		' Use mix of old and new fields.
+		testValue = Trim(doc.LocDisplay(0))
+		If Len(testValue) > 0 Then
+			returnValue = testValue
+			testValue = Trim(doc.LocationDetail(0))
+			If Len(testValue) > 0 Then
+				returnValue = returnValue & ", " & testValue
+			End If
+		Else		
+			returnValue = Trim(doc.LocationDetail(0))
+		End If
+	End If
+	
+	getAddressLocation = returnValue
+End Function
+'++LotusScript Development Environment:2:1:getAddressStreet:1:8
+Function getAddressStreet(doc As NotesDocument) As String
+	' Return standard display format for complete address street data.
+	' This is just the street address info, not the city, state, zip, location, etc.
+	
+	Dim returnValue As String
+	
+	returnValue = Trim(Trim(doc.StreetNumber(0) & " " & doc.Street(0))) & returnValue
+	
+	getAddressStreet = returnValue
+	'Print "getAddressStreet = " & getAddressStreet
+	
+End Function
+'++LotusScript Development Environment:2:1:getAddress:1:8
+Function getAddress(doc As NotesDocument) As String
+	' Return standard display format for complete address (street, city, state/province, zip).
+	
+	Dim returnValue As String
+	Dim t As String
+	
+	t = getAddressCityStateZip(doc)
+	If Len(t) > 0 Then
+		t = ", " & t
+	End If
+	returnValue = getAddressStreet(doc) & t
+	
+	getAddress = returnValue
+End Function
+
+'++LotusScript Development Environment:2:1:getAddressWithLocation:1:8
+Function getAddressWithLocation(doc As NotesDocument) As String
+	' Return standard display format for complete address (street, city, state/province, zip) and location data.
+	
+	Dim returnValue As String
+	Dim t As String
+	
+	t = getAddressCityStateZip(doc)
+	If Len(t) > 0 Then
+		t = ", " & t
+	End If
+	returnValue = getAddressStreetWithLocation(doc) & t
+	
+	getAddressWithLocation = returnValue
+	
+End Function
+'++LotusScript Development Environment:2:1:getKeywordvalues:1:8
+Public Function getKeywordvalues(LookupKeyword As String,LookupField As String,Lookupalias As String) As String	
+	Dim controldoc As notesdocument
+	Dim controlview As NotesView	
+	Dim ludb As New NotesDatabase( "", "" )
+	Dim lkupvalue As String	
+	Dim lucoll As NotesDocumentCollection
+	Dim ludoc As NotesDocument
+	Dim dbFile As String
+	Dim pos As Integer
+	Dim k As String
+	Dim luview As NotesView
+	
+	Dim s As New NotesSession
+	Dim db As NotesDatabase
+	Set db = s.CurrentDatabase
+	
+	
+	'Convert Lookup types to Keyword
+	Set controlview = db.GetView("(Control)")
+	Set controldoc = controlview.GetFirstDocument
+	If Not controldoc Is Nothing Then
+		If Instr(controldoc.LUPath(0),"\") <> 0 Then
+			'Path provided in file name
+			dbFile = controldoc.LUPath(0)
+		Else
+			'no path provided, so append path of current database
+			dbFile = Strleftback(db.FilePath,"\") + "\" + controldoc.LUPath(0)
+		End If
+		ludb.Open db.Server,dbFile
+		If ludb.IsOpen Then
+			Set luview = ludb.GetView(LOOKUP_VIEW)
+'			Set lucoll = luview.GetAllDocumentsByKey(controldoc.LUName(0) + keyword,True)
+'			Set ludoc = lucoll.GetFirstDocument
+			Set ludoc = luview.GetDocumentByKey(controldoc.LUName(0) + LookupKeyword,True)
+			Select Case LookupField	
+			Case "Field1"
+				k = ludoc.Field1(0)
+			Case "Field2"
+				k = ludoc.Field2(0)
+			Case "Field3"
+				k = ludoc.Field3(0)
+			Case "Field4"
+				k = ludoc.Field4(0)
+			Case Else
+				Print "Lookup Field needs to be Field1,Field2,Field3 or Field4"
+				Exit Function
+			End Select
+			If Not ludoc Is Nothing Then			
+				pos = Instr(k,"|")
+				If pos > 0 Then
+					If Trim$(Right$(k,Len(k)-pos)) = Trim$(Lookupalias) Then
+						lkupvalue = Trim$(Left$(k,pos-1))
+					End If
+				Else
+					lkupvalue = k
+				End If
+'				Set ludoc = lucoll.GetNextDocument(ludoc)
+			End If
+			
+			getKeywordvalues = lkupvalue
+		Else
+			Print "Lookup database could not be located using the path provided in the control document!"
+'			Call agentLog.LogAction("Lookup database could not be located using the replica id provided in the control document!")
+		End If
+	Else
+		Print "Control Document is not setup!"
+'		Call agentLog.LogAction("Control Document is not setup!")
+		Exit Function
+	End If
+	
+	
+End Function
+'++LotusScript Development Environment:2:1:getAddressCityStateZip:1:8
+Function getAddressCityStateZip(doc As NotesDocument) As String
+	' Return standard display format for address (street, city, state/province, zip+4)
+'	Stop
+	If doc.Form(0) = "Book" Then
+		'JMS Booking form fieldnames:
+		getAddressCityStateZip = Trim(doc.InmateCity(0) & " " & doc.InmateState(0)) & " " & doc.InmateZip(0)
+		If Len(doc.InmateZipExt(0)) > 0 Then
+			getAddressCityStateZip = getAddressCityStateZip & "-" & doc.InmateZipExt(0)
+		End If
+	Else
+		'RMS form fieldnames:
+		getAddressCityStateZip = Trim(doc.TownCity(0) & " " & doc.Prov(0)) & " " & doc.PostalCode(0)
+	End If
+End Function
+'++LotusScript Development Environment:2:1:getAddressWithLocationMultiLine:1:8
+Function getAddressWithLocationMultiLine(doc As NotesDocument) As String
+	' Return standard display format for complete address (street, city, state/province, zip) and location data.
+	Dim returnValue As String
+	Dim t As String
+	Dim newLine As String
+	'IntelliPRINT just wanted the Chr(10).
+	newLine = Chr(10)
+	
+	t = getAddressStreet(doc)
+	If Len(t) > 0 Then
+		returnValue = t
+	End If
+	
+	t = getAddressLocation(doc)
+	If Len(t) > 0 Then
+		If Len(returnValue) > 0 Then
+			returnValue = returnValue & newLine & t
+		Else			
+			returnValue = t
+		End If
+	End If
+	
+	t = getAddressCityStateZip(doc)
+	If Len(t) > 0 Then
+		If Len(returnValue) > 0 Then
+			returnValue = returnValue & newLine & t
+		Else			
+			returnValue = t
+		End If
+	End If
+	
+	getAddressWithLocationMultiLine = returnValue
+End Function
+'++LotusScript Development Environment:2:1:GetSsnDisplay:1:8
+Function GetSsnDisplay(inputText As String) As String
+	If Len(inputText) <> 9 Then
+		GetSsnDisplay = inputText
+		Exit Function
+	End If
+	
+	GetSsnDisplay = Left(inputText, 3) & "-" & Mid(inputText, 4, 2) & "-" & Right(inputText, 4)
+End Function

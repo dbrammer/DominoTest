@@ -1,0 +1,271 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+' ** Rules Engine Library: RulesWeb
+' ** Contains code and declarations necessary to support Web side Rules Engine functionality
+' ** Last Modification Date: 11/19/97
+'
+' Use of this library and any code contained within is reserved for registered users of Enterpol/Entaris products and/or licencees of the Enterpol Rules Engine
+' Any modification to this library will void Enterpol/Entaris support agreements unless prior authorization is granted.
+
+Option Public
+Option Explicit
+
+Use "RulesGlobal"
+
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Function JSCRIPT_BuildLink() As String
+Declare Function JSCRIPT_ShowStatus() As String
+Declare Function HTML_SaveSuccessDlg(msg As String, locFinish As String) As String
+Declare Public Function CurrentDbURL(doc As NotesDocument) As String
+Declare Public Function RulesSaveDocument(doc As NotesDocument) As Integer
+Declare Public Function GetDocumentFromURL(Byval url$) As NotesDocument
+
+'++LotusScript Development Environment:2:5:(Declarations):0:2
+
+'++LotusScript Development Environment:2:1:JSCRIPT_BuildLink:1:8
+Function JSCRIPT_BuildLink() As String
+     'This function creates an JavaScript function string that writes an HTML string for an anchor link to the provided document/view/agent,
+      'with the provided action appended.  The provided picture is used as a link, and the status message is used to add the status bar message
+      'in an on mouse over event.
+	
+	Dim session As New NotesSession
+	Dim db As NotesDatabase
+	Set db = session.CurrentDatabase
+	
+	Dim s As String
+	s = s & "function BuildLink(linkItem, action, img, statusMsg)" & Chr$(13)
+	s = s & "{" & Chr$(13)
+	s = s & "   //remove any existing actions appended to the linkItem" & Chr$(13)
+	s = s & "   if(linkItem.lastIndexOf(""?"") != -1)" & Chr$(13)
+	s = s & "   {" & Chr$(13)
+	s = s & "      linkItem = linkItem.substring(0, linkItem.lastIndexOf(""?""));" & Chr$(13)
+	s = s & "   }" & Chr$(13)
+	s = s & "   //if there is no database specified in the link item, then add it, and the local host to the link item" & Chr$(13)
+	s = s & "   if(linkItem.lastIndexOf("".nsf"") ==-1)" & Chr$(13)
+	s = s & "   {" & Chr$(13)
+	s = s & "      linkItem = ""HTTP://"" + location.hostname + """ & "/" & db.Filename & "/" & """ +  linkItem;" & Chr$(13)
+	s = s & "   }" & Chr$(13)
+	s = s & "   //build link based on action" & Chr$(13)
+	s = s & "   if(action == ""openDocument"")" & Chr$(13)
+	s = s & "   {" & Chr$(13)
+	s = s & "      document.write(""<a HREF=\""""+ linkItem + ""?OpenDocument \"" OnMouseOver=\""ShowStatus('"" + statusMsg + ""')\""><IMG SRC="" + img + "" BORDER=0></a>"");" & Chr$(13)
+     's = s & "      alert(""<a HREF=\""""+ linkItem + ""?OpenDocument \"" OnMouseOver=\""ShowStatus('"" + statusMsg + ""')\""><IMG SRC="" + img + "" BORDER=0></a>"");" & Chr$(13)
+	s = s & "   }" & Chr$(13)
+	s = s & "   else if(action == ""editDocument"")" & Chr$(13)
+	s = s & "   {" & Chr$(13)
+	s = s & "      document.write(""<a HREF=\""""+ linkItem + ""?EditDocument \"" OnMouseOver=\""ShowStatus('"" + statusMsg + ""')\""><IMG SRC="" + img + "" BORDER=0></a>"");" & Chr$(13)
+     's = s & "      alert(""<a HREF=\""""+ linkItem + ""?EditDocument \"" OnMouseOver=\""ShowStatus('"" + statusMsg + ""')\""><IMG SRC="" + img + "" BORDER=0></a>"");" & Chr$(13)
+	s = s & "   }" & Chr$(13)
+	s = s & "   else if(action == ""deleteDocument"")" & Chr$(13)
+	s = s & "   {" & Chr$(13)
+	s = s & "      document.write(""<a HREF=\""""+ linkItem + ""?DeleteDocument \"" OnMouseOver=\""ShowStatus('"" + statusMsg + ""')\""><IMG SRC="" + img + "" BORDER=0></a>"");" & Chr$(13)
+	s = s & "   }" & Chr$(13)
+	s = s & "   else if(action == ""createDocument"")" & Chr$(13)
+	s = s & "   {" & Chr$(13)
+	s = s & "      document.write(""<a HREF=\""""+ linkItem + ""?CreateDocument \"" OnMouseOver=\""ShowStatus('"" + statusMsg + ""')\""><IMG SRC="" + img + "" BORDER=0></a>"");" & Chr$(13)
+	s = s & "   }" & Chr$(13)
+	s = s & "   else if(action == ""openAgent"")" & Chr$(13)
+	s = s & "   {" & Chr$(13)
+	s = s & "      document.write(""<a HREF=\""""+ linkItem + ""?OpenAgent \"" OnMouseOver=\""ShowStatus('"" + statusMsg + ""')\""><IMG SRC="" + img + "" BORDER=0></a>"");" & Chr$(13)
+	s = s & "   }" & Chr$(13)
+	s = s & "   else if(action == ""openView"")" & Chr$(13)
+	s = s & "   {" & Chr$(13)
+	s = s & "      document.write(""<a HREF=\""""+ linkItem + ""?OpenView \"" OnMouseOver=\""ShowStatus('"" + statusMsg + ""')\""><IMG SRC="" + img + "" BORDER=0></a>"");" & Chr$(13)
+	s = s & "   }" & Chr$(13)
+	s = s & "}" & Chr$(13) & Chr$(13)
+	
+	JSCRIPT_BuildLink = s
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:JSCRIPT_ShowStatus:1:8
+Function JSCRIPT_ShowStatus() As String
+	
+	Dim sHTML As String
+	
+	sHTML = sHTML & "function ShowStatus(msg)" & Chr$(13)
+	sHTML = sHTML & "{"
+	sHTML = sHTML & "   window.status = msg;" & Chr$(13)
+	sHTML = sHTML & "   setTimeout(""window.status=''"", 2000);" & Chr$(13)
+	sHTML = sHTML & "}" & Chr$(13) & Chr$(13)
+	
+	JSCRIPT_ShowStatus = sHTML
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:HTML_SaveSuccessDlg:1:8
+Function HTML_SaveSuccessDlg(msg As String, locFinish As String) As String
+     'This function builds an HTML string that can be placed in $$Return as a result of a successful document save
+	
+	Dim sRtn As String
+	
+	sRtn = "<CENTER>" & Chr$(13)
+	sRtn = sRtn & "<P>&nbsp;" & Chr$(13)
+	sRtn = sRtn & "<TABLE BORDER=0 BORDERCOLOR=#000000 CELLPADDING=0 CELLSPACING=0 HEIGHT=320 WIDTH=555>" & Chr$(13)
+	sRtn = sRtn & "<TR>" & Chr$(13)
+	sRtn = sRtn & "<TD WIDTH=555 VALIGN=TOP HEIGHT=1 COLSPAN=7 BGCOLOR=#426F42>" & Chr$(13)
+	sRtn = sRtn & "<FONT SIZE=1 COLOR=#FFFFFF FACE=""MS Sans Serif, Arial, Helv"">" & Chr$(13)
+	sRtn = sRtn & "<B>&nbsp; Document Saved</B>" & Chr$(13)
+	sRtn = sRtn & "</FONT>" & Chr$(13)
+	sRtn = sRtn & "</TD>" & Chr$(13)
+	sRtn = sRtn & "</TR>" & Chr$(13)
+	sRtn = sRtn & "<TD WIDTH=555 VALIGN=CENTER HEIGHT=50 COLSPAN=7 BGCOLOR=#FFFFFF>" & Chr$(13)
+	sRtn = sRtn & "<P>&nbsp;" & Chr$(13)
+	sRtn = sRtn & "<FONT SIZE = 2 COLOR=#000000 FACE=""Verdana, Arial, Helv"">" & Chr$(13)
+	sRtn = sRtn & "&nbsp;<B>Document Saved Successfully</B>" & Chr$(13)
+	sRtn = sRtn & "</TD></TR>" & Chr$(13)
+	sRtn = sRtn & "<TR>" & Chr$(13)
+	sRtn = sRtn & "<TD WIDTH=555 VALIGN=TOP HEIGHT=250 COLSPAN=7 BGCOLOR=#FFFFFF>" & Chr$(13)
+	sRtn = sRtn & "<P>" & Chr$(13)
+	sRtn = sRtn & "&nbsp;" & msg & Chr$(13)
+	sRtn = sRtn & "</TD></TR>" & Chr$(13)
+	sRtn = sRtn & "<TR>" & Chr$(13)
+	sRtn = sRtn & "<TD ALIGN=RIGHT WIDTH=555 VALIGN=BOTTOM HEIGHT=19 COLSPAN=7 BGCOLOR=#FFFFFF>" & Chr$(13)
+	sRtn = sRtn & "<FONT SIZE=1 COLOR=#000000 FACE=""Verdana, Arial, Helv"">" & Chr$(13)   
+	sRtn = sRtn & "Click on 'New' for another document, or 'Finish' to exit. &nbsp;&nbsp;<INPUT TYPE=""Button"" VALUE=""New"" OnClick=""history.back()"">&nbsp;"
+	sRtn = sRtn & "<INPUT TYPE=""Button"" VALUE=""Finish"" OnClick=""location='"& locFinish & "'"">" & Chr$(13)
+	sRtn = sRtn & "</FONT></TD></TR>" & Chr$(13)
+	sRtn = sRtn & "</TABLE>" & Chr$(13)
+	
+	HTML_SaveSuccessDlg = sRtn
+End Function
+'++LotusScript Development Environment:2:1:CurrentDbURL:1:8
+Public Function CurrentDbURL(doc As NotesDocument) As String
+	Dim t$, i%
+	
+	t = doc.Path_Info(0)
+	i = Instr(1, t , ".nsf")
+	If i > 0 Then
+		t = Left(t, i + 3)
+	End If
+	t = "http://" & doc.Server_Name(0) & "/" & t
+	CurrentDbURL = t
+	
+End Function
+'++LotusScript Development Environment:2:1:RulesSaveDocument:1:8
+Public Function RulesSaveDocument(doc As NotesDocument) As Integer
+	Dim ns As New NotesSession
+	Dim db As NotesDatabase
+	Dim bDoc As NotesDocument
+	Dim tDoc As NotesDocument
+	Dim item As NotesItem
+	Dim bItem As NotesItem
+	Dim UNID As String, changed%, saved%
+	
+	RulesSaveDocument = False  
+	
+	Set db = doc.Parentdatabase
+	UNID = doc.UniversalID
+	
+     ' Change UNID so that the back end document is represented as a different document
+	doc.UniversalID = String(32, "1")
+	
+	On Error Resume Next
+	Set bDoc = db.GetDocumentByUNID(UNID)     
+	On Error Goto ErrSaveDocument
+	
+	If bDoc Is Nothing Then
+          ' Can't compare fields to back end document, assume it is a new document
+          ' Set the UniversalID back to the original one that was generated by notes
+		Set bDoc = curFormInfo.DB.CreateDocument
+		bDoc.Form = curFormInfo.FormName
+		bDoc.UniversalID = UNID
+		changed = True
+	End If
+	
+	Forall fld In curFormInfo.Fields
+		If fld.Save Then
+			Set item = doc.GetFirstItem(fld.FieldName)
+			If Not item Is Nothing Then
+				Set bItem=bDoc.GetFirstItem(fld.FieldName)
+				If bItem Is Nothing Then
+                         ' means that field does not exist in backend document, therefore initialize it
+					Set bItem=item.CopyItemToDocument(bDoc,"")
+					changed = True
+                         ' add the change to the auditarray
+				Elseif Not bItem.text=item.text Then
+					changed = True
+                          ' add the change to the auditarray
+					Set bItem=bDoc.ReplaceItemValue(item.Name,item.Values)
+				End If
+			End If
+		Else
+			If doc.hasItem(fld.FieldName) Then
+				doc.RemoveItem fld.FieldName
+			End If
+		End If
+	End Forall
+	
+	If doc.HasEmbedded And Not bDoc Is Nothing Then
+          ' Remove all file attachments from the backend document
+		Call bDoc.RemoveItem( "$FILE" ) 
+		Set tDoc = curFormInfo.DB.CreateDocument
+		Call doc.CopyAllItems(tDoc)
+          ' Remove everything except file attachments from temporary doc
+		Forall a In tDoc.Items
+			If Not a.type=1084 Then
+                    ' type 1084 is a file attachment (usually contained in a $FILE field)
+				Call a.remove
+			End If
+		End Forall
+          ' At this point all $FILE fields should have been removed from the backend document and the only fields left in doc should be $FILE fields          
+		Call tDoc.CopyAllItems(bDoc)
+		Set tDoc = Nothing
+		changed = True
+	End If
+	
+	If changed And Not bDoc Is Nothing Then
+		If Not curFormInfo.ParentDoc Is Nothing And doc.IsNewNote Then
+			Call bDoc.MakeResponse(curFormInfo.ParentDoc)
+		End If
+		saved = bDoc.save (True,True)        
+	End If
+	doc.UniqueID = UNID
+	RulesSaveDocument = True
+	Exit Function
+	
+ErrSaveDocument:
+	
+	Msgbox Error
+	gErrors.AddMessage Error & " during document save."
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:1:GetDocumentFromURL:1:8
+Public Function GetDocumentFromURL(Byval url$) As NotesDocument
+	
+	Dim unid$, i%, t$, dbname$
+	Dim db As NotesDatabase
+	Dim ns As New NotesSession
+	
+	i = Instr(url, "http://")
+	If i > 0 Then
+		t = Mid(url, i + 7)
+		i = Instr(t, ".nsf")
+		If i > 0 Then
+			dbname = Left(t,i + 4)
+               ' First item is the host name
+			dbname = Mid(dbname,Instr(1,dbname,"/") + 1)
+			dbname = Left(dbname, Len(dbname)-1)
+			t = Mid(t, i + 5)
+			If dbname = ns.CurrentDatabase.FilePath Then
+				Set db = ns.CurrentDatabase
+			Else
+				Set db = ns.GetDatabase("", dbname)
+			End If
+			If Not db Is Nothing Then
+				i = Instr(t,"/")
+				If i > 0 Then
+					unid = Mid(t,i +1,32)
+					If Len(unid) = 32 Then
+						Set GetDocumentFromURL = db.GetDocumentByUNID(unid)
+					End If
+				End If
+			End If
+		End If
+	End If
+	
+End Function

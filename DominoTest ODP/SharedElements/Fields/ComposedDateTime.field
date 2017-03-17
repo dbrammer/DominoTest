@@ -1,0 +1,29 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='sharedfield' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='13a' unid='95BD72110EA670B685256187007012AB' sequence='20'>
+<created><datetime dst='true'>19950322T162408,11-04</datetime></created>
+<modified><datetime dst='true'>20170316T154245,09-05</datetime></modified>
+<revised><datetime dst='true'>20070709T115243,22-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154245,08-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154245,08-05</datetime></addedtofile></noteinfo>
+<updatedby><name>Brian Henry</name><name>CN=Ed Funk/O=Teamhuber</name><name
+>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name='$TITLE'><text>ComposedDateTime</text></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAAAAAAAAAAAAAAAAAAAAA
+</rawitemdata></item>
+<item name='ComposedDateTime' summary='false' sign='true'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='$Fields'><text>ComposedDateTime</text></item>
+<item name='$Body' summary='true' sign='true'>
+<rawitemdata type='1'>
+gQKDBAEAhf8IAAEAAAqF/wgAAQAACor/PgCAAAAEADACAAAAAAEAAgEBAAoKAAAAXy4AABAAAAAA
+AAoAAAAIACwAAwBDb21wb3NlZERhdGVUaW1lhf8IAAEAAAo=
+</rawitemdata></item>
+<item name='$Flags'><text/></item></note>
+

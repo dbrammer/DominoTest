@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="form" maintenanceversion="1.8" replicaid="862580E50071C5D2" version="9.0" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="114e" sequence="8" unid="154652F2F98FE4FA8625711B006D776A">
+<created><datetime>20060220T135539,94-06</datetime></created>
+<modified><datetime dst="true">20170316T154529,55-05</datetime></modified>
+<revised><datetime dst="true">20100624T154446,36-05</datetime></revised>
+<lastaccessed><datetime dst="true">20170316T154529,54-05</datetime></lastaccessed>
+<addedtofile><datetime dst="true">20170316T154529,54-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Jesse Peters/O=Teamhuber</name><name>CN=Rodney Viessman/O=Teamhuber</name><name>CN=Andrew Thompson/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Andrew Thompson/O=Teamhuber</name></wassignedby>
+<item name="$TITLE"><text>PrintStyle.css</text></item>
+<item name="$FlagsExt"><text>D</text></item>
+
+<item name="$FileModDT" sign="true"><datetime dst="true">20050408T101856,65-05</datetime></item>
+
+<item name="$FileNames" sign="true"><text>PrintStyle.css</text></item>
+<item name="$DesignerVersion"><text>6.5</text></item>
+<item name="$EditFilePath"><text>C:\DOCUME~1\ATHOMP~1\LOCALS~1\Temp\notes6030C8\~PrintStyle.css</text></item>
+<item name="$Flags"><text>34C=Q$</text></item></note>

@@ -1,0 +1,77 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='filter' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='492' unid='849E2DDC7FB53ACF86257BA9006FBCBC' sequence='4'>
+<created><datetime dst='true'>20130715T152028,12-05</datetime></created>
+<modified><datetime dst='true'>20170316T154401,93-05</datetime></modified>
+<revised><datetime dst='true'>20130715T152257,83-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154401,92-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154401,92-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Mike Brown/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Mike Brown/O=Teamhuber</name></wassignedby>
+<item name='$AssistType' sign='true'><number>65426</number></item>
+<item name='$AssistLastRun' sign='true'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='$AssistDocCount' sign='true'><number>0</number></item>
+<item name='$Comment' sign='true'><text/></item>
+<item name='$FlagsExt' sign='true'><text/></item>
+<item name='$AssistFlags' sign='true'><text>Es</text></item>
+<item name='$AssistTrigger' sign='true'><text>4</text></item>
+<item name='$AssistInfo' sign='true'>
+<rawitemdata type='11'>
+AQAEAAQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+</rawitemdata></item>
+<item name='$AssistQuery' sign='true'>
+<rawitemdata type='f'>
+gQYAAAAA
+</rawitemdata></item>
+<item name='$AssistAction' sign='true'>
+<rawitemdata type='10'>
+gQKE/3wCAAAAAHICcgIBABAABgBOb3dUbXAsAAMABwAMAAUACTBTMEUAAQAYAAMARGF5AAUABgBO
+b3dUbXBQAQMABwAKAAMACTBSAAEAfAAFAE1vbnRoAAUABgBOb3dUbXBPAQEAAwBKYW4AAQADAEZl
+YgABAAMATWFyAAEAAwBBcHIAAQADAE1heQABAAMASnVuAAEAAwBKdWwAAQADAEF1ZwABAAMAU2Vw
+AAEAAwBPY3QAAQADAE5vdgABAAMARGVjAHcNAwAHAAoAAwAJMFIAAQAYAAQAWWVhcgUABgBOb3dU
+bXBOAQMABwAKAAMACTBSAAEAGAAEAFRpbWUFAAYATm93VG1wTAEDAAcACgADAAkwUgABAHQABQBF
+bnRyeQAFAAMARGF5AFYBBQAFAE1vbnRoACICBQAEAFllYXJWAQAAAAAAAAAAAEBgAiICAQABACAA
+IgIFAAQAVGltZVYBIgIBAA4AICAgIEFwcHJvdmVkOiAiAgIABgAAAAAAAAD0ALQCIgIDAAcAFgAP
+AAkwUjI1UzI2UzI3UzI4UwADADoADwBBcHByb3ZhbEhpc3RvcnkABQAFAEVudHJ5AAUADwBBcHBy
+b3ZhbEhpc3RvcnkAHwJeAQMABwASAAsACTBSMVMyUzNTMkUAAwAiAA4AQXBwcm92YWxTdGF0dXMB
+AAgAQXBwcm92ZWQDAAcAEAAJAAkwUjFTMlMzUwADADwAEABBbGxvd2FibGVBdXRob3JzAQAMAFtT
+dXBlcnZpc29yXQEADgBbU3RhdGlzdGljaWFuXR8CAwAHABAACQAJMFIxUzRTNVMAAAAIAGYAAwAH
+AAwABgAJMFJMMVM=
+</rawitemdata></item>
+<item name='$AssistAction_Ex' sign='true'>
+<rawitemdata type='14'>
+gQI=
+</rawitemdata></item>
+<item name='$Restricted' sign='true'><number>1</number></item>
+<item name='$Flags'><text>fP3</text></item>
+<item name='$AssistRunInfo' summary='true'>
+<rawitemdata type='3'>
+BgAAAgAACACOBAAAAAAAAAUAAAAwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAA6sVvAKl7JYYnTHQAg3slhgAAAAAAAAAAAAAAAAAAAAAAAAAAqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqq
+</rawitemdata></item>
+<item name='$TITLE' sign='true'><text>Approve Selected Button|Approve Selected Button</text></item>
+<item name='$DesignerVersion' sign='true'><text>8.5.3</text></item>
+<item name='$AssistVersion'><datetime dst='true'>20130715T152257,17-05</datetime></item></note>
+

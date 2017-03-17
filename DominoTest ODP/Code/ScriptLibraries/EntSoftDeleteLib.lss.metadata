@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="filter" maintenanceversion="1.8" replicaid="862580E50071C5D2" version="9.0" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="276" sequence="12" unid="321DA02ABC93CE178625711B006CEDCE">
+<created><datetime>20060220T134947,66-06</datetime></created>
+<modified><datetime dst="true">20170316T154312,73-05</datetime></modified>
+<revised><datetime>20081107T093459,72-06</datetime></revised>
+<lastaccessed><datetime dst="true">20170316T154312,72-05</datetime></lastaccessed>
+<addedtofile><datetime dst="true">20170316T154312,72-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=David Frahm/O=Teamhuber</name><name>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name="$DesignerVersion" sign="true"><text>7</text></item>
+<item name="$TITLE" sign="true"><text>EntSoftDeleteLib</text></item>
+<item name="$PublicAccess" sign="true"><text>1</text></item>
+
+
+<item name="$Comment"><text> </text></item>
+<item name="$Flags"><text>s34Q</text></item>
+<item name="$POID"><datetime>20081107T093459,72-06</datetime></item></note>

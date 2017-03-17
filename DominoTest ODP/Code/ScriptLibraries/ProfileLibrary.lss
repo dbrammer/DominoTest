@@ -1,0 +1,1340 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+' ** Rules Engine Library: ProfileLibrary
+' ** Contains code and declarations necessary to create and modify Rule Engine Profile Documents
+' ** Last Modification Date: 09/01/2000
+'
+' Use of this library and any code contained within is reserved for registered users of Enterpol/Enter InfoSystems products and/or licencees of the Enterpol Rules Engine
+' Any modification to this library will void Enterpol/Enter InfoSystems support agreements unless prior authorization is granted.
+
+Option Public
+Option Explicit
+
+Use "RulesGlobal"
+Use "RulesEngine" 
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Sub Initialize
+Declare Sub Terminate
+Declare Public Function ConvertString(txt As String,Byval DType As String) As Integer
+Declare Public Function BuildSimpleFormula(doc As NotesDocument) As String
+Declare Private Function CheckDelim(txt As String) As String
+Declare Public Function SaveVariableInfo(doc As NotesDocument) As Integer
+Declare Public Sub CreateFieldInfoDocs(thisDoc As NotesDocument)
+Declare Public Function CompileAllProfilesNew(RulesDatabase As NotesDatabase) As Integer
+Declare Public Function SaveFieldInfo(doc As NotesDocument) As Integer
+Declare Public Function SaveFormInfo(doc As NotesDocument) As Integer
+Declare Private Function GetEvents(v As Variant) As String
+Declare Public Function CompileHierarchyInfo(db As NotesDatabase) As Integer
+Declare Public Function CompileProfileOLD(FormName As String, SubForm As Integer, RulesDatabase As NotesDatabase) As Integer
+Declare Public Function SaveRuleDocument(doc As NotesDocument) As Integer
+Declare Sub MergeSort (Start& , Finish&, Array As Variant, newArray As Variant)
+Declare Public Function CompileProfile(FormName As String, SubForm As Integer, RulesDatabase As NotesDatabase) As Integer
+Declare Public Function CompileAllProfiles(RulesDatabase As NotesDatabase) As Integer
+Declare Sub Merge (Start&, MidPnt&, Finish&, Array As Variant, newArray As Variant)
+Declare Public Sub SortArray(ar As Variant)
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+Private curDB As NotesDatabase
+
+'++LotusScript Development Environment:2:2:Initialize:1:10
+Sub Initialize
+	
+	Set gErrors = New ErrorMessages
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:Terminate:1:10
+Sub Terminate
+	
+	Set gErrors = Nothing
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:ConvertString:1:8
+Public Function ConvertString(txt As String,Byval DType As String) As Integer
+     ' Converts a string to an appropriate data type.  Used when building simple validation formulas
+     ' Returns true if successful, otherwise returns false and places message in txt
+	Dim t$
+	
+	t = txt
+	ConvertString = True
+	Select Case DType
+	Case "Number"
+		If Not Isnumeric(t) Then
+			t = "must be numeric for a numeric field."
+			ConvertString = False
+		End If
+	Case "Time"
+		If Isdate(t)  Then
+			If Timevalue(t) > 0 Then
+				t = "@Time(" & Cstr(Hour(t)) & "; " & Cstr(Minute(t)) & "; " & Cstr(Second(t)) & ")"
+			Else
+				t = "@Date(" & Cstr(Year(t)) & "; " & Cstr(Month(t)) & "; " & Cstr(Day(t)) & ")"
+			End If                      
+		Else
+			Select Case Ucase(t)
+			Case "TODAY"
+				t = "@Today"
+			Case  "YESTERDAY"
+				t = "@Yesterday"
+			Case "TOMORROW"
+				t = "@Tomorrow"
+			Case Else
+				t = "must be a valid date/time for a time field."
+				ConvertString = False
+			End Select                        
+		End If
+	Case Else ' Text
+		If Left(t, 1) <> """" Then
+			t = """" & t
+		End If
+		If Right(t, 1) <> """" Then
+			t = t & """"
+		End If
+	End Select
+	txt = t
+	
+End Function
+
+
+
+'++LotusScript Development Environment:2:1:BuildSimpleFormula:1:8
+Public Function BuildSimpleFormula(doc As NotesDocument) As String
+	
+	Dim fdoc As NotesDocument
+	Dim view As NotesView
+	Dim req$, temp$, reqfield$, op$, bound$, key(), desc$, bounds$, msg$, fld$, t$
+	Dim reverse%, inc%
+	
+	Set view = doc.ParentDatabase.GetView("FieldInfo")
+	Redim Key(1)
+	
+	op = doc.Op1(0)
+	fld = doc.FieldName(0)
+	desc = doc.FieldDescription(0)
+	gErrors.ClearMessages
+	
+	If doc.VOptions(0) = "Bounds" Then
+		bound = doc.Bound1(0)
+		If bound = "" And doc.Bound2(0) = "" Then
+			gErrors.AddMessage "Upper and/or Lower Bounds are required."
+		End If
+		msg = bound
+		If bound <> "" Then
+			inc = doc.Inclusive1(0) <> ""
+			If ConvertString(bound, doc.FieldType(0)) Then
+				If doc.FieldType(0) = "Time" And  Isdate(msg) Then
+					If Timevalue(bound) > 0 Then
+						msg = Format(msg, "hh:nn:ss")                                 
+					Else
+						msg = Format(msg, "ddmmmyy")
+					End If        
+				End If
+			Else
+				gErrors.AddMessage "Lower bound " & bound
+			End If                    
+			If inc Then
+				t = " >= "
+			Else
+				t =  " > "
+			End If
+			bounds = "(" & fld & t & bound & ")"
+			t = desc & " must be greater than "
+			If inc Then
+				t = t & "or equal to "
+			End If
+			msg = t & msg
+			If doc.Bound2(0) <> "" Then
+				bounds = bounds & " & "
+				msg = msg & " and "
+			End If
+			reverse = True
+		End If
+		bound = doc.Bound2(0)
+		temp = bound
+		If bound <> "" Then
+			inc = doc.Inclusive2(0) <> ""
+			If ConvertString(bound, doc.FieldType(0)) Then
+				If doc.FieldType(0) = "Time" And  Isdate(msg) Then
+					If Timevalue(bound) > 0 Then
+						msg = Format(msg, "hh:nn:ss")                                 
+					Else
+						msg = Format(msg, "ddmmmyy")
+					End If        
+				End If
+			Else
+				gErrors.AddMessage "Upper bound " & bound
+			End If             
+			If inc Then                              
+				t = " <= "
+			Else
+				t =  " < "
+			End If               
+			bounds = bounds & "(" & fld  & t & bound & ")"
+			If msg = "" Then
+				t = desc & " must be less than " 
+			Else
+				t = msg & "less than "
+			End If
+			If inc Then
+				t = t & "or equal to "                    
+			End If
+			msg = t & temp               
+			reverse = True
+		End If          
+	End If
+	Select Case doc.VRequired(0)
+	Case "Yes"
+		If bounds = "" Then
+			bounds = "(" & fld  & " = """")"               
+			msg = desc & " is a required field."
+		End If
+	Case "No"
+		If bounds <> "" Then
+			bounds = "(" & bounds  & ") | (" & fld & " = """")"
+		End If
+	Case "Dependent"
+		reqfield = doc.RequiredField(0)
+		If reqfield = "" Then
+			gErrors.AddMessage "You must specify a dependent field."
+		End If
+		If doc.RequiredValue(0) = "" Then
+			gErrors.AddMessage "You must specify a value for the dependent field."
+		Elseif reqfield <> "" Then        
+			key(0)= doc.FormName(0)
+			key(1) = doc.SubFormName(0) & "|" & reqfield
+			Set fdoc = view.GetDocumentByKey(key)
+			If fdoc Is Nothing Then
+				gErrors.AddMessage "Could not locate field info document for dependent field " &  reqfield
+			Else
+				t = Trim(doc.RequiredValue(0))
+				If ConvertString(t, fdoc.FieldType(0)) Then
+					req = reqfield & " " & op & " " & t
+					If bounds = "" Then
+						bounds = "(" & req & ") & (" & fld  & " = """")"
+						If Right(t, 1) = """" Then
+							t = "'" & Mid(t, 2, Len(t) - 2) & "'"
+						End If
+						msg = desc & " is required field when " & reqfield & " " & op & " " & t
+					Else                         
+						bounds = "(" & req & ") & " & bounds
+					End If
+				Else
+					gErrors.AddMessage "Required field " & t
+				End If
+			End If
+		End If
+	End Select
+	
+	If bounds <> "" Then
+		If reverse Then
+			bounds = "@If(" & bounds & "; @Success; @Failure(""" &  msg & """))"
+		Else
+			bounds = "@If(" & bounds & "; @Failure(""" &  msg & """); @Success)"
+		End If
+	End If    
+	
+	BuildSimpleFormula = bounds
+	
+	
+End Function
+
+'++LotusScript Development Environment:2:1:CheckDelim:1:8
+Private Function CheckDelim(txt As String) As String
+	
+	Dim i%, t$
+	
+	t = txt
+	i = Instr(t, "~")
+	While i > 0 
+		t = Left(t, i -1) & "\" & Mid(t, i)
+		i = Instr(i + 2, t, "~")
+	Wend
+	CheckDelim = t
+	
+End Function
+
+
+
+'++LotusScript Development Environment:2:1:SaveVariableInfo:1:8
+Public Function SaveVariableInfo(doc As NotesDocument) As Integer
+	
+	SaveVariableInfo = True
+	
+End Function
+
+
+'++LotusScript Development Environment:2:2:CreateFieldInfoDocs:1:8
+Public Sub CreateFieldInfoDocs(thisDoc As NotesDocument)
+     ' Checks the FormInfo or SubFormInfo document for included fields and creates
+     ' or deletes FieldInfo documents as necessary
+	Dim doc As NotesDocument
+	Dim nextdoc As NotesDocument
+	Dim view As NotesView
+	Dim ns As New NotesSession
+	Dim db As NotesDatabase
+	Dim form As NotesForm
+	Dim FormName As String
+	Dim Fields As Variant, i%, key$()
+	Dim v
+	
+	Set db = ns.CurrentDatabase
+	
+	FormName = thisDoc.FormName(0)
+	Set view = db.GetView("FieldInfo")
+	Set form = db.GetForm(FormName)
+	If form Is Nothing Then
+		Messagebox "There is no form called '" & FormName & "' in the database.", 48, "Create Field Info Docs"
+		Exit Sub
+	End If
+	Redim key(1)          
+	
+	Fields = thisDoc.Fields
+	
+     ' Create Missing Form Info Documents
+	key(0) = thisDoc.FormName(0)
+	For i = 0 To Ubound(Fields)
+		If Fields(i) <> "" Then
+			key(1) = Fields(i)
+			Set doc = view.GetDocumentByKey(key, True)
+			If Not doc Is Nothing Then
+				If doc.FieldName(0) <> Fields(i) Then
+					Set doc = Nothing
+				End If
+			End If
+			If doc Is Nothing Then
+				Set doc = db.CreateDocument
+				With doc
+					.Form = "FieldInfo"
+					.FormName = key(0)
+					.FieldName = Fields(i)
+					.FieldDescription = Fields(i)
+					.FieldTypeOptions = ""
+					.Options = "Save"
+					.IsSubForm = thisDoc.IsSubForm 
+					.MakeResponse thisDoc
+					.Save True, False
+				End With
+			End If
+		End If
+	Next
+	
+     ' Delete unnecessary fieldinfo documents
+	key(1) = ""
+	Set doc = view.GetDocumentByKey(key, False)
+	While Not doc Is Nothing
+		Set nextdoc = view.GetNextDocument(doc)          
+		If doc.FormName(0) <> key(0) Then
+			Set nextdoc = Nothing
+		Else
+			For i = 0 To Ubound(Fields)
+				If Fields(i) = doc.FieldName(0) Then
+					Exit For
+				End If
+			Next
+			If i > Ubound(Fields) Then
+				doc.Remove True
+			End If
+		End If
+		Set doc = nextdoc
+	Wend
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:CompileAllProfilesNew:1:8
+Public Function CompileAllProfilesNew(RulesDatabase As NotesDatabase) As Integer
+	' *** WARNING... If you change this routine, you will also need to change the duplicate code in "CompileProfile"
+	'*** The CompileAllProfiles routine now contains all the code and doesn't call CompileProfile for each profile.
+	'*** This was an attempt to fix a memory leak problem in LotusScript.
+	'*** The old routine exists under "CompileAllProfilesOLD"
+	
+	'***** Also, this compileall profiles routine will stop if there is an error
+	
+	Dim ns As New NotesSession
+	Dim db As NotesDatabase
+	Dim view As NotesView, rcview As notesview, col As notesdocumentcollection
+	Dim doc As NotesDocument
+	Dim pdoc As NotesDocument
+	Dim v As Variant, a As Variant
+	Dim curform$, t$, count%, i%, bits&, forms
+	Dim key As String
+	
+	Dim allview As NotesView
+	Dim alldoc As NotesDocument
+	Dim allcount%
+	Dim subform As Integer
+	Dim FormName As String
+	
+	On Error Goto ErrAll
+	
+	Set db = ns.CurrentDatabase
+	Set rcview = db.getview("(RulesControl)")
+	Call rcview.refresh
+	
+	If RulesDatabase Is Nothing Then
+		Set allview = db.GetView("FormInfo")
+	Else
+		Set allview = RulesDatabase.GetView("FormInfo")
+		If allview Is Nothing Then
+			Msgbox "The database specified is not a repository for rules documents.  No profile documents compiled.", 48, "Compile All Profiles"
+			Exit Function
+		End If
+	End If
+	Set alldoc = allview.GetFirstDocument
+	
+	While Not alldoc Is Nothing
+		curform = ""
+		FormName=alldoc.FormName(0)
+		SubForm=alldoc.IsSubForm(0)="1"
+		
+		If SubForm Then
+			t = " SubForm Profile"
+			key = "C) SubForm Information"
+		Else
+			t = " Form Profile"
+			key = "B) Form Information"
+		End If
+		
+     'Remove any old Rules profile documents
+'		Set pdoc = db.GetProfileDocument(FormName & t)
+'		On Error Resume Next
+'		pdoc.Remove True
+		
+     'Find current Rules documents
+		Call rcview.refresh
+		Set pdoc = rcview.GetDocumentbyKey(FormName & t,True)
+		On Error Resume Next
+		If Not pdoc Is Nothing Then
+			pdoc.Remove True
+		End If
+		If Err <> 0 Then
+			Msgbox "You must have delete access to the database to compile profiles. (" & Str(Err) & "): " & Error$, 48, "Compile Profile"
+			Exit Function
+		End If
+		On Error Goto ErrAll
+		Set pdoc = New notesdocument(db)
+		pdoc.RulesControl = FormName & t
+		
+		If RulesDatabase Is Nothing Then
+			Set view = db.GetView("(RulesCompile)")
+		Else
+			Set view = RulesDatabase.GetView("(RulesCompile)")
+		End If
+		
+		key = key + "~"+FormName
+		Set doc = view.GetDocumentByKey(key)
+		Redim v(0)
+		count = 0
+		
+		While Not doc Is Nothing
+			forms = doc.FormName
+			For i = 0 To Ubound(forms)
+				If Ucase(forms(i)) = Ucase(FormName) Then
+					Exit For
+				End If
+			Next
+			If i > Ubound(forms) Then
+				Set doc = Nothing
+			End If
+			If Not doc Is Nothing Then
+				If curform <> doc.Form(0) Then
+					If  curform <> "" Then
+						pdoc.ReplaceItemValue curform, v
+						Redim v(0)
+						count = 0
+					End If
+					curform = doc.Form(0)
+				End If
+				t = ""
+				With doc
+					Select Case curform
+					Case "SubFormInfo"
+						
+					Case "FormInfo"
+						pdoc.EmbeddedSubForms = .ImbeddedSubForms
+						pdoc.LoadableSubForms = .LoadedSubForms
+						pdoc.LoadableSubFormInfo = .LoadedSubFormInfo
+						pdoc.UserLoadableSubForms = .UserLoadableSubForms
+						pdoc.CreateMacro = .CreateMacro
+						pdoc.SaveMacro = .SaveMacro
+						pdoc.DeleteMacro = .DeleteMacro
+						pdoc.ViewIcon = .ViewIcon
+						pdoc.ViewOrder = .ViewOrder
+						bits = 0
+						If .Response(0) <>"" Then
+							bits = bits Or FORM_RESPONSE
+						End If
+						If .Inherit(0) <>"" Then
+							bits = bits Or FORM_INHERIT
+						End If
+						If .ClientUse(0) <>"" Then
+							bits = bits Or FORM_CLIENT
+						End If
+						If .WebUse(0) <>"" Then
+							bits = bits Or FORM_WEB
+						End If
+						If .Auditing(0) <>"" Then
+							bits = bits Or FORM_AUDIT
+						End If
+						If .PromptSubForms(0) <>"" Then
+							bits = bits Or FORM_PROMPTSUBFORM
+						End If
+						t = CheckDelim(.FormName(0)) & "~" & CheckDelim(.Description(0)) & "~" & Cstr(bits) & "~" 
+						If doc.Auditing(0) = "" Then
+							t = t & "~~"
+						Else
+							t = t & Cstr(doc.AuditCount(0))
+							v = .AuditContents
+							For i = 0 To Ubound(v)
+								t = t & "~" & v(i)
+							Next
+						End If
+						pdoc.FormInfo = t
+						pdoc.InheritsFrom = .InheritsFrom
+						pdoc.ResponseTo = .ResponseTo
+						pdoc.AllowCreate = .AllowCreate
+						pdoc.AllowCreateOther = .AllowCreateOther
+						
+					Case "FieldInfo"
+						i = 0
+						Select Case .FieldType(0)
+						Case "Number"
+							i = FIELD_TYPE_NUMERIC
+						Case "Time"
+							i = FIELD_TYPE_TIME
+						Case "RichText"
+							i = FIELD_TYPE_RICHTEXT
+						Case Else
+							i = FIELD_TYPE_TEXT
+						End Select
+						
+						If doc.FieldCompute(0) = "Computed" Then
+							i = i Or FIELD_TYPE_COMPUTED
+						End If
+						
+						If .PickListChoices(0) <> "" Then
+							pdoc.ReplaceItemValue doc.FieldName(0) & "PickList", .PickListChoices
+						End If
+						
+						t = CheckDelim(.FieldName(0)) & "~" & CheckDelim(.SubForm(0)) & "~" & CheckDelim(.FieldDescription(0)) & "~" & CheckDelim(.FieldHelp(0)) & "~" & Cstr(i) & "~"  & CheckDelim(.DefaultValue(0)) & "~" 
+						t = t & CheckDelim(.SimpleTranslation(0)) & "~"  & CheckDelim(.ComplexTranslation(0)) & "~"  & CheckDelim(.SimpleValidation(0)) & "~" & CheckDelim(.ComplexValidation(0)) & "~"
+						t = t & GetEvents(.STDuring) & "~" & GetEvents(.CTDuring) & "~" & GetEvents(.SVDuring) & "~" & GetEvents(.CVDuring)
+						a = .Options
+						For i = 0 To Ubound(a)
+							If a(i) <> "" Then
+								t = t & "~" & a(i)
+							End If
+						Next
+						t = t & "~" & Cstr(.ExportSeq(0))
+					Case "VariableInfo"
+						pdoc.ReplaceItemValue .VariableName(0), .VariableValues            
+					Case Else
+                         ' Somebody was screwing around with the view - this document is ignored
+					End Select
+				End With
+				If t <> "" Then
+					Redim Preserve v(count)
+					v(count) = t
+					count = count + 1
+				End If
+				Set doc = view.GetNextDocument(doc)
+				If Not doc Is Nothing Then
+					If doc.FormName(0) <> FormName Then
+						If doc.Form(0) <> "SharedFieldInfo" And doc.Form(0) <> "VariableInfo" Then
+                              ' No more documents for this form - force exit of loop
+							Set doc = Nothing
+						End If
+					End If
+				End If          
+			End If
+		Wend
+		With pdoc
+			If v(0) <> "" Then
+				.ReplaceItemValue curform, v
+			End If
+			.Version = RulesVersion
+			v = Now        
+			.CompileDate = v
+			.Form = "RulesEngineProfile"
+			.Save True, False
+		End With
+		
+		allcount = allcount + 1
+		Set alldoc = allview.GetNextDocument(alldoc)
+	Wend
+	CompileAllProfilesNew = allcount
+	Exit Function
+	
+ErrAll:
+	Msgbox "Error compiling all profiles. (" & Str(Err) & ") in line " + Str(Erl)+": " & Error$, 48, "Compile ALL Profiles"
+	CompileAllProfilesNew = allcount
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:1:SaveFieldInfo:1:8
+Public Function SaveFieldInfo(doc As NotesDocument) As Integer
+	
+	Dim v, desc$
+	
+	Dim Errors As New ErrorMessages
+	
+	Redim v(0)
+	v(0) = 0
+	
+     ' Check macro formulas
+	With doc
+		If .ChangeMacro(0) <> "" Then
+			If Not CheckSyntax(.ChangeMacro(0)) Then
+				Errors.AddMessage "Field change macro syntax error: " & gErrors.LastMessage
+			End If
+		End If
+		If .ComplexTranslation(0) <> "" Then
+			If Not CheckSyntax(.ComplexTranslation(0)) Then
+				Errors.AddMessage "Complex translation formula syntax error: " & gErrors.LastMessage
+			End If
+		End If
+		If .SimpleValidation(0) <> "" Then
+			If Not CheckSyntax(.SimpleValidation(0)) Then
+				Errors.AddMessage "Simple translation formula syntax error: " & gErrors.LastMessage
+			End If
+		End If     
+		If .ComplexValidation(0) <> "" Then
+			If Not CheckSyntax(.ComplexValidation(0)) Then
+				Errors.AddMessage "Complex validation formula syntax error: " & gErrors.LastMessage
+			End If
+		End If
+	End With
+	
+	Set gErrors = Errors
+	SaveFieldInfo = True
+	
+	desc = doc.FieldDescription(0)
+	If desc = "" Then
+		gErrors.AddMessage "You must specify a field description."
+	End If
+	
+	If gErrors.Count > 0 Then
+          ' Set SaveOptions = 0 to prevent saving from the web
+		v = 0
+		doc.ReplaceItemValue "SaveOptions", v
+		SaveFieldInfo = False
+	Else
+		doc.RemoveItem "SaveOptions"
+	End If
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:SaveFormInfo:1:8
+Public Function SaveFormInfo(doc As NotesDocument) As Integer
+	Dim e%, v, i%, posn%, fname$, t$
+	Dim item As NotesItem
+	
+	gErrors.ClearMessages
+	e = True
+	If doc.Response(0) <> "" Then
+		If doc.ResponseTo(0) = "" Then
+			gErrors.AddMessage "You must specify at least one allowable parent for a response document."
+			e = False
+		End If
+	End If
+	If doc.Auditing(0) <> "" Then       
+		v = doc.AuditContents
+		If v(0) = "" Then
+			gErrors.AddMessage "At least one item is required for Audit Trail Contents."
+			e = False
+		End If        
+	End If
+	If  e Then
+		v = doc.DispSynchroFields
+		SortArray v
+		doc.ReplaceItemValue "SynchroFields", v
+	End If
+	SaveFormInfo = e
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:GetEvents:1:8
+Private Function GetEvents(v As Variant) As String
+	Dim i%, t, r%
+	
+     ' Constants defined in RulesGlobal library
+	r = 0
+	For i = 0 To Ubound(v)
+		Select Case v(i)
+		Case "Exit"
+			r = r + EXIT_EVENT
+		Case "Save"
+			r = r + SAVE_EVENT
+		Case "Blur"
+			r = r + BLUR_EVENT
+		Case "Submit"
+			r = r + SUBMIT_EVENT
+		End Select
+	Next
+	GetEvents = Cstr(r)
+	
+End Function
+
+
+
+'++LotusScript Development Environment:2:1:CompileHierarchyInfo:1:8
+Public Function CompileHierarchyInfo(db As NotesDatabase) As Integer
+	
+	On Error Goto ErrCompile
+	
+	Dim view As NotesView, rcview As notesview
+	Dim doc As NotesDocument
+	Dim pDoc As NotesDocument
+	Dim item As NotesItem
+	
+	Dim t$, i%, k%, m%, count%
+	Dim deps$()
+	Dim v
+	
+	Redim deps(100)
+	
+	Set rcview = db.getview("(RulesControl)")
+	Call rcview.refresh
+	
+     'Remove any old Rules profile documents
+	Set pdoc = db.GetProfileDocument("HierarchicalSynchronizationProfile")
+	On Error Resume Next
+	pdoc.Remove True
+	
+     'Find current Rules documents
+	Set pdoc = rcview.GetDocumentbyKey("HierarchicalSynchronizationProfile",True)
+	On Error Resume Next
+	If Not pdoc Is Nothing Then
+		pdoc.Remove True
+	End If
+	If Err <> 0 Then
+		Msgbox "You must have delete access to the database to compile profiles.", 48, "Compile Profile"
+		Exit Function
+	End If
+	On Error Goto ErrCompile
+	Set pdoc = New notesdocument(db)
+	pdoc.RulesControl = "HierarchicalSynchronizationProfile"
+	
+	
+     ' Fill structure with dependency information
+	With db
+		Set View = .GetView("FieldInfo")
+		Set doc = view.GetFirstDocument
+		While Not doc Is Nothing
+			With doc     
+				If .SynchroField(0) <> "" And .FieldName(0) <> "" And .SynchroForm(0) <> "" Then
+					Set item = .GetFirstItem("SynchroForm")
+					t = item.Text & "~"
+					If .SynchroField(0) = "*" Then
+						t = t & .FieldName(0)
+					Else
+						t = t & .SynchroField(0) 
+					End If
+					t = t & "~"
+					If .IsSubForm(0) = "" Then
+						t = t & .FormName(0)
+					Else
+						Set item = .GetFirstItem("SynchroForms")
+						If Not item Is Nothing Then
+							t = t & item.Text
+						End If
+					End If
+					If Right(t, 1) <> "~" Then
+						t = t & "~" & .FieldName(0)                              
+						If Ubound(deps) < count Then
+							Redim Preserve deps(Ubound(deps) + 100)                                   
+						End If
+						deps(count) = t
+						count = count + 1
+					End If
+				End If
+			End With 
+			Set doc = view.GetNextDocument(doc)
+		Wend
+	End With
+	If count > 0 Then
+		count = count - 1
+	End If
+	Redim Preserve deps(count)
+	pDoc.FormInfo = "Compiled " & Format(Now, "mm/dd/yy hh:nn AM/PM")
+	pDoc.HierarchyInfo = deps
+	CompileHierarchyInfo = True
+	pDoc.Save True, False
+	
+ErrCompile:
+	
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:1:CompileProfileOLD:1:8
+Public Function CompileProfileOLD(FormName As String, SubForm As Integer, RulesDatabase As NotesDatabase) As Integer
+	Dim ns As New NotesSession
+	Dim db As NotesDatabase
+	Dim view As NotesView, rcview As notesview
+	Dim doc As NotesDocument
+	Dim pdoc As NotesDocument
+	Dim v As Variant, a As Variant
+	Dim curform$, t$, count%, i%, bits&, forms
+	Dim key$()
+	
+	On Error Goto ErrCompile
+	CompileProfileOLD = False
+	curform = ""
+	
+	Set db = ns.CurrentDatabase
+	Set rcview = db.getview("(RulesControl)")
+	Call rcview.refresh
+	
+	Redim key(1)
+     ' Delete any existing Rules Document
+	If SubForm Then
+		t = " SubForm Profile"
+		key(0) = "C) SubForm Information"
+	Else
+		t = " Form Profile"
+		key(0) = "B) Form Information"
+	End If
+	
+     'Remove any old Rules profile documents
+	Set pdoc = db.GetProfileDocument(FormName & t)
+	On Error Resume Next
+	pdoc.Remove True
+	
+     'Find current Rules documents
+	Set pdoc = rcview.GetDocumentbyKey(FormName & t,True)
+	On Error Resume Next
+	If Not pdoc Is Nothing Then
+		pdoc.Remove True
+	End If
+	If Err <> 0 Then
+		Msgbox "You must have delete access to the database to compile profiles. (" & Str(Err) & "): " & Error$, 48, "Compile Profile"
+		Exit Function
+	End If
+	On Error Goto ErrCompile
+	Call rcview.refresh
+	Set pdoc = New notesdocument(db)
+	pdoc.RulesControl = FormName & t
+	
+	If RulesDatabase Is Nothing Then     
+		Set view = db.GetView("RulesDocs")
+	Else
+		Set view = RulesDatabase.GetView("RulesDocs")
+	End If
+	
+	key(1) = FormName     
+	Set doc = view.GetDocumentByKey(key)     
+	Redim v(0)
+	
+	While Not doc Is Nothing
+		forms = doc.FormName
+		For i = 0 To Ubound(forms)
+			If Ucase(forms(i)) = Ucase(FormName) Then
+				Exit For
+			End If
+		Next
+		If i > Ubound(forms) Then
+			Set doc = Nothing
+		End If
+		If Not doc Is Nothing Then
+			If curform <> doc.Form(0) Then
+				If  curform <> "" Then
+					pdoc.ReplaceItemValue curform, v
+					Redim v(0)
+					count = 0
+				End If
+				curform = doc.Form(0)
+			End If
+			t = ""
+			With doc
+				Select Case curform
+				Case "SubFormInfo"
+					
+				Case "FormInfo"
+					pdoc.EmbeddedSubForms = .ImbeddedSubForms
+					pdoc.LoadableSubForms = .LoadedSubForms
+					pdoc.LoadableSubFormInfo = .LoadedSubFormInfo
+					pdoc.UserLoadableSubForms = .UserLoadableSubForms
+					pdoc.CreateMacro = .CreateMacro
+					pdoc.SaveMacro = .SaveMacro
+					pdoc.DeleteMacro = .DeleteMacro
+					pdoc.ViewIcon = .ViewIcon
+					pdoc.ViewOrder = .ViewOrder
+					bits = 0
+					If .Response(0) <>"" Then
+						bits = bits Or FORM_RESPONSE
+					End If
+					If .Inherit(0) <>"" Then
+						bits = bits Or FORM_INHERIT
+					End If
+					If .ClientUse(0) <>"" Then
+						bits = bits Or FORM_CLIENT
+					End If
+					If .WebUse(0) <>"" Then
+						bits = bits Or FORM_WEB
+					End If
+					If .Auditing(0) <>"" Then
+						bits = bits Or FORM_AUDIT
+					End If
+					If .PromptSubForms(0) <>"" Then
+						bits = bits Or FORM_PROMPTSUBFORM
+					End If
+					t = CheckDelim(.FormName(0)) & "~" & CheckDelim(.Description(0)) & "~" & Cstr(bits) & "~" 
+					If doc.Auditing(0) = "" Then
+						t = t & "~~"
+					Else
+						t = t & Cstr(doc.AuditCount(0))
+						v = .AuditContents
+						For i = 0 To Ubound(v)
+							t = t & "~" & v(i)
+						Next
+					End If
+					pdoc.FormInfo = t
+					pdoc.InheritsFrom = .InheritsFrom
+					pdoc.ResponseTo = .ResponseTo
+					pdoc.AllowCreate = .AllowCreate
+					pdoc.AllowCreateOther = .AllowCreateOther
+					
+				Case "FieldInfo"
+					i = 0
+					Select Case .FieldType(0)
+					Case "Number"
+						i = FIELD_TYPE_NUMERIC
+					Case "Time"
+						i = FIELD_TYPE_TIME
+					Case "RichText"
+						i = FIELD_TYPE_RICHTEXT
+					Case Else
+						i = FIELD_TYPE_TEXT
+					End Select
+					
+					If doc.FieldCompute(0) = "Computed" Then
+						i = i Or FIELD_TYPE_COMPUTED
+					End If
+					
+					If .PickListChoices(0) <> "" Then
+						pdoc.ReplaceItemValue doc.FieldName(0) & "PickList", .PickListChoices
+					End If
+					
+					t = CheckDelim(.FieldName(0)) & "~" & CheckDelim(.SubForm(0)) & "~" & CheckDelim(.FieldDescription(0)) & "~" & CheckDelim(.FieldHelp(0)) & "~" & Cstr(i) & "~"  & CheckDelim(.DefaultValue(0)) & "~" 
+					t = t & CheckDelim(.SimpleTranslation(0)) & "~"  & CheckDelim(.ComplexTranslation(0)) & "~"  & CheckDelim(.SimpleValidation(0)) & "~" & CheckDelim(.ComplexValidation(0)) & "~"
+					t = t & GetEvents(.STDuring) & "~" & GetEvents(.CTDuring) & "~" & GetEvents(.SVDuring) & "~" & GetEvents(.CVDuring)
+					a = .Options
+					For i = 0 To Ubound(a)
+						If a(i) <> "" Then
+							t = t & "~" & a(i)
+						End If
+					Next
+					t = t & "~" & Cstr(.ExportSeq(0))
+				Case "VariableInfo"
+					pdoc.ReplaceItemValue .VariableName(0), .VariableValues            
+				Case Else
+                         ' Somebody was screwing around with the view - this document is ignored
+				End Select
+			End With
+			If t <> "" Then
+				Redim Preserve v(count)
+				v(count) = t
+				count = count + 1
+			End If
+			Set doc = view.GetNextDocument(doc)
+			If Not doc Is Nothing Then
+				If doc.FormName(0) <> FormName Then
+					If doc.Form(0) <> "SharedFieldInfo" And doc.Form(0) <> "VariableInfo" Then
+                              ' No more documents for this form - force exit of loop
+						Set doc = Nothing
+					End If
+				End If
+			End If          
+		End If
+	Wend
+	With pdoc
+		If v(0) <> "" Then
+			.ReplaceItemValue curform, v
+		End If
+		.Version = RulesVersion
+		v = Now        
+		.CompileDate = v
+		.Form = "RulesEngineProfile"
+		.Save True, False
+	End With
+	CompileProfileOLD = True
+	
+ErrCompile:
+	
+	Exit Function
+End Function
+
+'++LotusScript Development Environment:2:1:SaveRuleDocument:1:8
+Public Function SaveRuleDocument(doc As NotesDocument) As Integer
+	Dim ns As New NotesSession
+	Dim db As NotesDatabase
+	Dim bDoc As NotesDocument
+	Dim bItem As NotesItem
+	Dim UNID As String, saved%, changed%
+	
+	SaveRuleDocument = False
+	On Error Goto ErrSaveDocument
+	
+	Set db = doc.Parentdatabase
+	UNID = doc.UniversalID
+	
+     ' Change UNID so that the back end document is represented as a different document
+	doc.UniversalID = String(32, "1")
+	Set bDoc = db.GetDocumentByUNID(UNID)
+	
+	If bDoc Is Nothing Then 
+          ' Can't compare fields to back end document, assume it is a new document
+          ' Set the UniversalID back to the original one that was generated by notes
+		Set bDoc = db.CreateDocument
+		bDoc.UniversalID = UNID
+		changed = True
+	End If
+	
+	Forall item In doc.Items   
+		Set bItem=bDoc.GetFirstItem(item.Name)                         
+		If bItem Is Nothing Then
+               ' means that field does not exist in backend document, therefore initialize it
+			Set bItem = item.CopyItemToDocument(bDoc,"")                                            
+			changed = True
+		Elseif Not bItem.text = item.text Then
+			changed = True
+			Set bItem=bDoc.ReplaceItemValue(item.Name, item.Values)                              
+		End If                      
+	End Forall
+	
+	If changed Then
+		saved = bDoc.save (True,True)               
+		If saved Then 
+			SaveRuleDocument = True
+		Else
+			
+		End If          
+	Else
+		SaveRuleDocument = True
+	End If
+	Exit Function
+	
+ErrSaveDocument:
+	
+	gErrors.AddMessage Error & " during document save."
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:2:MergeSort:1:8
+Sub MergeSort (Start& , Finish&, Array As Variant, newArray As Variant)
+	
+	Dim MidPt&
+	
+	If Start = Finish Then
+		Exit Sub
+	End If
+	
+	MidPt = Clng((Start + Finish) / 2 - .1)
+	MergeSort Start, MidPt, Array, newArray
+	MergeSort MidPt + 1, Finish, Array, newArray
+	Merge Start, MidPt, Finish, Array, newArray
+	
+End Sub
+
+
+'++LotusScript Development Environment:2:1:CompileProfile:1:8
+Public Function CompileProfile(FormName As String, SubForm As Integer, RulesDatabase As NotesDatabase) As Integer
+	''***** Warning... If you change this routine, you will also have to change the CompileAllProfiles routine.
+	'** The old method of a function repeated calling a function didn't seem to work.  This is an attempt to help eliminate memory leaks.
+	
+	Dim ns As New NotesSession
+	Dim db As NotesDatabase
+	Dim view As NotesView, rcview As notesview
+	Dim doc As NotesDocument
+	Dim pdoc As NotesDocument
+	Dim v As Variant, a As Variant
+	Dim curform$, t$, count%, i%, bits&, forms
+	Dim key As String
+	
+	On Error Goto ErrCompile
+	CompileProfile = False
+	curform = ""
+	
+	Set db = ns.CurrentDatabase
+	Set rcview = db.getview("(RulesControl)")
+	Call rcview.refresh
+	
+     ' Delete any existing Rules Document
+	If SubForm Then
+		t = " SubForm Profile"
+		key = "C) SubForm Information"
+	Else
+		t = " Form Profile"
+		key = "B) Form Information"
+	End If
+	
+     'Remove any old Rules profile documents
+'	Set pdoc = db.GetProfileDocument(FormName & t)
+'	On Error Resume Next
+'	pdoc.Remove True
+	
+     'Find current Rules documents
+	Set pdoc = rcview.GetDocumentbyKey(FormName & t,True)
+	On Error Resume Next
+	If Not pdoc Is Nothing Then
+		pdoc.Remove True
+	End If
+	If Err <> 0 Then
+		Msgbox "You must have delete access to the database to compile profiles. (" & Str(Err) & "): " & Error$, 48, "Compile Profile"
+		Exit Function
+	End If
+	On Error Goto ErrCompile
+	Set pdoc = New notesdocument(db)
+	pdoc.RulesControl = FormName & t
+	
+	If RulesDatabase Is Nothing Then     
+		Set view = db.GetView("(RulesCompile)")
+	Else
+		Set view = RulesDatabase.GetView("(RulesCompile)")
+	End If
+	
+	key = key + "~"+FormName
+	Set doc = view.GetDocumentByKey(key)
+	Redim v(0)
+	
+	While Not doc Is Nothing
+		forms = doc.FormName
+		For i = 0 To Ubound(forms)
+			If Ucase(forms(i)) = Ucase(FormName) Then
+				Exit For
+			End If
+		Next
+		If i > Ubound(forms) Then
+			Set doc = Nothing
+		End If
+		If Not doc Is Nothing Then
+			If curform <> doc.Form(0) Then
+				If  curform <> "" Then
+					pdoc.ReplaceItemValue curform, v
+					Redim v(0)
+					count = 0
+				End If
+				curform = doc.Form(0)
+			End If
+			t = ""
+			With doc
+				Select Case curform
+				Case "SubFormInfo"
+					
+				Case "FormInfo"
+					pdoc.EmbeddedSubForms = .ImbeddedSubForms
+					pdoc.LoadableSubForms = .LoadedSubForms
+					pdoc.LoadableSubFormInfo = .LoadedSubFormInfo
+					pdoc.UserLoadableSubForms = .UserLoadableSubForms
+					pdoc.CreateMacro = .CreateMacro
+					pdoc.SaveMacro = .SaveMacro
+					pdoc.DeleteMacro = .DeleteMacro
+					pdoc.ViewIcon = .ViewIcon
+					pdoc.ViewOrder = .ViewOrder
+					bits = 0
+					If .Response(0) <>"" Then
+						bits = bits Or FORM_RESPONSE
+					End If
+					If .Inherit(0) <>"" Then
+						bits = bits Or FORM_INHERIT
+					End If
+					If .ClientUse(0) <>"" Then
+						bits = bits Or FORM_CLIENT
+					End If
+					If .WebUse(0) <>"" Then
+						bits = bits Or FORM_WEB
+					End If
+					If .Auditing(0) <>"" Then
+						bits = bits Or FORM_AUDIT
+					End If
+					If .PromptSubForms(0) <>"" Then
+						bits = bits Or FORM_PROMPTSUBFORM
+					End If
+					t = CheckDelim(.FormName(0)) & "~" & CheckDelim(.Description(0)) & "~" & Cstr(bits) & "~" 
+					If doc.Auditing(0) = "" Then
+						t = t & "~~"
+					Else
+						t = t & Cstr(doc.AuditCount(0))
+						v = .AuditContents
+						For i = 0 To Ubound(v)
+							t = t & "~" & v(i)
+						Next
+					End If
+					pdoc.FormInfo = t
+					pdoc.InheritsFrom = .InheritsFrom
+					pdoc.ResponseTo = .ResponseTo
+					pdoc.AllowCreate = .AllowCreate
+					pdoc.AllowCreateOther = .AllowCreateOther
+					pdoc.AllowReport = .AllowReport
+					pdoc.AllowReportAgents = .AllowReportAgents
+					
+				Case "FieldInfo"
+					i = 0
+					Select Case .FieldType(0)
+					Case "Number"
+						i = FIELD_TYPE_NUMERIC
+					Case "Time"
+						i = FIELD_TYPE_TIME
+					Case "RichText"
+						i = FIELD_TYPE_RICHTEXT
+					Case "Authors"
+						i = FIELD_TYPE_AUTHORS
+					Case Else
+						i = FIELD_TYPE_TEXT
+					End Select
+					
+					If doc.FieldCompute(0) = "Computed" Then
+						i = i Or FIELD_TYPE_COMPUTED
+					End If
+					
+					If .PickListChoices(0) <> "" Then
+						pdoc.ReplaceItemValue doc.FieldName(0) & "PickList", .PickListChoices
+					End If
+					
+					t = CheckDelim(.FieldName(0)) & "~" & CheckDelim(.SubForm(0)) & "~" & CheckDelim(.FieldDescription(0)) & "~" & CheckDelim(.FieldHelp(0)) & "~" & Cstr(i) & "~"  & CheckDelim(.DefaultValue(0)) & "~" 
+					t = t & CheckDelim(.SimpleTranslation(0)) & "~"  & CheckDelim(.ComplexTranslation(0)) & "~"  & CheckDelim(.SimpleValidation(0)) & "~" & CheckDelim(.ComplexValidation(0)) & "~"
+					t = t & GetEvents(.STDuring) & "~" & GetEvents(.CTDuring) & "~" & GetEvents(.SVDuring) & "~" & GetEvents(.CVDuring)
+					a = .Options
+					For i = 0 To Ubound(a)
+						If a(i) <> "" Then
+							t = t & "~" & a(i)
+						End If
+					Next
+					t = t & "~" & Cstr(.ExportSeq(0))
+				Case "VariableInfo"
+					pdoc.ReplaceItemValue .VariableName(0), .VariableValues            
+				Case Else
+                         ' Somebody was screwing around with the view - this document is ignored
+				End Select
+			End With
+			If t <> "" Then
+				Redim Preserve v(count)
+				v(count) = t
+				count = count + 1
+			End If
+			Set doc = view.GetNextDocument(doc)
+			If Not doc Is Nothing Then
+				If doc.FormName(0) <> FormName Then
+					If doc.Form(0) <> "SharedFieldInfo" And doc.Form(0) <> "VariableInfo" Then
+                              ' No more documents for this form - force exit of loop
+						Set doc = Nothing
+					End If
+				End If
+			End If          
+		End If
+	Wend
+	With pdoc
+		If v(0) <> "" Then
+			.ReplaceItemValue curform, v
+		End If
+		.Version = RulesVersion
+		v = Now        
+		.CompileDate = v
+		.Form = "RulesEngineProfile"
+		.Save True, False
+	End With
+	CompileProfile = True
+	Exit Function
+	
+ErrCompile:
+	Msgbox "Error compiling profile. (" & Str(Err) & ") in line " + Str(Erl)+": " & Error$, 48, "Compile Profile"
+	Exit Function
+	
+End Function
+
+
+
+'++LotusScript Development Environment:2:1:CompileAllProfiles:1:8
+Public Function CompileAllProfiles(RulesDatabase As NotesDatabase) As Integer
+	
+	Dim view As NotesView
+	Dim db As NotesDatabase
+	Dim doc As NotesDocument
+	Dim ns As New NotesSession
+	Dim count%
+	
+	On Error Goto ErrAll
+	
+	Set db = ns.CurrentDatabase
+	If RulesDatabase Is Nothing Then
+		Set view = db.GetView("FormInfo")
+	Else
+		Set view = RulesDatabase.GetView("FormInfo")
+		If view Is Nothing Then
+			Msgbox "The database specified is not a repository for rules documents.  No profile documents compiled.", 48, "Compile All Profiles"
+			Exit Function
+		End If
+	End If
+	Set doc = view.GetFirstDocument
+	
+	While Not doc Is Nothing          
+		If CompileProfile (doc.FormName(0), (doc.IsSubForm(0) = "1"), RulesDatabase) Then
+			count = count + 1
+		Else 
+			Goto ErrAll
+		End If
+		Set doc = view.GetNextDocument(doc)          
+	Wend
+	
+ErrAll:
+	
+	CompileAllProfiles = count
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:2:Merge:1:8
+Sub Merge (Start&, MidPnt&, Finish&, Array As Variant, newArray As Variant)
+	Dim i%, j%, k%, l%, Bool%
+	
+	i = Start
+	j = MidPnt + 1
+	k = Start
+	
+	Do While i <= MidPnt And j <= Finish
+		
+		If Array(i) < Array(j) Then
+			newArray(k) = Array(i)
+			i = i + 1
+		Else
+			newArray(k) = Array(j)
+			j = j + 1
+		End If
+		k = k + 1
+		
+	Loop
+	
+	If i > MidPnt Then
+		For l = j To Finish
+			newArray(k) = Array(l)
+			k = k + 1
+		Next
+	Else
+		For l = i To MidPnt
+			newArray(k) = Array(l)
+			k = k + 1
+		Next
+	End If
+	
+	For l = Start To Finish
+		Array(l) = newArray(l)
+	Next
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:SortArray:1:8
+Public Sub SortArray(ar As Variant)
+	
+	Dim newar() As Variant
+	
+	If Isarray(ar) Then
+		Redim newar(Ubound(ar))
+		MergeSort 0, Ubound(ar), ar, newar
+	End If
+	
+End Sub

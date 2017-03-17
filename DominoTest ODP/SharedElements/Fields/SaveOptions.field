@@ -1,0 +1,34 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='sharedfield' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='14a' unid='BF713860A43CF7F98625711B006B67D8' sequence='7'>
+<created><datetime>20060220T133309,36-06</datetime></created>
+<modified><datetime dst='true'>20170316T154245,85-05</datetime></modified>
+<revised><datetime dst='true'>20070709T115542,67-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154245,84-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154245,84-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Darin Dutcher/O=Teamhuber</name><name>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name='$HTMLCode' sign='true'>
+<rawitemdata type='1'>
+</rawitemdata></item>
+<item name='$TITLE'><text>SaveOptions</text></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAgAAAAQABAP///wAQAAAA
+</rawitemdata></item>
+<item name='$DesignerVersion'><text>6.5</text></item>
+<item name='SaveOptions' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='$Fields'><text>SaveOptions</text></item>
+<item name='$Body' summary='true' sign='true'>
+<rawitemdata type='1'>
+gQKC/1oAAQAAAAAAAAAAAKAFAACgBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAABAAAAAJSHAAAAAAAAAAAAAAAAAQAAAAQAAACDBAEAhf8IAAEAAArdBgAAiv/+/1AA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAIr/QgCIAQAFADACAAAAAAAAAgEAAAoSAAAAAAAAAAsAAAAAABIA
+AAAQAAAAAAAAAAAAAAADAFNhdmVPcHRpb25zAN4GAACK/4X/CAABAAAK
+</rawitemdata></item>
+<item name='$Flags'><text/></item></note>
+

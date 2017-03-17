@@ -1,0 +1,659 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+%REM
+	Library Camera
+	Created Oct 11, 2016 by Andrew Thompson/Teamhuber
+	Description: Comments for Library
+%END REM
+Option Public
+Option Declare
+
+UseLSX "*javacon" 'Which lets you Use Java From Lotusscript
+Use "ThumbNail" ' A Java library that holds a Function To Do Thumbnailing
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Sub Initialize
+Declare Function CheckDirectoryExists(pathName As String) As Boolean
+Declare Function GetPhotosForPerson(personDocument As NotesDocument) As Variant
+Declare Function GetCameraSoftwarePath() As String
+Declare Function GetCameraSavePathForPerson(personDocument As NotesDocument) As String
+Declare Function IsUninitializedArray(array As Variant) As Boolean
+Declare Function LaunchCameraSoftwareAndWait(softwarePath As String, bookNum As String, inmateName As String, inmateDOB As String, savePath As String) As String
+Declare Function GetCameraSoftwarePathFromRegistry() As String
+Declare Function CheckCameraEnabled() As Boolean
+Declare Sub ExecuteAndWait(cmdline)
+Declare Sub DeletePhotosForPerson(personDocument As NotesDocument)
+Declare Sub ImportPictures(useCamera As Boolean)
+Declare Function CanDeleteFiles As Boolean
+Declare Function GetCameraSavePath() As String
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+Dim currentSession As NotesSession
+Dim currentDatabase As NotesDatabase
+
+' Win32 API for ExecuteAndWait
+Const NORMAL_PRIORITY_CLASS = &H20&
+Const INFINITE = -1&
+
+Type STARTUPINFO
+	cb As Long
+	lpReserved As String
+	lpDesktop As String
+	lpTitle As String
+	dwX As Long
+	dwY As Long
+	dwXSize As Long
+	dwYSize As Long
+	dwXCountChars As Long
+	dwYCountChars As Long
+	dwFillAttribute As Long
+	dwFlags As Long
+	wShowWindow As Integer
+	cbReserved2 As Integer
+	lpReserved2 As Long
+	hStdInput As Long
+	hStdOutput As Long
+	hStdError As Long
+End Type
+
+Const STARTF_USESHOWWINDOW = &H1
+Const SW_MINIMIZE = 6
+Const SW_SHOW = 5
+
+Type PROCESS_INFORMATION
+	hProcess As Long
+	hThread As Long
+	dwProcessID As Long
+	dwThreadID As Long
+End Type
+
+Declare Function CloseHandle Lib "kernel32" (hObject As Long) As Boolean
+Declare Function WaitForSingleObject Lib "kernel32" (ByVal hHandle As Long,ByVal dwMilliseconds As Long) As Long
+Declare Function CreateProcessA Lib "kernel32" (ByVal lpApplicationName As Long,ByVal lpCommandLine As String, ByVal lpProcessAttributes As Long, ByVallpThreadAttributes As Long, ByVal bInheritHandles As Long, ByVal dwCreationFlags As Long, ByVal lpEnvironment As Long, ByVal lpCurrentDirectory As Long, lpStartupInfo As STARTUPINFO,lpProcessInformation As PROCESS_INFORMATION) As Long
+
+Declare Function RegOpenKeyEx Lib "advapi32.dll" Alias "RegOpenKeyExA" (ByVal hKey As Long, ByVal lpSubKey As String, ByVal ulOptions As Long, ByVal samDesired As Long, phkResult As Long) As Long
+Declare Function RegQueryValueEx Lib "advapi32.dll" Alias "RegQueryValueExA" (ByVal hKey As Long, ByVal lpValueName As String, ByVal lpReserved As Long, lpType As Long, ByVal lpData As String, lpcbData As Integer) As Long
+
+
+'-- Constant Definitions for WIN32API
+Const HKEY_CLASSES_ROOT = &H80000000
+Const HKEY_CURRENT_USER = &H80000001
+
+Const SYNCHRONIZE = &H100000
+Const STANDARD_RIGHTS_READ = &H20000
+Const KEY_QUERY_VALUE = &H1
+Const KEY_CREATE_SUB_KEY = &H4
+Const KEY_ENUMERATE_SUB_KEYS = &H8
+Const KEY_NOTIFY = &H10
+Const KEY_READ = ((STANDARD_RIGHTS_READ Or KEY_QUERY_VALUE Or KEY_ENUMERATE_SUB_KEYS Or KEY_NOTIFY) And (Not SYNCHRONIZE))
+Const ERROR_SUCCESS = 0&
+
+'++LotusScript Development Environment:2:2:Initialize:1:10
+Sub Initialize
+	Set currentSession = New NotesSession
+	Set currentDatabase = currentSession.CurrentDatabase
+End Sub
+
+
+
+'++LotusScript Development Environment:2:1:CheckDirectoryExists:5:8
+%REM
+	Function directoryExists
+	Description: Comments for Function
+%END REM
+Function CheckDirectoryExists(pathName As String) As Boolean
+		
+	On Error 76 Resume Next
+	If Dir$(pathName$ , 16) = "" Then
+		CheckDirectoryExists = False
+	Else
+		CheckDirectoryExists = True
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:GetPhotosForPerson:5:8
+%REM
+	Function GetBookingPhotos
+	Description: Comments for Function
+%END REM
+Function GetPhotosForPerson(personDocument As NotesDocument) As Variant
+	
+	Dim cameraSavePath As String
+	
+	Dim idString As String
+	Dim nameString As String
+	Dim dobString As String
+	
+	idString = personDocument.NoteID
+	nameString = FullTrim(personDocument.Surname(0) & ", " & personDocument.Given1(0) & " " & personDocument.Given2(0))
+	If IsDate(personDocument.DOB(0)) Then
+		dobString = CStr(personDocument.DOB(0))
+	Else
+		dobString = "No DOB"
+	End If
+	
+	cameraSavePath = GetCameraSavePathForPerson(personDocument)
+	
+	Call LaunchCameraSoftwareAndWait( _
+	GetCameraSoftwarePath(), _
+	idString, _
+	nameString, _
+	dobString, _
+	cameraSavePath)
+	
+	Dim cameraPhotoArray() As String
+	Dim cameraPhotoCount As Integer
+	Dim cameraPhotoPath As String
+	
+	cameraPhotoPath = Dir$(cameraSavePath & idString & "*.jpg", 0)
+	Do While cameraPhotoPath <> ""
+		
+		cameraPhotoCount = cameraPhotoCount + 1
+		ReDim Preserve cameraPhotoArray(1 To cameraPhotoCount)
+		cameraPhotoArray(cameraPhotoCount) = cameraSavePath & cameraPhotoPath
+		
+		cameraPhotoPath = Dir$()
+	Loop
+	
+	If Not IsUninitializedArray(cameraPhotoArray) Then
+		GetPhotosForPerson = cameraPhotoArray
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:GetCameraSoftwarePath:1:8
+Function GetCameraSoftwarePath() As String
+	
+	Dim controlView As NotesView
+	Dim controlDocument As NotesDocument
+	
+	Set controlView = currentDatabase.GetView("(Control)")
+	Set controlDocument = controlView.GetFirstDocument
+	
+	If controlDocument.HasItem("CameraSoftwareLocationType") Then
+		If controlDocument.CameraSoftwareLocationType(0) = "R" Then
+			GetCameraSoftwarePath = GetCameraSoftwarePathFromRegistry()
+		ElseIf controlDocument.CameraSoftwareLocationType(0) = "P" Then
+			GetCameraSoftwarePath = controlDocument.CameraSoftwareLocationPath(0)
+		End If
+	End If
+	
+End Function
+
+
+
+
+'++LotusScript Development Environment:2:1:GetCameraSavePathForPerson:5:8
+%REM
+	Function GetCameraSavePathForBOoking
+	Description: Comments for Function
+%END REM
+Function GetCameraSavePathForPerson(personDocument As NotesDocument) As String
+	
+	Dim controlView As NotesView
+	Dim controlDocument As NotesDocument
+	
+	Dim cameraSavePath As String
+	
+	Set controlView = currentDatabase.GetView("(Control)")
+	Set controlDocument = controlView.GetFirstDocument
+	
+	cameraSavePath = GetCameraSavePath()
+	
+	If cameraSavePath = "" Then
+		Error 9999, "Save path for CamControl could not be found."
+	ElseIf Not CheckDirectoryExists(cameraSavePath) Then
+		Error 9999, "Save path for CamControl does not exist."
+	End If
+	
+	If controlDocument.HasItem("CameraSavePathSubfolder") Then
+		If controlDocument.CameraSavePathSubfolder(0) = "Y" Then
+			cameraSavePath = cameraSavePath & personDocument.NoteID & "\"
+		End If
+	End If
+	
+	If Not CheckDirectoryExists(cameraSavePath) Then
+		MkDir cameraSavePath
+	End If
+	
+	GetCameraSavePathForPerson = cameraSavePath
+	
+End Function
+
+'++LotusScript Development Environment:2:1:IsUninitializedArray:1:8
+Function IsUninitializedArray(array As Variant) As Boolean
+	
+	On Error GoTo ErrorHandle
+	
+	IsUninitializedArray = True
+	ForAll arrayElement In array
+		IsUninitializedArray = False
+		Exit ForAll
+	End ForAll
+	
+ExitFunction:
+	
+	Exit Function
+	
+ErrorHandle:
+	
+	Resume ExitFunction
+	
+End Function
+
+'++LotusScript Development Environment:2:1:LaunchCameraSoftwareAndWait:5:8
+%REM
+	Function LaunchCameraSoftwareAndWait
+	Description: Comments for Function
+%END REM
+Function LaunchCameraSoftwareAndWait(softwarePath As String, bookNum As String, inmateName As String, inmateDOB As String, savePath As String) As String
+	
+	On Error GoTo ErrorHandle
+	
+	Dim cameraSoftwarePath As String
+	
+	cameraSoftwarePath = softwarePath
+	
+	If cameraSoftwarePath = "" Then
+		Error 9999, "Path to CamControl software could not be found."
+	ElseIf Dir$(cameraSoftwarePath, 0) = "" Then
+		Error 9999, "CamControl software could not be found at the specified location."
+	End If
+	
+	Call ExecuteAndWait( _ 
+	{"} & cameraSoftwarePath & {"} & _
+	{ "} & bookNum & {" } & _
+	{ "} & inmateName & {" } & _
+	{ "} & inmateDOB & {" } & _
+	{ "} & savePath)
+	
+	Exit Function
+	
+ErrorHandle:
+	
+	If Err = 76 Then
+		MsgBox "CamControl software could not be found at the specified location."
+	Else
+		MsgBox Error
+	End If
+	
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:1:GetCameraSoftwarePathFromRegistry:5:8
+%REM
+	Function GetCameraSoftwarePathRegistry
+	Description: Comments for Function
+%END REM
+Function GetCameraSoftwarePathFromRegistry() As String
+	
+	Dim keyHandle As Long
+	Dim returnType As Long
+	Dim lpReturnedString As String*127
+	Dim returnSize As Integer
+	
+	returnSize = 126
+	
+	If RegOpenKeyEx(HKEY_CLASSES_ROOT, "CamControl", 0, _
+	KEY_READ, keyHandle) = ERROR_SUCCESS Then
+		
+		If RegQueryValueEx(keyHandle, "Directory", 0, returnType, lpReturnedString, _
+		returnSize) = ERROR_SUCCESS Then
+			
+			GetCameraSoftwarePathFromRegistry = Left$(lpReturnedString, returnSize-1)
+			
+		End If
+		
+	End If
+	
+End Function
+
+
+
+'++LotusScript Development Environment:2:1:CheckCameraEnabled:5:8
+%REM
+	Function CheckCameraEnabled
+	Description: Comments for Function
+%END REM
+Function CheckCameraEnabled() As Boolean
+	
+	Dim controlView As NotesView
+	Dim controlDocument As NotesDocument
+	
+	Dim cameraSavePath As String
+	
+	Set controlView = currentDatabase.GetView("(Control)")
+	Set controlDocument = controlView.GetFirstDocument
+	
+	If controlDocument.HasItem("CameraYN") Then
+		If controlDocument.CameraYN(0) = "Y" Then
+			CheckCameraEnabled = True
+		End If
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:2:ExecuteAndWait:1:8
+Sub ExecuteAndWait(cmdline)
+	Dim NameOfProc As PROCESS_INFORMATION
+	Dim NameStart As STARTUPINFO
+	Dim X As Long
+	NameStart.wShowWindow = SW_SHOW
+	NameStart.dwFlags = STARTF_USESHOWWINDOW
+	NameStart.cb = Len(NameStart)
+	X = CreateProcessA(0&, cmdline, 0&, 0&, 1&, NORMAL_PRIORITY_CLASS,0&, 0&, NameStart, NameOfProc)
+	X = WaitForSingleObject(NameOfProc.hProcess, INFINITE)
+	X = CloseHandle(NameOfProc.hProcess)
+End Sub
+
+
+
+
+
+'++LotusScript Development Environment:2:2:DeletePhotosForPerson:5:8
+%REM
+	Sub DeletePhotosForBooking
+	Description: Comments for Sub
+%END REM
+Sub DeletePhotosForPerson(personDocument As NotesDocument)
+	
+	Dim cameraSavePath As String
+	
+	cameraSavePath = GetCameraSavePathForPerson(personDocument)
+	
+	Dim cameraPhotoPath As String
+	
+	cameraPhotoPath = Dir$(cameraSavePath & personDocument.NoteID & "*.jpg", 0)
+	Do While cameraPhotoPath <> ""
+	
+		Kill cameraSavePath & cameraPhotoPath
+	
+		cameraPhotoPath = Dir$()
+	Loop
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:ImportPictures:5:8
+%REM
+	Sub ImportPictureFromFile
+	Description: Comments for Sub
+%END REM
+Sub ImportPictures(useCamera As Boolean)
+	
+	Dim currentSession As NotesSession
+	Dim currentDatabase As NotesDatabase
+	
+	Dim currentWorkspace As NotesUIWorkspace
+	Dim currentUIDocument As NotesUIDocument
+	Dim currentDocument As NotesDocument
+	
+	Dim controlView As NotesView
+	Dim controlDocument As NotesDocument
+	
+	Dim selectedFilePathArray As Variant
+	Dim selectedFileExtension As String
+	Dim selectedFileExtensionType As String
+	
+	Dim thumbnailWidth As Integer
+	Dim thumbnailHeight As Integer
+	Dim thumbnailQuality As Double
+	
+	Dim doImportImage As Boolean
+	Dim doAppendImage As Boolean
+	Dim doThumbnailImage As Boolean
+	
+	Dim currentJavaSession As JavaSession
+	Dim thumbNailClass As JavaClass
+	Dim thumbNailObject As JavaObject
+	Dim thumbNailFilePath As String
+	Dim javaReturnCode As String
+	
+	Dim importFilePath As String
+	
+	Dim inmateView As NotesView
+	Dim inmateDocument As NotesDocument
+	Dim inmateUIDocument As NotesUIDocument
+	
+	' Get handle to current database.
+	Set currentSession = New NotesSession
+	Set currentDatabase = currentSession.CurrentDatabase
+	
+	' Get handle to current UI document.
+	Set currentWorkspace = New NotesUIWorkspace
+	Set currentUIDocument = currentWorkspace.CurrentDocument
+	Set currentDocument = currentUIDocument.Document
+	
+	' Get handle to control document.
+	Set controlView = currentDatabase.GetView("(Control)")
+	Set controlDocument = controlView.GetFirstDocument
+	
+	' Create Java session and object.
+	Set currentJavaSession = New JAVASESSION
+	Set thumbnailClass = currentJavaSession.GetClass("ThumbNail")
+	Set thumbnailObject = thumbnailClass.CreateObject
+	
+	' Get array of user-selected image file paths.
+	If useCamera Then
+		If CheckCameraEnabled Then
+			selectedFilePathArray = GetPhotosForPerson(currentDocument)
+		Else
+			MsgBox "Camera feature must be enabled in the Control File."
+			Exit Sub
+		End If
+	Else
+		selectedFilePathArray = currentWorkspace.OpenFileDialog( True, "File List", "Image files|*.jpg;*.gif;*.jpeg;*.bmp||", "C:")
+	End If 	
+	
+	' Exit if no items are returned.
+	If IsEmpty(selectedFilePathArray) Then
+		Exit Sub
+	End If
+	
+	' Determine whether imported images should be placed on inmate record as well.
+	doImportImage = False
+	If controlDocument.HasItem("ImageOnInmate") Then
+		If controlDocument.ImageOnInmate(0) = "P" Then
+			If MessageBox("Do you wish to have these photographs placed in this person's Inmate Record?" ,_
+			36,"Add to Inmate Record?") = 6 Then
+				doImportImage = True
+			End If
+		ElseIf controlDocument.ImageOnInmate(0) = "Y" Then
+			doImportImage = True
+		ElseIf controlDocument.ImageOnInmate(0) = "N" Then
+			doImportImage = False
+		Else
+			If MessageBox("Do you wish to have these photographs placed in this person's Inmate Record?" ,_
+			36,"Add to Inmate Record?") = 6 Then
+				doImportImage = True
+			End If					
+		End If
+	Else
+		If MessageBox("Do you wish to have these photographs placed in this person's Inmate Record?" ,_
+		36,"Add to Inmate Record?") = 6 Then
+			doImportImage = True
+		End If				
+	End If
+	
+	' Determine whether imported images should overwrite or append.
+	If controlDocument.HasItem("ImageOnInmateReplaceAppend") Then
+		If controlDocument.ImageOnInmateReplaceAppend(0) = "A" Then
+			doAppendImage = True
+		ElseIf controlDocument.ImageOnInmateReplaceAppend(0) = "R" Then
+			doAppendImage = False
+		Else
+			doAppendImage = True
+		End If
+	Else
+		doAppendImage = True
+	End If
+	
+	' Determine settings for thumbnailing image.
+	If controlDocument.HasItem("ImageThumbnail") Then
+		If controlDocument.ImageThumbnail(0) = "Y" Then
+			
+			doThumbnailImage = True
+			
+			If IsNumeric(controlDocument.ImageThumbnailSizeWidth(0)) _
+			And IsNumeric(controlDocument.ImageThumbnailSizeHeight(0)) Then
+				
+				thumbnailWidth = controlDocument.ImageThumbnailSizeWidth(0)
+				thumbnailHeight = controlDocument.ImageThumbnailSizeHeight(0)
+				
+			Else
+				
+				MessageBox "Thumbnail height and width settings are invalid or empty. Please check Control File.", 0, "Error"
+				Exit Sub
+				
+			End If
+			
+			If IsNumeric(controlDocument.ImageThumbnailQuality(0)) Then
+				
+				thumbnailQuality = controlDocument.ImageThumbnailQuality(0)
+				
+			Else
+				
+				thumbnailQuality = 0.75
+				
+			End If
+			
+		End If
+	End If
+	
+	' Loop through selected image file paths.	
+	ForAll selectedFilePath In selectedFilePathArray
+		If Len(selectedFilePath) > 0 Then
+			
+			' Determine the file type from the file extension.
+			selectedFileExtension = LCase(StrRightBack(selectedFilePath, "."))
+			If selectedFileExtension = "bmp" Then
+				selectedFileExtensionType = "BMP Image"
+			ElseIf selectedFileExtension = "jpg" Or selectedFileExtension = "jpeg" Then
+				selectedFileExtensionType = "JPEG Image"
+			ElseIf selectedFileExtension = "gif" Then
+				selectedFileExtensionType = "GIF Image"
+			Else
+				MessageBox "Error importing image. Please contact Enterpol support.", 0 + 48, "Inmate Error"
+				Exit Sub
+			End If
+			
+			' Create thumbnail of image.
+			If doThumbnailImage Then
+				
+				thumbNailFilePath = Environ$("TEMP") & "\" & "thumbnail_" + StrRightBack(selectedFilePath, "\")
+				
+				javaReturnCode = thumbNailObject.Thumbnailthis(selectedFilePath, thumbNailFilePath, thumbnailWidth, thumbnailHeight, thumbnailQuality)
+				If javaReturnCode <> "OK" Then
+					MessageBox("Error Importing Photo")
+					Exit Sub
+				End If
+				
+				importFilePath = thumbNailFilePath
+				
+			Else
+				
+				importFilePath = selectedFilePath
+				
+			End If
+			
+			' Import the image to the UI (booking) document.
+			Call currentUIDocument.GoToField("InmatePicture")
+			Call currentUIDocument.Import(selectedFileExtensionType, importFilePath)
+			
+			If doImportImage Then
+				Set inmateView = currentDatabase.GetView("(InmatesbyInmateNum)")
+				Set inmateDocument = inmateView.GetDocumentByKey(currentUIDocument.FieldGetText("InmateNum"), True)
+				If Not inmateDocument Is Nothing Then
+					If Not doAppendImage Then
+						Call inmateDocument.RemoveItem("InmatePicture")
+						Call inmateDocument.Save(False, False)
+					End If
+					
+					Set inmateUIDocument = currentWorkspace.EditDocument(True, inmateDocument)
+					Call inmateUIDocument.GoToField("InmatePicture")
+					Call inmateUIDocument.Import(selectedFileExtensionType, importFilePath)
+					Call inmateUIDocument.Save
+					Call inmateUIDocument.Close
+					
+					If doThumbnailImage Then
+						Kill thumbNailFilePath
+					End If
+					
+				Else
+					MessageBox "Cannot locate the Inmate document", 0 + 48, "Inmate Error"
+					If doThumbnailImage Then
+						Kill thumbNailFilePath
+					End If
+					Exit Sub
+				End If
+			End If
+		End If
+	End ForAll
+	
+	' Delete files imported from camera, if setting is enabled.
+	If useCamera Then
+		If CheckCameraEnabled Then
+			If CanDeleteFiles Then
+				'Call DeletePhotosForID("")
+			End If
+		End If
+	End If
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:CanDeleteFiles:5:8
+%REM
+	Function CanDeleteFiles
+	Description: Comments for Function
+%END REM
+Function CanDeleteFiles As Boolean
+	
+	Dim controlView As NotesView
+	Dim controlDocument As NotesDocument
+	
+	Dim cameraSavePath As String
+	
+	Set controlView = currentDatabase.GetView("(Control)")
+	Set controlDocument = controlView.GetFirstDocument
+	
+	If controlDocument.HasItem("CameraDeleteFiles") Then
+		If controlDocument.CameraDeleteFiles(0) = "Y" Then
+			CanDeleteFiles = True
+		End If
+	End If
+	
+End Function
+
+
+
+'++LotusScript Development Environment:2:1:GetCameraSavePath:5:8
+%REM
+	Function GetCameraSavePath
+	Description: Comments for Function
+%END REM
+Function GetCameraSavePath() As String
+	
+	Dim controlView As NotesView
+	Dim controlDocument As NotesDocument
+	
+	Dim cameraSavePath As String
+	
+	Set controlView = currentDatabase.GetView("(Control)")
+	Set controlDocument = controlView.GetFirstDocument
+	
+	If controlDocument.HasItem("CameraSavePathType") Then
+		If controlDocument.CameraSavePathType(0) = "T" Then
+			cameraSavePath = Environ("TEMP")
+		ElseIf controlDocument.CameraSavePathType(0) = "P" Then
+			cameraSavePath = controlDocument.CameraSavePath(0)
+		End If
+	End If
+	
+	If Right(cameraSavePath, 1) <> "\" Then
+		cameraSavePath = cameraSavePath & "\"
+	End If
+	
+	GetCameraSavePath = cameraSavePath
+	
+End Function
+

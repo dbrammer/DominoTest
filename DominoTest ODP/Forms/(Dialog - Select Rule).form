@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='form' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='1176' unid='2A0A9BA93724E660852565F0006DB18B' sequence='20'>
+<created><datetime dst='true'>19980424T155808,75-04</datetime></created>
+<modified><datetime dst='true'>20170316T154532,21-05</datetime></modified>
+<revised><datetime dst='true'>20070709T115542,99-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154532,20-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154532,20-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Rodney Viessman/O=Teamhuber</name><name>CN=Darin Dutcher/O=Teamhuber</name><name
+>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name='$TITLE'><textlist><text>(Dialog - Select Rule)</text><text>SelectRule</text></textlist></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAgAAAAQABAP///wAAAAAA
+</rawitemdata></item>
+<item name='$DesignerVersion'><text>5</text></item>
+<item name='$$ScriptName' summary='false' sign='true'><text> SelectRule</text></item>
+<item name='_FieldName' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='$Fields'><text>_FieldName</text></item>
+<item name='$Body' sign='true'>
+<rawitemdata type='1'>
+gQKC/1IAAQAAAAAAAAAAAKAFAACgBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAABAAAAAJQHAAAAAAAAAAAAAAAAgwQBAIX/CAABAAAKgQK3HKAF6AkiDAkAAABIAAAA
+AAAAAAAAAAAAAAAAgwQBAIECuirkBX0BUglCCgEAAAgBAAEA////AAEAAAADAAAAAAAAAAAAAAAA
+AAAAgwQBAN0GAACK//7/UAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAsP8UAAAAAIAAAAAAAAAAAAAAAACK
+/6gBigIABQAgAgAAAAAAAAIBAAAIAAAAAAAAAAAKAAAAegFfRmllbGROYW1lAAB4AQEASAAEAGZs
+ZHMBAAAAAQAHAE5vQ2FjaGUAHwIBAAAAAQAJAEZpZWxkSW5mbwAFAAQARm9ybQEACQBGaWVsZE5h
+bWUAgwUDAAcAGAARAAkyUzhTMTBTMTJTMTNTMTRTAAEATgAGAHNoYXJlZAEAAAABAAcATm9DYWNo
+ZQAfAgEAAAABABIAU2hhcmVkRmllbGRzQnlGb3JtBQAEAEZvcm0AAAAAAAAAAABAgwUDAAcAGgAT
+AAkwUjJTOFMxMFMxMlMxM1MxNFMAAQAyAAMAY2gxAAUABABmbGRzWgGvABoACgABAAAArgAQAAUA
+BABmbGRzrgAEALUDAwAHAA4ACAAJMFI5UzExUwEANgADAGNoMgAFAAYAc2hhcmVkWgGvABwACgAB
+AAAArgASAAUABgBzaGFyZWSuAAQAtQMDAAcADgAIAAkwUjlTMTFTAAAcAAUAAwBjaDEABQADAGNo
+MgAfAl4BqwEDAAcADgAHAAkwUjVTNlMA3gYAAIr/gQK4KicGjQCBByEBAQAACAEABQD///8AAAAA
+EAAAAAAAAAAAAAAAAAAAAACDBAEAhf8eAAEAAAhBdmFpbGFibGUgRmllbGQgTmFtZXM6uRIAAAAA
+AAAAAAAAAAAAAAAAgQKDBAEAhf8IAAEAAAo=
+</rawitemdata></item>
+<item name='$ACTIONS' sign='true'>
+<rawitemdata type='1'>
+vRwvAAAAAQABAAAAAQMAAAAAAAAFAQAJFAAAAA==
+</rawitemdata></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+i/8oAAEABSJBcmlhbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABr0cLwAAAAEAAQAAAAEDAAAA
+AAAABQEACRQAAAB5/2wAAQD39/cAAQAAAAAAAQAAAAAAAQDv7+8AAwAfAAQAAAAAAAAAAQAAAAAA
+AAAAAAAAAAAAADlAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAD8/zoAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAA
+AAAAAAAA
+</rawitemdata></item>
+<item name='$Flags'><text/></item></note>
+

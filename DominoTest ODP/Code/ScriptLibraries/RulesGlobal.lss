@@ -1,0 +1,1406 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+' ** Rules Engine Library: RulesGlobal
+' ** Contains code, declarations, and class definitions required for the Rules Engine
+' ** Last Modification Date: 09/01/2000
+'
+' Use of this library and any code contained within is reserved for registered users of Enterpol/Enter InfoSystems products and/or licencees of the Enterpol Rules Engine
+' Any modification to this library will void Enterpol/Enter InfoSystems support agreements unless prior authorization is granted.
+
+Option Public
+Option Explicit 
+
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Public Class ErrorMessages
+Declare Public Class FieldInfo
+Declare Public Class VariableInfo
+Declare Public Class FormInfo
+Declare Public Class AuditEntry
+Declare Class NewSynchValue
+Declare Class SynchFields
+Declare Class SynchFormInfo
+Declare Sub Initialize
+Declare Sub Terminate
+Declare Public Function RulesVersion() As String
+Declare Public Function SynchResponses(sForm As SynchFormInfo, dc As NotesDocumentCollection) As Integer
+Declare Public Function GetSynchInfo(db As NotesDatabase) As Integer
+Declare Public Function ParseDelimited(txt As String, Delimiter As String) As Variant
+Declare Public Function SynchChildFields(fInfo As FormInfo) As Integer
+Declare Public Sub GetAuditEntries(doc As NotesDocument, records List As AuditEntry)
+Declare Private Sub DebugDocument(doc As NotesDocument, text As String)
+Declare Public Function UpdateDocuments(server, database,viewname, key , sourcefields, destfields, sourcedoc As NotesDocument)
+Declare Public Sub GetFieldText(doc As NotesDocument)
+Declare Public Function MergeArrays(array1 As Variant, array2 As Variant) As Integer
+Declare Public Function CompareVariants(v1, v2) As Integer
+Declare Public Sub AuditDocument(doc As NotesDocument)
+Declare Public Function FindUpstreamForm(startDoc As NotesDocument, choices) As NotesDocument
+Declare Private Function UniqueName(length%) As String
+Declare Private Function LoadFields(Info As FormInfo, profDoc As NotesDocument, Byval SubForm As String) As Integer
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+Public Const RULES_VERSION = "2.0"
+
+' Debugging stuff
+Public RulesEngineDebuggerOn As Integer
+Private DebugFileNum As Integer
+Const DEBUG_FILENAME = "C:\DEBUG.TXT"
+
+' Constant used by recursive procedures
+Public Const MAX_RECURSION_LEVEL = 50
+
+' Constants used to determine where validation and translation occur
+Public Const EXIT_EVENT = 1
+Public Const SAVE_EVENT = 2
+Public Const BLUR_EVENT = 4
+Public Const SUBMIT_EVENT = 8
+
+'Constants used as destinations for printing error messages
+Public Const DEST_NOERR = 0
+Public Const DEST_STATBAR=1
+Public Const DEST_MSGBOX = 2
+Public Const DEST_DEBUG = 4
+Public Const DEST_HTML = 8
+
+' Constants to determine form atrtributes
+Public Const FORM_RESPONSE = 1
+Public Const FORM_INHERIT = 2
+Public Const FORM_CLIENT = 4
+Public Const FORM_WEB = 8
+Public Const FORM_AUDIT = 16
+Public Const FORM_PROMPTSUBFORM = 32
+
+' Constants used to determine field attributes
+Public Const FIELD_TYPE_TEXT = 1
+Public Const FIELD_TYPE_NUMERIC = 2
+Public Const FIELD_TYPE_TIME = 4
+Public Const FIELD_TYPE_RICHTEXT = 8
+Public Const FIELD_TYPE_COMPUTED = 16
+Public Const FIELD_TYPE_AUTHORS = 32
+
+' Contants used to specify the current Rules Engine Activity
+Public Const RULES_DEFAULT = 1
+Public Const RULES_VALIDATE = 2
+Public Const RULES_TRANSLATE = 3
+Public Const RULES_ACTION = 4
+
+' Maximum number of characters tracked for any one field when saving old and new values
+Public Const MAX_AUDIT_CHARS = 1000
+Public Const MAX_ERROR_MESSAGES = 10
+
+Public gErrors As ErrorMessages   ' Contains all error messages
+
+Type SubFormType
+	Name As String
+	UserLoadable As Integer
+	Formula As String
+End Type
+
+Public giInternet As Integer            ' Set to true for Internet access
+Public giDebug As Integer             ' Determines how errors are reported during macro parsing
+
+Public giStopValidationEncountered As Integer  ' Stops further validation when set to True (e.g. by @Stop)
+Public curFormInfo As FormInfo
+Public gvErrorMsg As Variant
+Public giReturnEncountered As Integer
+Public giSyntaxErrorEncountered As Integer
+Public giCancelCreate As Integer
+Public giCancelSave As Integer
+
+Public gFormSynchInfo List As SynchFormInfo    ' Listtags set to source form name - used by hierarchical synchronization
+
+Public Class ErrorMessages
+	Public Msgs() As String
+	Public ErrorTitle As String
+	Public SyntaxError As Integer
+	Public LotusScriptError As Integer
+	
+	Sub New()
+		Redim Msgs(0)
+		ErrorTitle = "Errors Encountered"
+	End Sub
+	
+	Public Sub AddMessage(txt As Variant)
+		Dim i%
+		i = Ubound(Msgs)
+		Msgs(i) = Cstr(txt)
+		Redim Preserve Msgs(i + 1)
+	End Sub
+	
+	Public Function LastMessage() As String
+		Dim i%
+		For i = Ubound(Msgs) To 0 Step -1
+			If Msgs(i) <> "" Then
+				LastMessage = Msgs(i)
+				Exit For
+			End If
+		Next          
+	End Function
+	
+	Public Sub ClearMessages()
+		Redim Msgs(0)
+		SyntaxError = False
+		LotusScriptError = False
+	End Sub
+	
+	Public Property Get Count() As Integer
+		Count = Ubound(Msgs)
+	End Property
+	
+	Public Sub PrintMessages(dest As Integer)
+		Dim i%, t$, temp$
+		
+		If Ubound(Msgs) = 0 And msgs(0) = "" Then Exit Sub
+          'Message prefix handling
+		If dest = 8 Then
+               'Provide initial HTML formatting
+			Dim ctrRows As Integer
+			ctrRows = 0
+			Dim ctrMsgs  As Integer
+			ctrMsgs = 0
+			t = "<CENTER>" & Chr$(13)
+			t = t & "<P>&nbsp;" & Chr$(13)
+			t = t & "<TABLE BORDER=0 BORDERCOLOR=#000000 CELLPADDING=0 CELLSPACING=0 HEIGHT=320 WIDTH=555>" & Chr$(13)
+			t = t & "<TR>" & Chr$(13)
+			t = t & "<TD WIDTH=555 VALIGN=TOP HEIGHT=1 COLSPAN=7 BGCOLOR=#FF0000>" & Chr$(13)
+			t = t & "<FONT SIZE=1 COLOR=#FFFFFF FACE=""MS Sans Serif, Arial, Helv"">" & Chr$(13)
+			t = t & "<B>&nbsp; Error</B>" & Chr$(13)
+			t = t & "</FONT>" & Chr$(13)
+			t = t & "</TD>" & Chr$(13)
+			t = t & "</TR>" & Chr$(13)
+			t = t & "<TD WIDTH=555 VALIGN=CENTER HEIGHT=25 COLSPAN=7 BGCOLOR=#FFFFFF>" & Chr$(13)
+			ctrRows = ctrRows + 25
+			t = t & "<FONT SIZE = 2 COLOR=#000000 FACE=""Verdana, Arial, Helv"">" & Chr$(13)
+			t = t & "&nbsp;<B>Problem(s) Saving Document</B>" & Chr$(13)               
+		End If
+		
+		If SyntaxError Or LotusScriptError Then               
+			temp = Msgs(Count - 1)
+			Redim Msgs(1)
+			If SyntaxError Then
+				Msgs(0) = "Syntax Error:"
+			Else
+				Msgs(0) = "LotusScript Error:"
+			End If
+			Msgs(1) = temp
+		End If
+		
+          'Assemble message body
+		For i = 0 To Ubound(Msgs)
+			If Not (Msgs(i) = "" And i = Ubound(Msgs)) Then
+				If i =< MAX_ERROR_MESSAGES Then
+					Select Case dest
+					Case 0
+                              ' No error reporting
+					Case 1
+                              ' Print message to status bar
+						Print Msgs(i)
+					Case 2
+                              ' Display errors in message box
+						t = t & Msgs(i) & Chr(10) & Chr(10)
+					Case 4
+                              ' Break on error only works in Debug Mode
+						Stop
+					Case 8
+                              'Return messages formatted in HTML (requires a $$Return field)
+						ctrMsgs = ctrMsgs + 1
+						t = t & "<TR>" & Chr$(13)
+						t = t & "<TD WIDTH=555 VALIGN=TOP HEIGHT=10 COLSPAN=7 BGCOLOR=#FFFFFF>" & Chr$(13)
+						t = t & "<FONT SIZE=2 COLOR=#000000 FACE=""Verdana, Arial, Helv"">" & Chr$(13)
+						t = t & "&nbsp; " & Format$(ctrMsgs) & ". " & Msgs(i) & Chr$(13)
+						t = t & "</FONT></TD></TR>" & Chr$(13)
+						ctrRows = ctrRows + 10
+					End Select
+				Else
+					Select Case dest
+					Case 2
+						t = t & "Additional errors also encountered."
+					End Select
+					Exit For
+				End If
+			End If
+		Next
+          'Message suffix handling
+		If dest = 2 Then
+			Msgbox t, 48, ErrorTitle
+		Elseif dest = 8 Then
+			t = t & "<TR>" & Chr$(13)
+			If (320-ctrRows) < 0 Then
+				t = t & "<TD ALIGN=RIGHT WIDTH=555 VALIGN=BOTTOM HEIGHT=19 COLSPAN=7 BGCOLOR=#FFFFFF>" & Chr$(13)
+			Else
+				t = t & "<TD ALIGN=RIGHT WIDTH=555 VALIGN=BOTTOM HEIGHT=" & Format$(320 - ctrRows) & "COLSPAN=7 BGCOLOR=#FFFFFF>" & Chr$(13)
+			End If
+			t = t & "<FONT SIZE=1 COLOR=#000000 FACE=""Verdana, Arial, Helv"">" & Chr$(13)
+               't = t & "&nbsp;Please click on the ""Back"" button on your browser to return to the previous document." & Chr$(13)
+			t = t & "Please return to the form & edit errors.  If problem persists, contact administrator. &nbsp;&nbsp;<INPUT TYPE=""Button"" VALUE=""Back"" OnClick=""history.back()"">&nbsp;" & Chr$(13)
+			t = t & "</FONT></TD></TR>" & Chr$(13)
+			t = t & "</TABLE>"
+			Dim session As New NotesSession
+			Dim db As Variant
+			Dim doc As NotesDocument
+			Set db = session.CurrentDatabase
+			Set doc = session.DocumentContext
+			doc.ReplaceItemValue "$$Return", t
+		End If
+	End Sub
+	
+End Class
+
+Public Class FieldInfo
+	Public FieldName As String
+	Public Description As String   ' Field Description
+	Public SubForm As String
+	Public FieldHelp As String
+	Public FieldType As Integer    ' Bit mapped field (see field type constants)
+	Public ExportSequence As Integer
+	Public Save As Integer
+	Public Audit As Integer
+	
+     ' Following variable contain macro formulas
+	Public Default As String
+	Public STranslation As String
+	Public CTranslation As String     
+	Public SValidation As String
+	Public CValidation As String
+	
+     ' Following variables determine when translation and validation occurs
+	Public STDuring As Integer
+	Public CTDuring As Integer
+	Public SVDuring As Integer
+	Public CVDuring As Integer
+	
+	Public Function Load(txt As String) As Integer
+          ' Converts string from profile document and initializes variables
+		Dim v As Variant, i%          
+		
+		Load = False
+		
+		On Error Goto ErrLoad
+		
+		gErrors.ClearMessages
+		v = ParseDelimited(txt, "~")
+		FieldName = v(0)
+		Description = v(2)
+		FieldHelp = v(3)
+		FieldType = Cint(v(4))
+		Default = v(5)
+		STranslation = v(6)
+		CTranslation = v(7)
+		SValidation = v(8)
+		CValidation = v(9)
+		STDuring = Cint(v(10))
+		CTDuring = Cint(v(11))
+		SVDuring = Cint(v(12))
+		CVDuring = Cint(v(13))
+		If Isnumeric(v(Ubound(v))) Then
+			ExportSequence = v(Ubound(v))
+		End If
+		For i = 14 To Ubound(v)
+			Select Case v(i)
+			Case "Save"
+				Save = True
+			Case "Audit"
+				Audit = True
+			End Select
+		Next
+		Load = True
+		Exit Function
+		
+ErrLoad:
+		
+		gErrors.AddMessage Cstr(Error) & " during rules load."
+		Exit Function
+	End Function
+	
+End Class
+
+Public Class VariableInfo
+	Public VarName As String
+	Public Alias As String
+	Public Save As Integer
+	Public Macro As String
+	
+	Public Function Load(txt As String) As Integer
+		Dim v As Variant, i%
+		Load = False
+		On Error Goto ErrLoad
+		v = ParseDelimited(txt, "~")
+		VarName = v(0)
+		Macro = v(1)
+		For i = 2 To Ubound(v)
+			Select Case v(i)
+			Case "Save"
+				Save = True
+			End Select
+		Next
+		Load = True
+ErrLoad:
+		Exit Function
+	End Function
+	
+End Class
+
+Public Class FormInfo
+	Public FormName As String
+	Public Description As String
+	Public RulesLoaded As Integer
+	Public LoadedSubForms List As String
+	Public LoadableSubForms List As SubFormType
+	Public UserLoadableSubForms As Variant
+	Public ClientUse As Integer            ' Unused - Intended to limit to form to Notes client
+	Public WebUse As Integer             ' Unued - Intended to limit the form to Web client
+	Public Inherit As Integer                 ' Indicate that the document inherits from current document
+	Public Response As Integer           ' Indicates that the document becomes a response document     
+	Public Audit As Integer                   ' Indicates that document modifications are audited
+	Public PromptSubForms As Integer ' User will be prompted for subforms when creating document
+	Public AuditCount As Integer           ' Maximum number of audit fields
+	Public AuditInfo List As String          ' Data to be included in audit trail
+	Public SynchroFields As Variant      ' to be assigned an array
+	Public ResponseTo As Variant        ' Forms that this document is a response to
+	Public InheritsFrom As Variant         ' Forms that this document can inherit from
+	Public AllowCreate As Variant          ' Forms that can be created from this document
+	Public AllowCreateOther As String   ' Formula that determines what other forms can be created
+	Public AllowReport As Variant          ' Reports that can be created from this document
+	Public AllowReportAgents As Variant   ' Agents List for Reporting
+	Public Fields List As FieldInfo           ' Collection of all field to be handled by rules engine
+	Public DeleteFields List As String     ' Fields to be deleted when document is closed
+	Public Variables List As VariableInfo
+	Public ParentChanged As Integer
+	Public CreateMacro As String
+	Public SaveMacro As String
+	Public DeleteMacro As String
+	
+	
+	Public Document As NotesDocument     ' The current NotesDocument
+	Public DB As NotesDatabase                 ' The current NotesDatabase
+	Public TempDoc As NotesDocument     ' Scratch pad document used while parsing macros
+	Public ParentDoc As NotesDocument    ' Parent of this document          
+	Public InheritFromDoc As NotesDocument   ' Document to inherit from
+	Public UIWorkSpace As Variant                ' NotesUIWorkspace object - Set only by NotesClient in NotesUI Script Library
+	Public RulesView As notesview                 'View used to look up Rules Engine documents
+	
+	Public FieldText List As String                  ' List of all text contained in document when opened
+	Public ChangedFields List As String         ' List of all fields that have changed
+	Public CalendarSlot As Variant                 ' Time slot on calendar view 
+	
+	Public CurrentField As String
+	Public CurrentActivity As Integer
+	Public IsNewDoc As Integer
+	Public OpenMode As Integer                ' Indicates how the document should be opened (True = Edit Mode)
+	Public RemainOpen As Integer             ' If True the document reopens after a close
+	Public IsSaved As Integer
+	Public IsConflict As Integer
+	
+	Public LookupDoc As NotesDocument
+	Public DocCollection  As NotesDocumentCollection
+	
+	Public Sub LoadSubForm(SubFormName As String)
+		Dim doc As NotesDocument
+		Dim v As Variant
+		
+		If Not Iselement(LoadedSubForms(SubFormName)) And SubFormName <> "" Then
+			Set doc = RulesView.getdocumentbykey(SubFormName & " SubForm Profile")
+			If Not doc Is Nothing Then
+				If Not LoadFields(Me, doc, SubFormName) Then
+					gErrors.AddMessage "Unable to load subform rules: " & SubFormName
+				End If
+			End If
+			LoadedSubForms(SubFormName) = ""
+		End If
+		
+		If Iselement(LoadableSubforms(SubFormName)) Then
+               ' Add Subform name to LoadedSubForms field
+			v = Document.LoadedSubForms
+			If MergeArrays(v, SubFormName) Then
+				Document.LoadedSubForms = v
+			End If
+		End If
+	End Sub
+	
+	Public Sub RemoveSubForm(SubFormName As String)
+		Dim i%, found%, vnew, vold
+		' *** Declare Notes Form object ( JLP - 5/11/2004 )
+		Dim notessubform As notesform
+		Dim s As New notessession
+		Dim db As notesdatabase
+		Set db = s.CurrentDatabase
+		
+		vold = Document.LoadedSubForms
+		Redim vnew(0)
+		For i = 0 To Ubound(vold)
+			If vold(i) = SubFormName Then
+				found = True
+			Else
+				If Not (Ubound(vnew) = 0 And vnew(0) = "") Then
+					Redim Preserve vnew(Ubound(vnew) + 1)
+				End If
+				vnew(Ubound(vnew)) = vold(i)
+			End If
+		Next
+		If found Then
+               ' Remove subform fields
+			' *** Modified for removal of all fields from subform ( JLP - 5/10/2004 )
+			Set notessubform = db.GetForm(SubFormName)
+			Forall fld In notessubform.Fields
+				' *** Add Subform fields to the list ( JLP - 5/10/2004 )
+				DeleteFields(fld)  = ""
+				' *** Check to see if the Field exist in the Rules document ( JLP - 5/10/2004 )
+				If Iselement(Fields(fld)) Then
+					Erase Fields(fld)
+				End If
+			End Forall
+			' *** Modified for removal of all fields from subform ( JLP - 5/10/2004 )
+			
+			' *** Old Code before change ( JLP - 5/11/2004 )
+			'Forall fld In Fields
+			'	If fld.SubForm = SubFormName Then
+			'		DeleteFields(Listtag(fld))  = ""
+			'		Erase Fields(Listtag(fld))
+			'	End If
+			'End Forall  
+			Document.LoadedSubForms = vnew
+		End If
+	End Sub
+	
+	Private Sub Load(FormNm As Variant)
+          ' Converts string from profile document and initializes variables
+		Dim profDoc As NotesDocument
+		Dim v As Variant, i% , txt$, bits&
+		Dim sf As SubFormType
+		Dim names, info
+		
+		RulesLoaded = False
+		On Error Goto ErrLoad
+		
+		Set profDoc = RulesView.getdocumentbykey(FormNm & " Form Profile")
+		Set TempDoc = DB.CreateDocument
+		txt = profDoc.FormInfo(0)
+		v = ParseDelimited(txt, "~")
+		FormName = FormNm
+		Description = v(1)
+		bits = Clng(v(2))
+		Response = (bits And FORM_RESPONSE) > 0
+		Inherit = (bits And FORM_INHERIT) > 0
+		WebUse = (bits And FORM_WEB) > 0
+		ClientUse= (bits And FORM_CLIENT) > 0
+		Audit = (bits And FORM_AUDIT) > 0
+		PromptSubForms = (bits And FORM_PROMPTSUBFORM) > 0
+		If Isnumeric(v(3)) Then
+			AuditCount = Cint(v(3))
+		Else
+			AuditCount = 0
+		End If
+		For i = 4 To Ubound(v)
+			AuditInfo(v(i)) = Cstr(i)
+		Next
+		With profDoc
+			SynchroFields = .SynchroFields
+			ResponseTo = .ResponseTo
+			InheritsFrom = .InheritsFrom
+			AllowCreate = .AllowCreate
+			AllowCreateOther = .AllowCreateOther(0)
+			AllowReport = .AllowReport
+			AllowReportAgents = .AllowReportAgents
+			names  = .LoadableSubforms
+			info = .LoadableSubFormInfo
+			UserLoadableSubforms = .UserLoadableSubforms
+'               If .UserLoadableSubforms(0) <> "" Then
+'                    Document.UserLoadableSubForms = .UserLoadableSubforms
+'               End If
+			CreateMacro = .CreateMacro(0)
+			SaveMacro = .SaveMacro(0)
+			DeleteMacro = .DeleteMacro(0)
+			For i = 0 To Ubound(names)
+				If names(i) <> "" Then
+					sf.name = names(i)
+					If i <= Ubound(info) Then
+						sf.UserLoadable = (Left(info(i), 1) = "1")
+						sf.Formula = Mid(info(i), 2)
+					End If
+					LoadableSubForms(names(i)) = sf
+				End If
+			Next
+			v = .EmbeddedSubforms
+			For i = 0 To Ubound(v)
+				LoadSubForm v(i)
+			Next
+			v = Document.LoadedSubForms
+			For i = 0 To Ubound(v)
+				LoadSubForm v(i)
+			Next
+		End With
+		
+		If Not LoadFields(Me, profDoc, "") Then
+			gErrors.AddMessage "Unable to load field rules for " & FormName
+			Exit Sub
+		End If
+		
+		RulesLoaded = True
+		Exit Sub
+		
+ErrLoad:
+		
+		gErrors.AddMessage Error
+		Exit Sub
+	End Sub
+	
+	Public Sub New(doc As NotesDocument, FormNm As Variant)
+		Dim ns As New NotesSession
+		Dim item As NotesItem
+		
+		If doc Is Nothing Then
+			Set DB = ns.CurrentDatabase
+			Set Document = DB.CreateDocument
+			Document.Form = FormNm
+			IsNewDoc = True
+		Else
+			Set Document = doc
+			Set DB = doc.ParentDatabase
+			On Error Resume Next
+			If doc.ParentDocumentUNID = "" Then                   
+				If doc.ParentDocUNID(0) <> "" Then
+					Set ParentDoc = DB.GetDocumentByUNID(doc.ParentDocUNID(0))
+				End If
+			Else
+				Set ParentDoc = DB.GetDocumentByUNID(doc.ParentDocumentUNID)
+			End If
+			If Err <> 0 Then
+				gErrors.AddMessage "Unable to locate parent document."
+			End If
+			Set item = doc.GetFirstItem("$Conflict")
+			IsConflict = Not item Is Nothing
+			IsNewDoc = False
+		End If
+		
+		Set RulesView = DB.getview("(RulesControl)")
+		Call RulesView.refresh
+		
+		If Lcase(FormNm) <> "rulessyntaxcheck" And FormNm <> "" Then
+			Load FormNm
+		Else
+			RulesLoaded = True
+		End If
+		If RulesLoaded Then
+			Set tempDoc = DB.CreateDocument
+		End If          
+	End Sub     
+	
+End Class
+
+Public Class AuditEntry
+	Public EditDate As Variant
+	Public EditorName As String
+	Public Fields List As String
+	Public NewVals List As String
+	Public OldVals List As String
+	
+	Public Sub New(doc As NotesDocument, FieldName As String)
+		Dim v As Variant, i%, posn%, curField$, value$
+		
+		v = doc.GetItemValue(FieldName)
+		If v(0) <> "" Then
+			EditDate = Dateserial(Cint(Left(v(0), 4)), Cint(Mid(v(0), 5,2)), Cint(Mid(v(0), 7,2))) + Timeserial(Cint(Mid(v(0), 10, 2)), Cint(Mid(v(0), 13, 2)), Cint(Mid(v(0), 16, 2)))
+			EditorName = Mid(v(0), 19)
+		End If
+		For i = 1 To Ubound(v)
+			posn = Instr(v(i), "~")
+			If posn > 0 Then
+				value = Mid(v(i), posn + 1)
+				If Len(value) > 0 Then
+					value = Left(value, Len(value) - 1)
+				End If
+				Select Case Left(v(i), posn - 1)
+				Case "Field"
+					curField = value
+					Fields(curField) = curField
+				Case "New"
+					NewVals(curField) = value
+				Case "Old"
+					OldVals(curField) = value
+				End Select
+			End If
+		Next
+	End Sub
+End Class
+
+' The following three classes are used for hierarchical synchronization of information
+Class NewSynchValue
+	Public FieldName As String   ' Destination field name
+	Public Value As Variant         ' New value(s)
+	Public AbortRecurseForms List As String
+	Public AbortRecurse As Integer
+End Class
+
+Class SynchFields
+	Public DestFields List As NewSynchValue   ' Listtags to be set to source field name
+End Class
+
+Class SynchFormInfo
+	Public DestForms List As SynchFields    ' Listtags to be set to destination form name     
+End Class
+'++LotusScript Development Environment:2:2:Initialize:1:10
+Sub Initialize
+	
+	Set gErrors = New ErrorMessages
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:Terminate:1:10
+Sub Terminate
+	
+	Set curFormInfo = Nothing
+	If DebugFileNum > 0 Then
+		Close DebugFileNum
+	End If
+	
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:RulesVersion:1:8
+Public Function RulesVersion() As String
+	
+	RulesVersion = RULES_VERSION
+	
+End Function
+
+'++LotusScript Development Environment:2:1:SynchResponses:1:8
+Public Function SynchResponses(sForm As SynchFormInfo, dc As NotesDocumentCollection) As Integer
+	
+     ' Returns True if an error has been encountered
+	
+	Dim doc As NotesDocument
+	Dim rdc As NotesDocumentCollection
+	Dim item As NotesItem
+	Dim changed As Integer
+	Dim failed%, i%
+	Dim t$, form$
+	Dim v
+	Static recursionLevel&
+	Static checkedForms List As String
+	Static UniversalIDList List As String
+	
+	On Error Goto ErrResponses
+	
+	If recursionlevel > MAX_RECURSION_LEVEL Then
+          ' This can indicate that the database is corrupted
+		gErrors.AddMessage "Warning encountered in ProcessResponses: Maximum recursion level reached (" & Cstr(MAX_RECURSION_LEVEL) & ")"
+		SynchResponses = True
+		Goto CloseResponses
+	End If          
+	
+	recursionLevel = recursionLevel + 1
+	
+	Set doc = dc.GetFirstDocument
+	While Not doc Is Nothing
+		
+          ' Remove following comments to use debugger
+          ' Also need to set global variable RulesEngineDebuggerOn = True
+          't = doc.CompanyName(0)
+          'DebugDocument doc, t
+		
+		If recursionLevel = 1 Then
+               ' This is the first level of a response hierarchy - reset all the AbortRecurse flags                    
+			Forall dForms In sForm.DestForms
+				Forall fld In dForms.DestFields
+					fld.AbortRecurse = False
+				End Forall
+			End Forall
+			Erase checkedForms
+			Erase UniversalIDList
+		End If
+		
+		If recursionLevel > 10 Then               
+               ' Start keeping track of uniqueIDs to make sure we are not in a loop
+			If Iselement(UniversalIDList(doc.UniversalID)) Then
+                    ' We have entered into an endless loop caused by an improper $Ref or replication conflict
+				gErrors.AddMessage "Warning invalid (looping) response heirarchy encountered.  The Universal IDs follow:"
+				i = False
+				Forall unids In UniversalIDList
+                         ' Locate first universal ID that was duplicated
+					If Listtag(unids) = doc.UniversalID Then
+						i = True
+					End If
+					If i Then
+						gErrors.AddMessage unids
+					End If
+				End Forall
+				SynchResponses = True
+				Goto CloseResponses
+			Else
+                    ' Add it to the list
+				t = doc.UniversalID & " " & doc.Form(0)
+				Set item = doc.GetFirstItem("$Conflict")
+				If Not item Is Nothing Then
+					t = t & " (Replication/Save Conflict)"
+				End If
+				UniversalIDList(doc.UniversalID) = t
+			End If
+		End If
+		
+		With doc               
+			form = .Form(0)
+               ' Check to see if this response will cause the aborting of a recusive update to certain fields
+               ' Do not check form types that have been examined before because it is redundant
+			If Not Iselement(checkedForms(form)) Then
+				checkedForms(form) = ""
+				Forall dForms In sForm.DestForms
+					Forall fld In dForms.DestFields
+						If Iselement(fld.AbortRecurseForms(form)) Then
+							fld.AbortRecurse = True
+						End If
+					End Forall
+				End Forall
+			End If
+               ' Check to see if this response is one of the form types that need to be synchronized
+			If Iselement(sForm.DestForms(form)) Then
+				changed = False
+				Forall fld In sForm.DestForms(form).DestFields
+                         ' Check to see if another form type was encountered (in a previous recursion) that can override this inherited value
+                         ' fld.Value will not be an array if a data type error is present
+					If Not fld.AbortRecurse And Isarray(fld.Value) Then
+						v = .GetItemValue(fld.FieldName)
+						If Isarray(v) Then
+							If Ubound(fld.Value) = Ubound(v) Then
+								For i = 0 To Ubound(v)
+									If Cstr(fld.Value(i)) <> Cstr(v(i)) Then
+										.ReplaceItemValue fld.FieldName, fld.Value
+										changed = True
+										Exit For
+									End If
+								Next
+							Else
+								.ReplaceItemValue fld.FieldName, fld.Value
+								changed = True
+							End If
+						Else
+                                   ' Data in response document is indicates a data type error.  Replace it.
+							.ReplaceItemValue fld.FieldName, fld.Value
+							changed = True 
+						End If
+					End If
+				End Forall
+				If changed Then
+					If Not .isdeleted Then			'Don't modify any documents in the trash
+						.Save True, False
+					End If
+				End If
+			End If
+               ' Recurse
+			Set rdc = .Responses
+			If Not rdc Is Nothing Then
+				If rdc.Count > 0 Then                                               
+					If SynchResponses(sForm, rdc) Then
+						SynchResponses = True
+						Goto CloseResponses
+					End If
+				End If
+			End If
+		End With        
+		Set doc = dc.GetNextDocument(doc)
+	Wend
+	
+CloseResponses:
+	
+	recursionLevel = recursionLevel - 1
+	Exit Function
+	
+ErrResponses:
+	
+	SynchResponses = True
+	t = "Error encountered in ProcessResponses"
+	If Not doc Is Nothing Then
+		t = t & " (" & doc.Form(0) & " - " & doc.UniversalID & ")"
+	End If
+	If Err > 0 Then
+		t = t & ": " & Error
+	End If     
+	gErrors.AddMessage t
+	Resume CloseResponses
+	
+End Function
+
+
+
+'++LotusScript Development Environment:2:1:GetSynchInfo:1:8
+Public Function GetSynchInfo(db As NotesDatabase) As Integer
+	
+	Dim pDoc As NotesDocument
+	
+	Dim sf As New SynchFormInfo
+	Dim sFields As New SynchFields
+	Dim nv As New NewSynchValue
+	
+	Dim entries, info
+	Dim sourceForms, destForms, sourceField$, destField$
+	Dim i%, k%, m%, n%, count%
+	
+	Dim RulesView As notesview
+	
+	Set RulesView = db.GetView("(RulesControl)")
+	Call RulesView.refresh
+	Set pDoc = RulesView.getdocumentbykey("HierarchicalSynchronizationProfile",True)
+	If Not pDoc Is Nothing Then
+		entries = pDoc.HierarchyInfo
+		If entries(0) <> "" Then
+			For n = 0 To Ubound(entries)
+				info = ParseDelimited(entries(n), "~")
+				sourceForms = ParseDelimited(Cstr(info(0)), ";")
+				sourceField = info(1)
+				destForms = ParseDelimited(Cstr(info(2)), ";")
+				destField = info(3)               
+				For i = 0 To Ubound(sourceForms)
+					If Iselement(gFormSynchInfo(sourceForms(i))) Then
+						Set sf = gFormSynchInfo(sourceForms(i))
+					Else
+                              ' This source form has not been encountered yet
+						Set sf = New SynchFormInfo
+						Set gFormSynchInfo(sourceForms(i)) = sf
+						count = count + 1
+					End If
+					For k = 0 To Ubound(destForms)
+						Set nv = New NewSynchValue
+						If Iselement(sf.DestForms(destForms(k))) Then
+							Set sFields = sf.DestForms(destForms(k))
+						Else
+							Set sFields = New SynchFields
+							Set sf.DestForms(destForms(k)) = sFields
+						End If
+						nv.FieldName = destField
+						For m = 0 To Ubound(sourceForms)
+                                   ' Create a list of forms that will abort recursion of the inheritance
+							If sourceForms(m) <> sourceForms(i) Then
+								If Not Iselement(nv.AbortRecurseForms(sourceForms(m))) Then
+									nv.AbortRecurseForms(sourceForms(m)) = ""
+								End If
+							End If
+						Next
+						Set sFields.DestFields(sourceField) = nv
+					Next
+				Next
+			Next
+		End If
+	End If
+	GetSynchInfo = True
+	Exit Function
+	
+ErrGetInfo:
+	
+	gErrors.AddMessage "Error in GetSynchInfo: " & Error
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:1:ParseDelimited:3:8
+' Splits txt input into variant array of strings based on Delimiter character.
+' Any escaped Delimiter characters (e.g. "\~") will become plain characters in the output ("~").
+Public Function ParseDelimited(txt As String, Delimiter As String) As Variant
+	
+	' Use Chr(22), SYN, as a placeholder for the escaped character.
+	txt = Replace(txt, "\" & Delimiter, Chr(22))
+	ParseDelimited = Split(txt, Delimiter)
+	ParseDelimited = Replace(ParseDelimited, Chr(22), Delimiter)
+	
+End Function
+
+'++LotusScript Development Environment:2:1:SynchChildFields:1:8
+Public Function SynchChildFields(fInfo As FormInfo) As Integer
+     ' Synchronizes fields on child documents as specified on the FieldInfo documents
+     ' and compiled on the profile document.
+	
+	Dim rdc As NotesDocumentCollection
+	Dim form$, t$, changed%
+	
+	On Error Goto ErrProcess
+	
+	gErrors.ClearMessages
+	With fInfo
+		If GetSynchInfo(.Document.Parentdatabase) Then
+			If Not Isempty(gFormSynchInfo) Then
+				With .Document
+                         ' Check to see if this document is of a form type that is a source of synchronized information
+					form = .Form(0)
+					If Iselement(gFormSynchInfo(form)) Then          
+                              ' Determine if any dependant fields have changed
+						changed = False
+						Forall dForms In gFormSynchInfo(form).DestForms
+							Forall fld In dForms.DestFields
+								If Iselement(fInfo.ChangedFields(Lcase(Listtag(fld)))) Then
+									changed = True
+									Exit Forall
+								End If
+							End Forall
+							If changed Then
+								Exit Forall
+							End If
+						End Forall
+						If changed Then
+							Set rdc = .Responses
+							If Not rdc Is Nothing Then
+								If rdc.count > 0 Then
+                                             ' Load in the new values for any fields that need to be synchronized
+                                             ' Does not check to make sure they were changed because - this is a matter of choice
+                                             ' I figured it was a good idea because other fields might be out of synch 
+									Forall dForms In gFormSynchInfo(form).DestForms
+										Forall fld In dForms.DestFields
+											fld.Value = .GetItemValue(Listtag(fld))
+										End Forall
+									End Forall
+									If SynchResponses(gFormSynchInfo(form), rdc) Then
+										Goto ErrProcess
+									End If
+								End If
+							End If
+						End If
+					End If
+				End With
+			End If
+		End If     
+	End With
+	Exit Function
+	
+ErrProcess:
+	
+	SynchChildFields = True
+	t = "Error encountered in SynchChildFields: " & Error
+	gErrors.AddMessage t
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:2:GetAuditEntries:1:8
+Public Sub GetAuditEntries(doc As NotesDocument, records List As AuditEntry)
+     ' Returns a list of audit fields
+	
+	With doc
+		Forall item In .Items
+			If Left(item.Name, 6) = "Audit~" Then
+				If Len(item.Name) = 16 And item.Values(0) <> "" Then
+					Set records(item.Name) = New AuditEntry(doc, item.Name)
+				End If
+			End If
+		End Forall
+	End With
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:DebugDocument:1:8
+Private Sub DebugDocument(doc As NotesDocument, text As String)
+	
+	Static DebugFileNum As Integer
+	Dim t$, v
+	
+	If RulesEngineDebuggerOn Then
+		If Not doc Is Nothing Then
+			If DebugFileNum = 0 Then
+				DebugFileNum = Freefile
+				Open DEBUG_FILENAME For Append As DebugFileNum
+			End If
+			t = doc.Form(0) & Chr(9) & text & Chr(9) & doc.UniversalID & Chr(9) & doc.ParentDocumentUNID
+			Print #DebugFileNum, t
+		Else
+			If DebugFileNum > 0 Then
+				Close DebugFileNum
+			End If
+			RulesEngineDebuggerON  = False
+		End If
+	End If
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:UpdateDocuments:1:8
+Public Function UpdateDocuments(server, database,viewname, key , sourcefields, destfields, sourcedoc As NotesDocument)
+	
+	Dim db As NotesDatabase
+	Dim ns As New NotesSession
+	Dim doc As NotesDocument
+	Dim dc As NotesDocumentCollection
+	Dim view As NotesView
+	Dim i%, k%, changed%, sval, dval
+	
+	Const NO_DATABASE = -1
+	Const NO_VIEW = -2
+	Const NO_DOCUMENT = -3
+	Const UNMATCHED_FIELD_COUNT = -4
+	Const NO_FIELD_NAME = -5
+	
+	On Error Goto ErrUpdate
+	If Ubound(sourcefields) <> Ubound(destFields) Then
+		UpdateDocuments = UNMATCHED_FIELD_COUNT 
+		Exit Function
+	End If
+	UpdateDocuments = NO_DATABASE
+	
+	If Trim(server & database) = "" Then
+		Set db = ns.CurrentDatabase
+	Else
+		Set db = ns.GetDatabase(server, database)     
+	End If     
+	If db Is Nothing Then
+		Exit Function
+	Else
+		If Val(db.ReplicaID) = 0 Then
+			Exit Function
+		End If
+	End If
+	
+	Set view = db.GetView(viewname)
+	If view Is Nothing Then
+		UpdateDocuments = NO_VIEW
+	Else
+		Set dc = view.GetAllDocumentsByKey(key, True)
+		If dc.count = 0 Then
+			UpdateDocuments = NO_DOCUMENT
+		Else
+			Set doc = dc.GetFirstDocument
+			While Not doc Is Nothing
+				changed = False
+				If doc.UniversalID <> sourceDoc.UniversalID Then
+					For i = 0 To Ubound(sourceFields)
+						If sourceFields(i) = "" Then
+							UpdateDocuments = NO_FIELD_NAME
+							Exit Function
+						End If
+						If destFields(i) = "" Then
+							destFields(i) = sourceFields(i)
+						End If
+						sval = sourceDoc.GetItemValue(sourceFields(i))
+						dval = doc.GetItemValue(destFields(i))
+						If Ubound(sval) = Ubound(dval) Then
+							For k = 0 To Ubound(sval)
+								If sval(k) <> dval(k) Then
+									doc.ReplaceItemValue destFields(i), sval
+									changed = True
+									Exit For
+								End If
+							Next
+						Else
+							doc.ReplaceItemValue destFields(i), sval
+							changed = True
+						End If
+					Next
+					If changed Then 
+						doc.Save True, False
+					End If
+					UpdateDocuments = 0
+				End If
+				Set doc = dc.GetNextDocument(doc)
+			Wend
+		End If
+	End If
+	Exit Function
+	
+ErrUpdate:
+	
+	UpdateDocuments = Err
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:2:GetFieldText:1:8
+Public Sub GetFieldText(doc As NotesDocument)
+	
+	Erase curFormInfo.FieldText 
+	Forall item In doc.Items
+		If item.SaveToDisk Then
+			If Isempty(item.Text) Then
+				curFormInfo.FieldText(Lcase(item.Name)) = ""
+			Else
+				curFormInfo.FieldText(Lcase(item.Name)) = item.Text
+			End If               
+		End If
+	End Forall
+	
+End Sub
+
+
+'++LotusScript Development Environment:2:1:MergeArrays:1:8
+Public Function MergeArrays(array1 As Variant, array2 As Variant) As Integer
+     ' Merges two arrays into one and store the results in array1
+     ' Does not ensure that the data types are consistant
+     ' Returns true if array1 has been modified
+	
+	Dim v          
+	Dim i%, k%
+	
+	If Isarray(array2) Then
+		v = array2
+	Else
+		Redim v(0)
+		v(0) = array2
+	End If
+	
+	If Not Isarray(array1) Then
+		Redim array1(0)
+	End If
+	
+	MergeArrays = False
+	For i = 0 To Ubound(v)
+			' Added Isnumeric statement for numeric values - ( JLP - 6/8/2004)
+		If Isnumeric(v(i)) Then
+			For k = 0 To Ubound(array1)
+				If Cstr(v(i)) = array1(k) Then
+					Exit For
+				End If
+			Next
+			If k > Ubound(array1) Then
+				If array1(0) = "" Then
+					array1(0) = v(i)
+				Else
+					Redim Preserve array1(k)
+					array1(k) = v(i)
+				End If
+				MergeArrays = True
+			End If
+		Else ' else is not numeric
+			If v(i) <> "" Then
+				For k = 0 To Ubound(array1)
+					If v(i) = array1(k) Then
+						Exit For
+					End If
+				Next
+				If k > Ubound(array1) Then
+					If array1(0) = "" Then
+						array1(0) = v(i)
+					Else
+						Redim Preserve array1(k)
+						array1(k) = v(i)
+					End If
+					MergeArrays = True
+				End If
+			End If
+		End If
+	Next
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:CompareVariants:1:8
+Public Function CompareVariants(v1, v2) As Integer
+	Dim i%
+	
+     ' Error is likely a data type mismatch i.e. v1 and v2 are different
+	On Error Goto ErrCompare
+	
+	If Isarray(v1) Then
+		If Isarray(v2) Then
+			If Ubound(v1) = Ubound(v2) Then
+				For i = 0 To Ubound(v1)
+					If v1(i) <> v2(i) Then
+						Exit Function
+					End If
+				Next
+				CompareVariants = True
+			End If
+		End If
+	Else
+		If Not Isarray(v2) Then
+			If v1 = v2 Then
+				CompareVariants = True
+			End If
+		End If
+	End If
+	
+ErrCompare:
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:2:AuditDocument:1:8
+Public Sub AuditDocument(doc As NotesDocument)
+	
+	Dim ns As New NotesSession
+	Dim t$, newfield$, person$, dt$, prevval%, newval%
+	Dim newitem As NotesItem
+	Dim item As NotesItem
+	Dim createdoc As String, savedoc As String
+	
+     ' Added for new auditing
+	Dim db As notesdatabase
+	Dim oldfield$, fieldname$
+	Dim olditem As NotesItem, fielditem As NotesItem
+	Dim audititem As NotesItem
+	Dim auditdoc As notesdocument
+	
+' Creates audit documents containing information about changes to any of the fields that want audit tracking - JLP
+	
+	With curFormInfo
+     ' Check document to see if it is a New Document (If new then skip auditing)
+		If Not .Document.IsNewNote Then
+     ' Add additional information for creating documents for field auditing - JLP - 9/24/2003
+			person = ns.CommonUserName
+			dt = Format(Now, "yyyymmdd") & " " & Format(Now, "hh:nn:ss")
+			prevval = Iselement(.AuditInfo("Previous"))
+			newval = Iselement(.AuditInfo("New"))
+       ' New fields for document - JLP - 9/24/2003
+       '   ------------
+			fieldname = "AuditField"
+			newfield = "AuditInfo"
+	  '   ------------  
+			Forall cf In .ChangedFields
+				If Iselement(.Fields(Listtag(cf))) Then
+					If .Fields(Listtag(cf)).Audit Then
+						If createdoc <> "No" Then
+       '   ------------
+							Set db = ns.CurrentDatabase
+							Set auditdoc = db.CreateDocument 
+							auditdoc.Form = "Audit Document"
+							auditdoc.OrigUNID = doc.OrigUNID(0)
+							Set audititem = New NotesItem( auditdoc, "AllowableAuthors", "[Administration]" , AUTHORS ) ' Set authors field on document
+							auditdoc.Edate = dt
+							auditdoc.EName = person
+							createdoc = "No"
+							savedoc = "Yes"
+        '   ------------
+						End If
+						If newitem Is Nothing Then
+      '  Comment out generated new field - JLP - 9/24/2003
+                            ' newfield = "Audit~" & UniqueName(10)
+							Set newitem = auditdoc.ReplaceItemValue(newfield, "")
+							Set fielditem = auditdoc.ReplaceItemValue(fieldname, "")
+                            ' newitem.AppendToTextList dt & "~" & person
+						End If
+						newitem.AppendToTextList "Field~" & Listtag(cf) & "~"
+						fielditem.AppendToTextList Listtag(cf)
+						If prevval Then
+							t = ""
+							If Iselement(.FieldText(Listtag(cf))) Then
+								t = .FieldText(Listtag(cf))
+							End If
+							If Len(t) > MAX_AUDIT_CHARS Then
+								t = "Last " & Cstr(MAX_AUDIT_CHARS) & " Chars: " & Right(t, 100)
+							End If
+							newitem.AppendToTextList "Old~" & t & "~"
+						End If
+						If newval Then
+							Set item = doc.GetFirstItem(Listtag(cf))
+							t = ""
+							If Not item Is Nothing Then
+								On Error Resume Next
+								t = item.Text
+								If t <> "" Then
+									If Len(t) > MAX_AUDIT_CHARS Then
+										t = "Last " & Cstr(MAX_AUDIT_CHARS) & " Chars: " & Right(t, 100)
+									End If
+								End If
+								newitem.AppendToTextList "New~" & t & "~"
+							End If
+						End If
+					End If
+				End If
+			End Forall
+          ' curFormInfo.ChangedFields should be erased in RulesClientSubForm QuerySave Event after SynchChildFields is called
+          ' Erase .ChangedFields
+       ' Save document used for audit Tracking - JLP
+			If savedoc = "Yes" Then
+				Call auditdoc.Save(False,False)
+			End If
+		End If
+	End With
+End Sub
+
+'++LotusScript Development Environment:2:1:FindUpstreamForm:1:8
+Public Function FindUpstreamForm(startDoc As NotesDocument, choices) As NotesDocument
+	
+	Dim parDoc As NotesDocument
+	Dim db As NotesDatabase
+	Dim unid$, i%, t$
+	Dim unids List As String
+	
+	If Not Isarray(choices) Or startDoc Is Nothing  Then
+		Exit Function
+	End If
+	
+	Set db = startDoc.ParentDatabase
+	Set parDoc = startDoc
+	Do 
+		For i = 0 To Ubound(choices)
+			t = Mid(choices(i), Instr(choices(i), "|") + 1)
+			If t = parDoc.Form(0) Then
+				Exit Do
+			End If
+		Next
+		If i > Ubound(choices) Then
+               ' The current parent is not an allowed parent.  Look up the response heirarchy for others
+			unid = parDoc.ParentDocumentUNID
+			If Iselement(unids(unid)) Then
+                    ' Looping response hierarchy - possible replication conflict
+				Exit Function
+			End If
+			unids(unid) = ""
+			Set parDoc = Nothing
+			On Error Resume Next                                                  
+			If unid <> "" Then
+				Set parDoc = db.GetDocumentByUNID(unid)
+			End If
+		End If
+	Loop
+	Set FindUpstreamForm = parDoc
+	
+End Function
+
+'++LotusScript Development Environment:2:1:UniqueName:1:8
+Private Function UniqueName(length%) As String
+	
+	Dim i%, w$, c$, v%
+	
+	For i = 1 To length
+		v = Int(Rnd * 36)
+		If v < 10 Then
+			c = Chr(Asc("0") + v)
+		Else
+			c = Chr(Asc("A") + v - 10)
+		End If
+		w = w & c
+	Next
+	UniqueName = w
+	
+End Function
+
+'++LotusScript Development Environment:2:1:LoadFields:1:8
+Private Function LoadFields(Info As FormInfo, profDoc As NotesDocument, Byval SubForm As String) As Integer
+	
+     ' Classes and global variables defined in RuleGlobal script library
+	Dim fld As New FieldInfo
+	Dim var As New VariableInfo
+	Dim v As Variant
+	Dim doc As NotesDocument
+	Dim i%, t$
+	
+	LoadFields = False
+	On Error Goto ErrLoadRules
+	
+     ' Load Fields
+	v = profDoc.FieldInfo
+	For i = 0 To Ubound(v)
+		If v(i) <> "" Then
+			Set fld = New FieldInfo
+			If fld.Load(v(i)) Then
+				fld.SubForm = SubForm
+				t = Lcase(fld.FieldName)
+                    ' Do not load field if it is was already loaded
+				If Not Iselement(Info.Fields(t)) Then
+					Set Info.Fields(t) = fld
+				End If                    
+			End If
+		End If
+	Next
+	
+     ' Load Variables
+	v = profDoc.VariableInfo
+	For i = 0 To Ubound(v)
+		If v(i) <> "" Then
+			If var.Load(v(i)) Then
+				Set Info.Variables(var.VarName) = var                  
+			End If
+			Set var = New VariableInfo
+		End If
+	Next
+	
+	LoadFields = True
+	Exit Function
+	
+ErrLoadRules:
+	
+	gErrors.AddMessage Cstr(Error) & " during rules load."
+	Exit Function
+	
+End Function

@@ -1,0 +1,44 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='form' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='1392' unid='FD83160E99922DD38625711B006D65FD' sequence='8'>
+<created><datetime>20060220T135455,33-06</datetime></created>
+<modified><datetime dst='true'>20170316T154609,09-05</datetime></modified>
+<revised><datetime dst='true'>20070709T115543,05-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154609,08-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154609,08-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=David Frahm/O=Teamhuber</name><name>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name='$Fonts'>
+<rawitemdata type='1'>
+i/8oAAEABSZBcmlhbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+</rawitemdata></item>
+<item name='$BackgroundR5'>
+<rawitemdata type='1'>
+3QYBAJkAmQAcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAH0AHAAAAAEAsAQCAAAAAAAAAAAAAAAA
+AAAAAAD2/4IAAQAAAAMAEwBgAAAAAAAAAAAAAAAAAAAAAAAAAAAAYAABADYACQBNYWxsSW1hZ2UA
+AQAAAAEAAAABAAAAHwIBAAYAKE1hbGwpAAAAAAAAAAAmQKoEAwAHAAoAAwAJMlMAAAAUAAUACQBN
+YWxsSW1hZ2UAAwAHAAoAAwAJMFIA3gYBAJkA
+</rawitemdata></item>
+<item name='$HTMLCode' sign='true'>
+<rawitemdata type='1'>
+X/8QAAIADwAHAAAAAAAAAA==
+</rawitemdata></item>
+<item name='$TITLE'><text>DefaultLogo</text></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAAAAAAQABAP///wAAAAAA
+</rawitemdata></item>
+<item name='$DesignerVersion'><text>7</text></item>
+<item name='$$ScriptName' summary='false' sign='true'><text>DefaultLogo</text></item>
+<item name='$Body' sign='true'>
+<rawitemdata type='1'>
+gQKC/1oAAQAAAAAAAAAAADgEAAA4BAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAABAAAAAJSEOAQOADgEDgAAAAAAAQAAAAQAAACDBAEAhf8IAAEAAAjdBgEAmQCZABwA
+AACqCg0CAAAAAAAAAAAAAAAAAQABAAAAfQAcAAAAAQC2ADwAAAAAAAAAAAAAAAAAAAAAAPb/MgAA
+AAAAAwATABAAAAAAAAAAAAAAAAAAAAAAAAAAAABFbnRlcnBvbExvZ28uZ2lm3gYBAJkA3QYAAIX/
+hf8IAAEAAQjSCAEA////AN4GAACF/w==
+</rawitemdata></item>
+<item name='$PublicAccess'><text>1</text></item>
+<item name='$Flags'><text>C34WQ</text></item></note>
+

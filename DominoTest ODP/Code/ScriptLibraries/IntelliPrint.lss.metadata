@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="filter" maintenanceversion="1.8" replicaid="862580E50071C5D2" version="9.0" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="686" sequence="13" unid="E667B18C4FA2969086256D7400628FCF">
+<created><datetime dst="true">20030731T125633,43-05</datetime></created>
+<modified><datetime dst="true">20170316T154442,04-05</datetime></modified>
+<revised><datetime>20110128T110324,64-06</datetime></revised>
+<lastaccessed><datetime dst="true">20170316T154442,03-05</datetime></lastaccessed>
+<addedtofile><datetime dst="true">20170316T154442,03-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Hastings Sugan/O=CYBERNET</name><name>CN=S Sukumaran/O=CYBERNET</name><name>CN=Hastings Sugan/O=CYBERNET</name><name>CN=N Balaji/O=CYBERNET</name><name>CN=Anand Kannan/O=CYBERNET</name><name>CN=L Kesavan/O=CYBERNET</name><name>CN=R Nithyapriya/O=CYBERNET</name><name>CN=Anand Kannan/O=CYBERNET</name><name>CN=V Raja/O=CYBERNET</name><name>CN=Anand Kannan/O=CYBERNET</name><name>CN=Jesse Peters/O=Teamhuber</name><name>CN=Rodney Viessman/O=Teamhuber</name><name>CN=Jesse Peters/O=Teamhuber</name><name>CN=Rodney Viessman/O=Teamhuber</name><name>CN=Andrew Thompson/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Andrew Thompson/O=Teamhuber</name></wassignedby>
+<item name="$TITLE" sign="true"><text>IntelliPrint</text></item>
+<item name="$PublicAccess" sign="true"><text>1</text></item>
+
+
+<item name="$Flags"><text>s34Q</text></item>
+<item name="$POID"><datetime>20110128T110324,64-06</datetime></item></note>

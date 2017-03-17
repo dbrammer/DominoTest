@@ -1,0 +1,74 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='form' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='11ee' unid='59DD5888A155CC7C8525678200695D91' sequence='19'>
+<created><datetime dst='true'>19990531T151052,33-04</datetime></created>
+<modified><datetime dst='true'>20170316T154541,75-05</datetime></modified>
+<revised><datetime dst='true'>20070709T115542,72-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154541,74-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154541,74-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Rodney Viessman/O=Teamhuber</name><name>CN=Darin Dutcher/O=Teamhuber</name><name
+>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name='$TITLE'><textlist><text>(Dialog - Select Option)</text><text>SelectOption</text></textlist></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAgAAAAQABAP///wAAAAAA
+</rawitemdata></item>
+<item name='$DesignerVersion'><text>5</text></item>
+<item name='$Fonts'>
+<rawitemdata type='1'>
+i/8oAAEABSJNUyBTYW5zIFNlcmlmAAAAAAAAAAAAAAAAAAAAAAAAAA==
+</rawitemdata></item>
+<item name='$$ScriptName' summary='false' sign='true'><text> SelectOption</text></item>
+<item name='$$FormAction6' sign='true'><formula>FIELD Append:=@DeleteField;
+FIELD ValueList:=@DeleteField;
+""</formula></item>
+<item name='Choices' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Prompt' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ReturnValue' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='$Fields'><textlist><text>ReturnValue</text><text>Prompt</text><text
+>Choices</text></textlist></item>
+<item name='$Body' sign='true'>
+<rawitemdata type='1'>
+gQKC/1IAAQAAAAAAAAAAAKAFAACgBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAADBjAAAAAJQEoAUJAKAFCQAAAAAAgwQBAIX/CAABAAAK3QYAAIr//v9QAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAACK/ywAigABBQYwAgAAAAAAAAIBAAIIAAAAAAAAAAAHAAAAAABDaG9pY2VzAN4G
+AACK/4X/CAABAAAK3QYAAIr//v9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACK/yoAigAABQAwAgAAAAAA
+AAIBAAIIAAAAAAAAAAAGAAAAAABQcm9tcHTeBgAAiv+F/wgAAQAACoECtxygBbUPBAwJAAAASAAA
+AAAAAAAAAAAAAAAAAIL/UgACAAAAAAAAAAAAoAUAAKAFAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAlASgBQkAoAUJAAAAAACDBAIAgQK6KusFjAEfDxUKBQAA
+CAEAAQD///8AAQAAAAMAAAAAAAAAAAAAAAAAAACDBAIA3QYAAIr//v9QAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAACw/xQAAAACgAAAAAAAAAAAAAAAAIr/ygCKAgAFACACAAAAAAAAAgUAAAgYAAAAAABsAAsA
+AAAWABgAAAAWAAUACwBSZXR1cm5WYWx1ZQADAGwAAABaAAUACwBSZXR1cm5WYWx1ZQABAAAACgKv
+ADwAMgABACUAWW91IG11c3Qgc2VsZWN0IGFuIGl0ZW0gZnJvbSB0aGUgbGlzdAB7Aa4ACgB6AK4A
+BAC1AwMABwAQAAoACTNTNFM2UzExU1JldHVyblZhbHVlAAAUAAAAEgAFAAcAQ2hvaWNlcwADAADe
+BgAAiv+BAroqAgZZAOMO8QABAAAIAQAFAP///wAJAAAQAAAAAAAAAAAAAAAAAAAAAIMEAgDdBgAA
+iv/+/1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIr/QACAAQAFADACAAAAAAAAAgEAAAgSAAAAAAAAAAoA
+AAAAABIAAAAQAAUABgBQcm9tcHQDAGRpc3BQcm9tcHTeBgAAiv+5EgAAAAAAAAAAAAAAAAAAAACB
+AoMEAgCF/wgAAQAACg==
+</rawitemdata></item>
+<item name='$ACTIONS' sign='true'>
+<rawitemdata type='1'>
+vRwvAAAAAQABAAAAAQMAAAAAAAAFAQAJFAAAAA==
+</rawitemdata></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+i/8oAAEABSJBcmlhbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABr0cLwAAAAEAAQAAAAEDAAAA
+AAAABQEACRQAAAB5/2wAAQD39/cAAQAAAAAAAQAAAAAAAQDv7+8AAwAfAAQAAAAAAAAAAQAAAAAA
+AAAAAAAAAAAAADlAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAD8/zoAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAA
+AAAAAAAA
+</rawitemdata></item>
+<item name='$Flags'><text>C</text></item></note>
+

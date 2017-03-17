@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='form' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='113e' unid='0CF11A757A6A57BB8525679C005751E2' sequence='24'>
+<created><datetime dst='true'>19990626T115345,94-04</datetime></created>
+<modified><datetime dst='true'>20170316T154527,70-05</datetime></modified>
+<revised><datetime dst='true'>20120718T141912,53-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154527,69-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154527,69-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=James Milne/O=Enterpol</name><name>CN=Ed Funk/O=Teamhuber</name><name
+>CN=Darin Dutcher/O=Teamhuber</name><name>CN=Sondra Allen/O=Teamhuber</name><name
+>CN=Darin Dutcher/O=Teamhuber</name><name>CN=Rodney Viessman/O=Teamhuber</name><name
+>CN=Andrew Thompson/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Andrew Thompson/O=Teamhuber</name></wassignedby>
+<item name='$TITLE' sign='true'><textlist><text>(Edit Stats Profile)</text><text
+>StatisticsProfile</text></textlist></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAAAAAAQAAAAAAAAAAAAAA
+</rawitemdata></item>
+<item name='Jurisdiction' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='StatsMethod' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='$Fields'><textlist><text>StatsMethod</text><text>Jurisdiction</text></textlist></item>
+<item name='$ACTIONS' sign='true'>
+<rawitemdata type='1'>
+vRwvAAAAAAAAAAAAAQMAAAAAAAAFAQAJFAAAAA==
+</rawitemdata></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+i/8oAAEABSJBcmlhbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABr0cLwAAAAAAAAAAAAEDAAAA
+AAAABQEACRQAAAB5/2wAAQD39/cAAQAAAAAAAQAAAAAAAQDv7+8AAwAfAAQAAAAAAAAAAQAAAAAA
+AAAAAAAAAAAAADlAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAD8/zoAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAA
+AAAAAAAA
+</rawitemdata></item>
+<item name='$$ScriptName' summary='false' sign='true'><text>StatisticsProfile</text></item>
+<item name='$Body' sign='true'>
+<rawitemdata type='1'>
+gQKDBAEAhf8gAAEBBBJFZGl0IFN0YXRpc3RpY2FsIFByb2ZpbGWBAqMOoAUoAEgAAABIAAsApBIA
+AKAFhRAjFlUCEREBAQAAgQKC/0YAAgABAAAAAAAAAMgFXRDIBQAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAIYBAAAAAAAAgwQCAIX/FQABAQAISnVyaXNkaWN0aW9uOgCk
+EgABhRD+PFxaVQIREQEBAACBAoL/RgADAAAAAAAAAAAA3xDWPN8QAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhgEAAAAAAACDBAMAhf8IAAEAAAiK/zAAigAABQAwAgAA
+AAAAAAIBAAAIAAAAAAAAAAAMAAAAAABKdXJpc2RpY3Rpb26F/wgAAQAACKQSAQCgBYUQIxZVAhER
+AQEAAIECgwQCAIX/GwABAQAIU3RhdGlzdGljYWwgTWV0aG9kOgCkEgEBhRD+PFxaVQIREQEBAACB
+AoMEAwCF/wgAAQAACIr/MACKAAAFADACAAAAAAAAAgEAAAgAAAAAAAAAAAsAAAAAAFN0YXRzTWV0
+aG9kAIX/CAABAAAIpBICAKAFhRAjFlUCEREBAQAAgQKDBAIAhf8IAAEBAAikEgIBhRD+PFxaVQIR
+EQEBAACBAoMEAwCF/wgAAQAACKUGAAAAAIECgwQBAIX/CAABAQAI
+</rawitemdata></item>
+<item name='$Flags'><text>CD</text></item></note>
+

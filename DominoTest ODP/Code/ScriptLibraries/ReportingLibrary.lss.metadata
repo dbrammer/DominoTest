@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="filter" maintenanceversion="1.8" replicaid="862580E50071C5D2" version="9.0" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="26a" sequence="49" unid="30C184F1A4F2000D8525675A00585D24">
+<created><datetime dst="true">19990421T120510,12-04</datetime></created>
+<modified><datetime dst="true">20170316T154311,53-05</datetime></modified>
+<revised><datetime dst="true">20070709T115545,34-05</datetime></revised>
+<lastaccessed><datetime dst="true">20170316T154311,52-05</datetime></lastaccessed>
+<addedtofile><datetime dst="true">20170316T154311,52-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=David Frahm/O=Teamhuber</name><name>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name="$DesignerVersion" sign="true"><text>7</text></item>
+<item name="$TITLE" sign="true"><text>ReportingLibrary</text></item>
+<item name="$PublicAccess" sign="true"><text>1</text></item>
+
+
+<item name="$Flags"><text>s34Q</text></item>
+<item name="$POID"><datetime dst="true">20070709T115545,34-05</datetime></item></note>

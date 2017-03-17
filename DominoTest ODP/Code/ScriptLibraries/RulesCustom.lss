@@ -1,0 +1,169 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+Option Public
+Option Explicit
+
+
+Use "RulesUI"
+
+
+
+
+
+
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Public Sub CustomQueryClose(docInfo As FormInfo)
+Declare Public Sub CustomQueryOpen(docInfo As FormInfo)
+Declare Public Sub CustomQuerySave(docInfo As FormInfo)
+Declare Public Sub ShowRelatedDocuments(openDoc As NotesDocument)
+Declare Public Sub CustomPostSave(docInfo As FormInfo)
+Declare Function ExecuteRulesOnDocument(targetDocument As NotesDocument, doValidate As Boolean) As Boolean
+
+'++LotusScript Development Environment:2:5:(Declarations):0:2
+
+'++LotusScript Development Environment:2:2:CustomQueryClose:1:8
+Public Sub CustomQueryClose(docInfo As FormInfo)
+	
+End Sub
+
+
+'++LotusScript Development Environment:2:2:CustomQueryOpen:1:8
+Public Sub CustomQueryOpen(docInfo As FormInfo)
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:CustomQuerySave:1:8
+Public Sub CustomQuerySave(docInfo As FormInfo)
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:ShowRelatedDocuments:1:8
+Public Sub ShowRelatedDocuments(openDoc As NotesDocument)
+	
+	Dim ws As New NotesUIWorkspace     
+	Dim ns As New NotesSession
+	Dim doc As NotesDocument
+	Dim curDoc As NotesDocument
+	Dim unid$, action$, title$, form$, v
+	title = "Show Related Documents"
+	
+	On Error Goto ErrRelatedDocs
+	Set curDoc = openDoc
+	With ns
+		If openDoc Is Nothing Then
+			v = ""
+			.SetEnvironmentVar "CurrentDocUNID", v
+			.SetEnvironmentVar "RelatedDocsAction", v
+			Call ws.DialogBox("RelatedDocsLoader", True, True, True, False, False, "Wait.." )
+			Doevents
+			unid = .GetEnvironmentString("CurrentDocUNID")
+			If Len(unid) = 32 Then
+				With .CurrentDatabase
+					Set curDoc = .GetDocumentByUNID(unid)
+					If curDoc Is Nothing Then
+						Exit Sub
+					End If
+				End With
+			Else
+				Msgbox "A document has not been selected in the view.", 48, title
+			End If
+		End If
+		Set doc = .CurrentDatabase.CreateDocument
+		With doc
+			.UniqueID = curDoc.UniqueID
+			.CompanyName = curDoc.CompanyName
+			.FormName = curDoc.Form
+			.CustomerCode = curDoc.CustomerCode
+			.DocUNID = curDoc.UniversalID
+			.SaveOptions = "0"
+		End With
+		Call ws.DialogBox("RelatedDocs", True, True, True, False, False, False, "Related Documents", doc)          
+		action = .GetEnvironmentString("RelatedDocsAction")
+		If action <> "" Then
+			Select Case Ucase(Left$(action, 4))
+			Case "JUMP"
+				Set doc = .CurrentDatabase.GetDocumentByUNID(Right$(action, 32))
+				If Not doc Is Nothing Then                         
+					ws.EditDocument False, doc
+				End If
+			Case "NEW "
+				unid = Right$(action, 32)
+				form = Trim$(Mid$(action, 5, Len(action) - 36))
+				Set doc = CreateDocument(form, unid)
+				If Not doc Is Nothing Then
+					ws.EditDocument True, doc
+				End If
+			End Select
+		End If
+	End With
+	Exit Sub
+	
+ErrRelatedDocs:
+	
+	Msgbox Error, 48, title
+	Exit Sub
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:CustomPostSave:1:8
+Public Sub CustomPostSave(docInfo As FormInfo)
+	
+End Sub
+
+
+'++LotusScript Development Environment:2:1:ExecuteRulesOnDocument:1:8
+Function ExecuteRulesOnDocument(targetDocument As NotesDocument, doValidate As Boolean) As Boolean
+	
+	Dim v As Variant
+	Dim validationFailed As Boolean
+	
+	Set curFormInfo = New FormInfo(targetDocument, targetDocument.Form(0)) 
+	With curFormInfo
+		EventPostRecalcDoc targetDocument
+		If ActionValidateDoc(targetDocument, SAVE_EVENT) Then
+			If .SaveMacro <> "" Then
+				v = ParseMacro(.SaveMacro, targetDocument)                         
+				' Check to see if the above macro cancelled the save
+				If giCancelSave Then
+					validationFailed = True
+					curFormInfo.RemainOpen = False
+					GoTo Finish
+				End If
+			End If
+			' Run any customized code that has been entered in the RulesCustom ScriptLibrary
+			CustomQuerySave curFormInfo
+			If giCancelSave Then
+				validationFailed = True
+				curFormInfo.RemainOpen = False
+				GoTo Finish
+			End If
+			.IsSaved = SaveDocument(targetDocument)
+			If .IsSaved Then
+				CustomPostSave curFormInfo
+				' Need to erase record of changed fields
+				Erase curFormInfo.ChangedFields
+			Else
+				If doValidate Then
+					'gErrors.PrintMessages DEST_MSGBOX
+					validationFailed = True
+				End If
+				curFormInfo.RemainOpen = False
+			End If
+		ElseIf gErrors.Count Then
+			' gErrors.PrintMessages DEST_MSGBOX
+			If doValidate Then
+				validationFailed = True
+			End If
+			curFormInfo.RemainOpen = False
+		End If
+	End With
+	
+Finish:
+	
+	If validationFailed Then
+		ExecuteRulesOnDocument = False
+	Else
+		ExecuteRulesOnDocument = True
+	End If
+	
+End Function

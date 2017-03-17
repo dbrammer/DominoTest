@@ -1,0 +1,829 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='form' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='151e' unid='231E87940E5734108625789B006EA79A' sequence='21'>
+<created><datetime dst='true'>20110525T150838,66-05</datetime></created>
+<modified><datetime dst='true'>20170316T154642,56-05</datetime></modified>
+<revised><datetime dst='true'>20160818T154251,32-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154642,55-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154642,55-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Andrew Thompson/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Andrew Thompson/O=Teamhuber</name></wassignedby>
+<item name='$Fields'><text>PossibleHits</text></item>
+<item name='OriginalModTime' sign='true'><datetime dst='true'>20060429T211045,40-05</datetime></item>
+<item name='$HTMLCode' sign='true'>
+<rawitemdata type='1'>
+X/8QAAIADwAHAAAAAAAAAA==
+</rawitemdata></item>
+<item name='$FormLinks'>
+<rawitemdata type='7'>
+AQB2rW8AFG4lhgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+</rawitemdata></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAgAAAAQABAP///wAAAAAA
+</rawitemdata></item>
+<item name='$Script' summary='false' sign='true'><text>'++LotusScript Development Environment:2:5:(Options):0:74
+Option Public
+Option Explicit
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Function CheckForHits(CurrentUIDoc As NotesUIDocument,CurrentEvent As String) As String
+Declare Function LookupKeywords(keyword As String) As Variant
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+Dim db As NotesDatabase
+'++LotusScript Development Environment:2:1:CheckForHits:1:8
+Function CheckForHits(CurrentUIDoc As NotesUIDocument,CurrentEvent As String) As String
+      ' This agent cycles through all the entries in the PossibleHits field and determines if this document meets the ALL or ANY criteria
+	
+	Dim CurrentDoc As Notesdocument
+	Dim PersonFlagDoc As Notesdocument
+	
+	Dim ANYFlag As Integer
+	Dim ALLFlag As Integer
+	Dim CriteriaCount As Integer
+	Dim Counter As Integer
+	Dim FlagField As NotesItem
+	Dim FlagValue As NotesItem
+	Dim FieldValue As notesitem
+	Dim FieldSearch As String		'**
+	Dim FieldMatch As String			'**
+	Dim NotesItemTmp As NotesItem
+	Dim SaveFlagField As notesitem
+	Dim ReadFlagField As notesitem
+	Dim v As Variant
+	Dim MailDoc As notesdocument
+	
+	Dim PersonFieldtoCheck As Notesitem
+	Dim AnyPrompt As String
+	Dim AllPrompt As String
+	Dim Prompt As String
+	Dim view As notesview
+	Dim DocTmp As notesdocument
+	Dim PossibleHitsCollection As notesdocumentcollection
+	Dim PossibleHitList List As String
+	Dim PossibleHitListString As String
+	Dim i As Integer
+	Dim PossibleHitCount As Integer
+	Dim errorCount As Integer
+	
+	Set CurrentDoc=CurrentUIDoc.document
+	Set db=Currentdoc.parentdatabase
+	
+     ' Obtain the list of fields that are used to set flags
+	'Set view=db.getview("Lookup")
+	'Set DocTmp = View.GetDocumentByKey( "Flag Person Criteria" )
+	Dim tmplist As Variant	
+	tmplist   = LookupKeywords("Flag Person Criteria")
+	
+	If Isempty(tmplist) Then
+		Redim tmplist(0 To 4) As String
+		tmplist(0) = "Given1"
+		tmplist(1) = "Surname"
+		tmplist(2) = "DOB"
+		tmplist(3) = "HomePhone"
+		tmplist(4) = "Alias"
+	End If
+	
+	Set view=db.getview("Flagged Persons")
+	Forall FieldNames In tmplist
+		Set FieldValue=CurrentDoc.GetFirstItem(FieldNames)
+		If Not FieldValue Is Nothing Then                            
+			Forall FieldEntry In FieldValue.values
+				If Isdate(FieldEntry) Then         '**
+					FieldSearch = Format(FieldEntry,"DD-MMM-YYYY")
+				Else
+					FieldSearch = FieldEntry
+				End If			'**
+				Set possibleHitsCollection=view.getalldocumentsbykey(FieldSearch)     '**
+				If PossibleHitscollection.count&gt;0 Then
+					For i = 1 To PossiblehitsCollection.count
+						Set DocTmp=PossiblehitsCollection.getnthdocument(i)
+                              ' We are only interested in docs that are flagged on the CurrentEvent that called this function
+						If (DocTmp.SaveFlag(0)&lt;&gt;"" And CurrentEvent="Querysave") Or  (DocTmp.ReadFlag(0)&lt;&gt;"" And CurrentEvent="Postopen") Then                                  
+							If Instr(PossibleHitListString, DocTmp.universalID) &gt;0 Then
+                                         ' If it found the UNID in the string then it's already been added due to meeting some other criteria
+                                        ' and we don't have to add it again
+							Else
+                                        ' if not found it's a new possible hit so add it to the string as well as add it to the list
+								PossibleHitListString=PossibleHitListString &amp; " " &amp; DocTmp.universalID
+								PossibleHitCount=PossibleHitCount+1
+								PossibleHitList(Cstr(PossibleHitCount))=DocTmp.universalID                                       
+							End If 
+						End If
+					Next
+				End If              
+			End Forall 
+		End If
+	End Forall 
+	
+	ANYFlag = False
+	
+	Forall PossibleHit In PossibleHitList
+		Set PersonFlagDoc = db.GetDocumentByUNID( PossibleHit )
+		AnyPrompt=""
+		AllPrompt=""
+		
+          'CriteriaCount is the number of fields we allow flagged on the Flag Person form
+           ' In the future we could calculate this automatically by cycling through all the fieldnames in the doc that start with FlagAny
+		CriteriaCount=5
+          ' Flag if ANY of the following are TRUE
+		AnyFlag=False
+		For Counter = 1 To CriteriaCount
+			Set FlagField=PersonFlagDoc.getfirstItem("FlagAny"&amp;Cstr(Counter))
+			
+               ' If a blank field is encountered then don't check any further
+			If FlagField.values(0)="" Then Exit For
+			
+			
+			Set FlagValue=PersonFlagDoc.getfirstItem("CriteriaAny"&amp;Cstr(Counter))
+			Set PersonFieldtoCheck=CurrentDoc.getfirstitem(FlagField.values(0))
+			
+               'All values in the criteria fields must be compared with all values in the data fields on the person document
+               'This is to ensure that all possible comparisons are done with multi-value fields such as Alias
+			
+			Forall FlagValues In FlagValue.values
+				Forall FieldValues In PersonFieldtoCheck.values
+					If Isdate(FieldValues) Then
+						FieldMatch = Format(FieldValues,"DD-MMM-YYYY")
+					Else
+						FieldMatch = FieldValues
+					End If
+					If Ucase(FlagValues)=Ucase(FieldMatch) Then
+						AnyFlag=True
+						AnyPrompt=AnyPrompt &amp; Chr$(13) &amp; "Potential Hit on " &amp; FlagField.values(0) &amp; " = " &amp; Ucase(FieldValues)
+					End If
+				End Forall
+			End Forall              
+		Next
+		
+          'Flag if ALL of the following are TRUE
+		
+		For Counter = 1 To CriteriaCount
+			
+			Set FlagField=PersonFlagDoc.getfirstItem("FlagAll"&amp;Cstr(Counter))
+			
+               ' If a blank field is encountered then don't check any further
+			If FlagField.values(0)="" Then Exit For
+			
+			Set FlagValue=PersonFlagDoc.getfirstItem("CriteriaAll"&amp;Cstr(Counter))
+			Set PersonFieldtoCheck=CurrentDoc.getfirstitem(FlagField.values(0))
+			
+			' set the flag to false prior to each check. Every check must generate a True
+			AllFlag=False
+			
+               'All values in the criteria fields must be compared with all values in the data fields on the person document
+               'This is to ensure that all possible comparisons are done with multi-value fields such as Alias
+               'Since multiple values are allowed in the criteria fields we consider a hit positive if any one value in a field on the person doc
+               'is equal to any one value in the corresponding criteria field on the flagged person
+			
+			Forall FlagValues In FlagValue.values                    
+				Forall FieldValues In PersonFieldtoCheck.values
+					If Isdate(FieldValues) Then
+						FieldMatch = Format(FieldValues,"DD-MMM-YYYY")
+					Else
+						FieldMatch = FieldValues
+					End If
+					If Ucase(FlagValues)=Ucase(FieldMatch) Then
+						AllFlag=True
+						AllPrompt=AllPrompt  &amp; Chr$(13) &amp; "Potential Hit on " &amp; FlagField.values(0) &amp; " = " &amp; Ucase(FieldValues)
+					End If
+				End Forall                   
+			End Forall
+			
+               ' If a comparison of values failed then it doesn't meet the ALL criteria and we don't have to go any further
+			If AllFlag=False Then Exit For
+		Next          
+		
+		
+		' If there were no hits then we are done
+		If AnyFlag=False And AllFlag = False Then Exit Function
+		
+          ' There are two actions we may be called on to perform. We will send individual emails as we encounter each hit
+          ' or we will accumulate a single prompt string to be presented to the user once all the comparisons are done
+		Select Case CurrentEvent
+			
+		Case "Querysave"
+			
+			v=PersonFlagDoc.SaveFlag
+			
+			Forall entry In v
+				Select Case entry
+				Case "Prompt User"
+					If AnyFlag=True Then Prompt=Prompt &amp; Chr$(13) &amp; AnyPrompt
+					If AllFlag=True Then Prompt=Prompt &amp; Chr$(13) &amp; AllPrompt
+					If AnyFlag=True Or AllFlag=True Then Prompt=Prompt &amp; Chr$(13) &amp; Chr$(13) &amp; PersonFlagDoc.saveinst(0)
+				Case "Send Email"               			
+					Set Maildoc = New NotesDocument( db )
+					Maildoc.Form = "Memo"
+					Maildoc.SendTo = PersonFlagDoc.SaveEmail
+					Maildoc.Subject = "Possible hit on a flagged person: " &amp; CurrentDoc.Surname(0) &amp; ", " &amp; CurrentDoc.Given1(0) &amp; " " &amp; CurrentDoc.OccurrenceNumber(0)
+					MailDoc.Body= Chr$(13) &amp; AnyPrompt &amp; Chr$(13) &amp; AllPrompt &amp; Chr$(13) &amp; Chr$(13) &amp; PersonFlagDoc.SaveEmailInst(0)
+					Call Maildoc.Send( False )
+				End Select
+			End Forall
+			
+		Case "Postopen"
+			
+			v=PersonFlagDoc.ReadFlag
+			
+			Forall entry In v
+				Select Case entry
+				Case "Prompt User"
+					If AnyFlag=True Then Prompt=Prompt &amp; Chr$(13) &amp; AnyPrompt
+					If AllFlag=True Then Prompt=Prompt &amp; Chr$(13) &amp; AllPrompt
+					If AnyFlag=True Or AllFlag=True Then Prompt=Prompt &amp; Chr$(13) &amp; Chr$(13) &amp; PersonFlagDoc.readinst(0)
+				Case "Send Email"					
+					Set Maildoc = New NotesDocument( db )
+					Maildoc.Form = "Memo"
+					Maildoc.SendTo = PersonFlagDoc.ReadEmail
+					Maildoc.Subject = "Possible hit on a flagged person: " &amp; CurrentDoc.Surname(0) &amp; ", " &amp; CurrentDoc.Given1(0) &amp; " " &amp; CurrentDoc.OccurrenceNumber(0)
+					MailDoc.Body= Chr$(13) &amp; AnyPrompt &amp; Chr$(13) &amp; AllPrompt &amp; Chr$(13) &amp; Chr$(13) &amp; PersonFlagDoc.ReadEmailInst(0)
+					Call Maildoc.Send( False )
+				End Select
+			End Forall
+		End Select         
+	End Forall
+	
+	' Warrant Alert Check
+	Dim ControlView As NotesView
+	Dim ControlDoc As NotesDocument
+	Dim IsOutstandingWarrant As Boolean
+	
+	' Determine whether current document is an outstanding warrant
+	If CurrentDoc.HasItem("W_DateIssued") Then
+		If CurrentDoc.W_DateIssued(0) &lt;&gt; "" And CurrentDoc.W_DateReturned(0) = "" And CurrentDoc.W_DateRecalled(0) = "" And CurrentDoc.W_ArrestDate(0) = "" Then
+			IsOutstandingWarrant = True
+		End If
+	End If
+	
+	' Check Control Doc's ActiveFeatures to see whether Warrant Alert is enabled
+	Set ControlView = db.GetView("(Control)")
+	Set ControlDoc = ControlView.GetFirstDocument
+	If Not ControlDoc Is Nothing Then		
+		If Not Isnull(Arraygetindex(ControlDoc.ActiveFeatures,"WA")) Then
+			If Not IsOutstandingWarrant Then
+				Dim WarrantResult As String
+				Dim WarrantView As NotesView
+				Dim WarrantColl As NotesDocumentCollection
+				Dim WarrantDoc As NotesDocument		
+				Dim WarrantSearch As String
+				If db.IsFTIndexed Then
+					' Search Active Warrant view by SSN if available, otherwise by Last Name and DOB.
+					Set WarrantView = db.GetView("20. Administration\38. Active Warrants by Person")
+					If Not WarrantView Is Nothing Then
+						If CurrentDoc.SIN(0) &lt;&gt; "N/A" And CurrentDoc.SIN(0) &lt;&gt; "" Then
+							WarrantSearch = "Field SIN = " + currentdoc.SIN(0)
+							Call WarrantView.FTSearch(WarrantSearch,0)
+							Set WarrantDoc = WarrantView.GetFirstDocument
+						End If
+						If WarrantDoc Is Nothing And currentdoc.Surname(0) &lt;&gt; "" And currentdoc.DOB(0) &lt;&gt; "" Then
+							' modified DOB below to a formatted string to ensure the date component is truncated. Brian Henry Dec 2010.
+							WarrantSearch = "Field Surname = """ + currentdoc.Surname(0) +_
+							""" And Field DOB = " + Format(currentdoc.DOB(0),"d-mmm-yyyy")
+							Call WarrantView.FTSearch(WarrantSearch,0)
+							Set WarrantDoc = WarrantView.GetFirstDocument			
+						End If
+						If Not WarrantDoc Is Nothing Then
+							' Make sure that we don't alert the user to the warrant they are currently viewing
+							If WarrantDoc.UniversalID &lt;&gt; currentdoc.UniversalID Then
+								If Prompt &lt;&gt; "" Then
+									Prompt = Prompt + Chr(13) + Chr(10) + Chr(13) + Chr(10)
+								End If
+								' Make prompt informing user of Name and Warrant Number from Warrant doc
+								WarrantResult = "Possible match for outstanding warrant on " +_
+								WarrantDoc.Surname(0) + ", " + WarrantDoc.Given1(0) + " " +_
+								WarrantDoc.Given2(0) + " " + WarrantDoc.Given3(0)
+								WarrantResult = WarrantResult + Chr(13) + Chr(10) + "Agency: " + WarrantDoc.Agency(0)
+								If WarrantDoc.W_WarrantNum(0) &lt;&gt; "" Then
+									WarrantResult = WarrantResult + Chr(13) + Chr(10) + "Warrant #: " + WarrantDoc.W_WarrantNum(0)
+								End If
+								Prompt = Prompt + WarrantResult
+							End If
+						End If
+					End If
+				End If
+				' If there are no results in RMS, look in the CND.
+				Dim warrantCollection As NotesDocumentCollection
+				If WarrantResult = "" Then
+					Dim FoundWarrant As Boolean
+					FoundWarrant = False
+					Dim CNDb As New NotesDatabase("", "")
+					If Not ControlDoc.CNDUNID(0) = "" Then
+						CNDb.OpenByReplicaID db.Server,Replace(ControlDoc.CNDUNID(0),":","")
+						If CNDb.IsOpen Then
+							If CNDb.IsFTIndexed Then
+'								Set WarrantView = CNDb.GetView("Warrants\by Status")
+								' Perform search by SSN if available
+								If CurrentDoc.SIN(0) &lt;&gt; "N/A" And CurrentDoc.SIN(0) &lt;&gt; "" Then
+									WarrantSearch = "Field SIN = " + CurrentDoc.SIN(0) &amp; " And Field LoadedSubForms = ""Warrant"""
+									Set warrantCollection = CNDb.FTSearch(WarrantSearch, 0)
+								End If
+								If Not warrantCollection Is Nothing Then
+									Set WarrantDoc = warrantCollection.GetFirstDocument
+								End If
+								' Loop through results to find warrants that are outstanding.
+								While Not WarrantDoc Is Nothing And FoundWarrant = False
+									On Error 184 Goto ErrorHandle
+									If WarrantDoc.W_DateReturned(0) = "" And WarrantDoc.W_DateRecalled(0) = "" And WarrantDoc.W_ArrestDate(0) = "" Then
+										WarrantResult = "Possible match for outstanding warrant on " +_
+										WarrantDoc.Surname(0) + ", " + WarrantDoc.Given1(0) + " " +_
+										WarrantDoc.Given2(0) + " " + WarrantDoc.Given3(0)
+										WarrantResult = WarrantResult + Chr(13) + Chr(10) + "Agency: " + WarrantDoc.Agency(0)
+										If WarrantDoc.W_WarrantNum(0) &lt;&gt; "" Then
+											WarrantResult = WarrantResult + Chr(13) + Chr(10) + "Warrant #: " + WarrantDoc.W_WarrantNum(0)
+										End If
+										Prompt = Prompt + WarrantResult
+										FoundWarrant = True
+									End If
+NextDoc:									
+									Set WarrantDoc = warrantCollection.GetNextDocument(WarrantDoc)
+								Wend
+								Set warrantCollection = Nothing
+								Set WarrantDoc = Nothing
+								' If no results are returned, perform search by Surname/DOB if available
+								If FoundWarrant = False And CurrentDoc.Surname(0) &lt;&gt; "" And CurrentDoc.DOB(0) &lt;&gt; "" Then
+									' modified DOB below to a formatted string to ensure the date component is truncated. Brian Henry Dec 2010.
+									WarrantSearch = "Field Surname = """ + currentdoc.Surname(0) +_
+									""" And Field DOB = " + Format(currentdoc.DOB(0),"d-mmm-yyyy") + _
+									" And Field LoadedSubForms = ""Warrant"""
+									Set warrantCollection = CNDb.FTSearch(WarrantSearch, 0)
+								End If
+								If Not warrantCollection Is Nothing Then
+									Set WarrantDoc = warrantCollection.GetFirstDocument
+								End If
+								' Loop through results to find warrants that are outstanding.
+								While Not WarrantDoc Is Nothing And FoundWarrant = False
+									On Error 184 Goto ErrorHandle2
+									If WarrantDoc.W_DateReturned(0) = "" And WarrantDoc.W_DateRecalled(0) = "" And WarrantDoc.W_ArrestDate(0) = "" Then
+										WarrantResult = "Possible match for outstanding warrant on " +_
+										WarrantDoc.Surname(0) + ", " + WarrantDoc.Given1(0) + " " +_
+										WarrantDoc.Given2(0) + " " + WarrantDoc.Given3(0)
+										WarrantResult = WarrantResult + Chr(13) + Chr(10) + "Agency: " + WarrantDoc.Agency(0)
+										If WarrantDoc.W_WarrantNum(0) &lt;&gt; "" Then
+											WarrantResult = WarrantResult + Chr(13) + Chr(10) + "Warrant #: " + WarrantDoc.W_WarrantNum(0)
+										End If										
+										Prompt = Prompt + WarrantResult
+										FoundWarrant = True
+									End If
+NextDoc2:
+									Set WarrantDoc = warrantCollection.GetNextDocument(WarrantDoc)
+								Wend								
+							End If
+						End If
+					End If
+				End If		
+			End If
+		End If
+	End If
+	
+	If Prompt&lt;&gt;"" Then
+		Messagebox Prompt ,64,"Flagged Person"
+	End If
+	
+	Exit Function
+	
+ErrorHandle:
+	
+	errorCount = errorCount + 1
+	If errorCount = 10 Then
+		Exit Function
+	Else
+		Resume NextDoc
+	End If
+	
+	Exit Function
+	
+ErrorHandle2:
+	
+	errorCount = errorCount + 1
+	If errorCount = 10 Then
+		Exit Function
+	Else
+		Resume NextDoc2
+	End If
+	
+	Exit Function
+	
+End Function
+'++LotusScript Development Environment:2:1:LookupKeywords:1:8
+Function LookupKeywords(keyword As String) As Variant
+	Dim controldoc As notesdocument
+	Dim ws As New NotesUIWorkspace 
+	Dim controlview As NotesView	
+	Dim ludb As New NotesDatabase( "", "" )
+	Dim lkupvalue As String	
+	Dim lucoll As NotesDocumentCollection
+	Dim LUDoc As NotesDocument
+	Dim LUView As NotesView
+	Dim dbfile As String
+	
+	'Convert Lookup types to Keyword
+	Set controlview = db.GetView("(Control)")
+	Set controldoc = controlview.GetFirstDocument
+	If Not controldoc Is Nothing Then
+		If Instr(controldoc.LUPath(0),"\") &lt;&gt; 0 Then
+			'Path provided in file name
+			dbFile = controldoc.LUPath(0)
+		Else
+			'no path provided, so append path of current database
+			dbFile = Strleftback(db.FilePath,"\") + "\" + controldoc.LUPath(0)
+		End If
+		ludb.Open db.Server,dbFile
+		If ludb.IsOpen Then
+			Set luview = ludb.GetView("DatabaseLU")
+			Set ludoc = luview.GetDocumentByKey(controldoc.LUName(0) + keyword,True)
+			If ludoc Is Nothing Then
+				Exit Function
+			End If
+			LookupKeywords = ludoc.field1
+		Else
+			ws.Prompt PROMPT_OK, "Invalid Report", "Lookup database could not be located using the replica id provided in the control document!"
+			'Call agentLog.LogAction("Lookup database could not be located using the replica id provided in the control document!")
+		End If
+	Else
+		ws.Prompt PROMPT_OK, "Error", "Control Document is not set up!"
+		'Call agentLog.LogAction("Control Document is not setup!")
+		Exit Function
+	End If
+End Function<break/></text></item>
+<item name='$$Script_O' sign='true'>
+<rawitemdata type='14'>
+AQAAAkxTT0IEABQIZW4AAAQAiwAyEAQAAAA4EGQTAAAAAAAA5AB8CAAAAAAkAMgAGAA4AAAA+AFU
+AAAAAAAAAAQAAADUABgQGBAYEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAANQA1AAAAAAAAAAAAAAA
+AAAAAAAAgAG0BwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAcAAAAQAHwI8ABIAgAAAADEBXwIAAAAABAAEAAAAAAAAAAAAAAAAAAAAAAA
+AAAAABQFFAVsA2wDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAEABQBMb3R1cyBQcm9kdWN0AAAAVjAuMAAAAAAAAAAAAAAAAAAA
+AAAEAAAAMhAAAAAAAAA4EAAAZBMAAAAAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAAAA
+AAUAAABXMzJJJQMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAACAAIAAAAAABkEwAAAwD8DwAAAAAcAQkAKgAxADkAQgBCADUAMwAxADgAAABsAAMATgBFAFcA
+AACAAAYARABFAEwARQBUAEUAAAAAAIgACgBJAE4ASQBUAEkAQQBMAEkAWgBFAAAAAACoAAkAVABF
+AFIATQBJAE4AQQBUAEUAAABgAQYATwBCAEoARQBDAFQAAAAAAHQCAAAAAAAACAEMAEMAVQBSAFIA
+RQBOAFQAVQBJAEQATwBDAAAAAADcAAwAQwBVAFIAUgBFAE4AVABFAFYARQBOAFQAAAAAANABBwBL
+AEUAWQBXAE8AUgBEAAAA6AACAEQAQgAAAAAAkAENAE4ATwBUAEUAUwBEAEEAVABBAEIAQQBTAEUA
+AAA8AQYAJQBMAFMAWABCAEUAAAAAALABDABDAEgARQBDAEsARgBPAFIASABJAFQAUwAAAAAArAIP
+AE4ATwBUAEUAUwBVAEkARABPAEMAVQBNAEUATgBUAAAAdAEGACUATABTAFgAVQBJAAAAAADkAQoA
+QwBVAFIAUgBFAE4AVABEAE8AQwAAAAAAxAMNAE4ATwBUAEUAUwBEAE8AQwBVAE0ARQBOAFQAAACg
+Aw0AUABFAFIAUwBPAE4ARgBMAEEARwBEAE8AQwAAABgCBwBBAE4AWQBGAEwAQQBHAAAAXAIHAEEA
+TABMAEYATABBAEcAAAAsAg0AQwBSAEkAVABFAFIASQBBAEMATwBVAE4AVAAAAOgCBwBDAE8AVQBO
+AFQARQBSAAAARAIJAEYATABBAEcARgBJAEUATABEAAAAcAMJAE4ATwBUAEUAUwBJAFQARQBNAAAA
+kAIJAEYATABBAEcAVgBBAEwAVQBFAAAANAUKAEYASQBFAEwARABWAEEATABVAEUAAAAAACgDCwBG
+AEkARQBMAEQAUwBFAEEAUgBDAEgAAADIAgoARgBJAEUATABEAE0AQQBUAEMASAAAAAAACAMMAE4A
+TwBUAEUAUwBJAFQARQBNAFQATQBQAAAAAAC0Aw0AUwBBAFYARQBGAEwAQQBHAEYASQBFAEwARAAA
+AKwEDQBSAEUAQQBEAEYATABBAEcARgBJAEUATABEAAAAMAMBAFYAAABEAwcATQBBAEkATABEAE8A
+QwAAAIgDEgBQAEUAUgBTAE8ATgBGAEkARQBMAEQAVABPAEMASABFAEMASwAAAAAA+AQJAEEATgBZ
+AFAAUgBPAE0AUABUAAAAfAQJAEEATABMAFAAUgBPAE0AUABUAAAAJAQGAFAAUgBPAE0AUABUAAAA
+AADcAwQAVgBJAEUAVwAAAAAAtAQJAE4ATwBUAEUAUwBWAEkARQBXAAAA8AMGAEQATwBDAFQATQBQ
+AAAAAAAwBhYAUABPAFMAUwBJAEIATABFAEgASQBUAFMAQwBPAEwATABFAEMAVABJAE8ATgAAAAAA
+WAQXAE4ATwBUAEUAUwBEAE8AQwBVAE0ARQBOAFQAQwBPAEwATABFAEMAVABJAE8ATgAAANwEDwBQ
+AE8AUwBTAEkAQgBMAEUASABJAFQATABJAFMAVAAAAJwFFQBQAE8AUwBTAEkAQgBMAEUASABJAFQA
+TABJAFMAVABTAFQAUgBJAE4ARwAAAHwHAQBJAAAA6AUQAFAATwBTAFMASQBCAEwARQBIAEkAVABD
+AE8AVQBOAFQAAAAAABAFCgBFAFIAUgBPAFIAQwBPAFUATgBUAAAAAABIBQgARABPAEMAVQBNAEUA
+TgBUAAAAAABsBg4AUABBAFIARQBOAFQARABBAFQAQQBCAEEAUwBFAAAAAAAcBwcAVABNAFAATABJ
+AFMAVAAAAGwFDgBMAE8ATwBLAFUAUABLAEUAWQBXAE8AUgBEAFMAAAAAAMQFFABGAGwAYQBnACAA
+UABlAHIAcwBvAG4AIABDAHIAaQB0AGUAcgBpAGEAAAAAALAFBgBHAGkAdgBlAG4AMQAAAAAA6AYH
+AFMAdQByAG4AYQBtAGUAAADQBQMARABPAEIAAAD4BQkASABvAG0AZQBQAGgAbwBuAGUAAAAMBgUA
+QQBsAGkAYQBzAAAATAgHAEcARQBUAFYASQBFAFcAAACcBg8ARgBsAGEAZwBnAGUAZAAgAFAAZQBy
+AHMAbwBuAHMAAABMBgoARgBJAEUATABEAE4AQQBNAEUAUwAAAAAAiAYMAEcARQBUAEYASQBSAFMA
+VABJAFQARQBNAAAAAACYBwoARgBJAEUATABEAEUATgBUAFIAWQAAAAAANAcGAFYAQQBMAFUARQBT
+AAAAAAC4BgsARABEAC0ATQBNAE0ALQBZAFkAWQBZAAAA+AYUAEcARQBUAEEATABMAEQATwBDAFUA
+TQBFAE4AVABTAEIAWQBLAEUAWQAAAAAA5AcFAEMATwBVAE4AVAAAABQIDgBHAEUAVABOAFQASABE
+AE8AQwBVAE0ARQBOAFQAAAAAAGQHCABTAEEAVgBFAEYATABBAEcAAAAAAEwHCQBRAHUAZQByAHkA
+cwBhAHYAZQAAAKAHCABSAEUAQQBEAEYATABBAEcAAAAAAPgHCABQAG8AcwB0AG8AcABlAG4AAAAA
+AIAICwBVAE4ASQBWAEUAUgBTAEEATABJAEQAAAC8BwEAIAAAAHQICwBQAE8AUwBTAEkAQgBMAEUA
+SABJAFQAAAAwCBEARwBFAFQARABPAEMAVQBNAEUATgBUAEIAWQBVAE4ASQBEAAAAvAkHAEYAbABh
+AGcAQQBuAHkAAACoCgsAQwByAGkAdABlAHIAaQBhAEEAbgB5AAAAlAgKAEYATABBAEcAVgBBAEwA
+VQBFAFMAAAAAAMAICwBGAEkARQBMAEQAVgBBAEwAVQBFAFMAAADcCBEAUABvAHQAZQBuAHQAaQBh
+AGwAIABIAGkAdAAgAG8AbgAgAAAAsAgDACAAPQAgAAAAEAkHAEYAbABhAGcAQQBsAGwAAAD0CAsA
+QwByAGkAdABlAHIAaQBhAEEAbABsAAAAIAkFAEUATgBUAFIAWQAAADAJCwBQAHIAbwBtAHAAdAAg
+AFUAcwBlAHIAAAAoCggAUwBBAFYARQBJAE4AUwBUAAAAAABcCQoAUwBlAG4AZAAgAEUAbQBhAGkA
+bAAAAAAARAkEAEYATwBSAE0AAAAAANAJBABNAGUAbQBvAAAAAABwCQYAUwBFAE4ARABUAE8AAAAA
+ACQLCQBTAEEAVgBFAEUATQBBAEkATAAAANwJBwBTAFUAQgBKAEUAQwBUAAAAWAoiAFAAbwBzAHMA
+aQBiAGwAZQAgAGgAaQB0ACAAbwBuACAAYQAgAGYAbABhAGcAZwBlAGQAIABwAGUAcgBzAG8AbgA6
+ACAAAAAAAPAJBwBTAFUAUgBOAEEATQBFAAAARAsCACwAIAAAAAAAGAoGAEcASQBWAEUATgAxAAAA
+AAAMDBAATwBDAEMAVQBSAFIARQBOAEMARQBOAFUATQBCAEUAUgAAAAAA4AoEAEIATwBEAFkAAAAA
+AEgKDQBTAEEAVgBFAEUATQBBAEkATABJAE4AUwBUAAAAiAoEAFMARQBOAEQAAAAAAHAKCABSAEUA
+QQBEAEkATgBTAFQAAAAAABALCQBSAEUAQQBEAEUATQBBAEkATAAAAMQKDQBSAEUAQQBEAEUATQBB
+AEkATABJAE4AUwBUAAAAzAsLAEMATwBOAFQAUgBPAEwAVgBJAEUAVwAAAFwMCgBDAE8ATgBUAFIA
+TwBMAEQATwBDAAAAAAA8DBQASQBTAE8AVQBUAFMAVABBAE4ARABJAE4ARwBXAEEAUgBSAEEATgBU
+AAAAAACsCwcASABBAFMASQBUAEUATQAAANAMDABXAF8ARABhAHQAZQBJAHMAcwB1AGUAZAAAAAAA
+ZAsMAFcAXwBEAEEAVABFAEkAUwBTAFUARQBEAAAAAACICw4AVwBfAEQAQQBUAEUAUgBFAFQAVQBS
+AE4ARQBEAAAAAAAwDA4AVwBfAEQAQQBUAEUAUgBFAEMAQQBMAEwARQBEAAAAAAAwEQwAVwBfAEEA
+UgBSAEUAUwBUAEQAQQBUAEUAAAAAAOQLCQAoAEMAbwBuAHQAcgBvAGwAKQAAALAMEABHAEUAVABG
+AEkAUgBTAFQARABPAEMAVQBNAEUATgBUAAAAAAB4DA4AQQBDAFQASQBWAEUARgBFAEEAVABVAFIA
+RQBTAAAAAABUDQIAVwBBAAAAAACMDQ0AVwBBAFIAUgBBAE4AVABSAEUAUwBVAEwAVAAAAJQMCwBX
+AEEAUgBSAEEATgBUAFYASQBFAFcAAACwDgsAVwBBAFIAUgBBAE4AVABDAE8ATABMAAAApA0KAFcA
+QQBSAFIAQQBOAFQARABPAEMAAAAAAOwMDQBXAEEAUgBSAEEATgBUAFMARQBBAFIAQwBIAAAAZBAL
+AEkAUwBGAFQASQBOAEQARQBYAEUARAAAAGwNMAAyADAALgAgAEEAZABtAGkAbgBpAHMAdAByAGEA
+dABpAG8AbgBcADMAOAAuACAAQQBjAHQAaQB2AGUAIABXAGEAcgByAGEAbgB0AHMAIABiAHkAIABQ
+AGUAcgBzAG8AbgAAAAAAYA0DAFMASQBOAAAAhA4DAE4ALwBBAAAAFA4MAEYAaQBlAGwAZAAgAFMA
+SQBOACAAPQAgAAAAAAD4DQgARgBUAFMARQBBAFIAQwBIAAAAAADMDREARgBpAGUAbABkACAAUwB1
+AHIAbgBhAG0AZQAgAD0AIAAiAAAA5A4SACIAIABBAG4AZAAgAEYAaQBlAGwAZAAgAEQATwBCACAA
+PQAgAAAAAADEDgoAZAAtAG0AbQBtAC0AeQB5AHkAeQAAAAAAcA4qAFAAbwBzAHMAaQBiAGwAZQAg
+AG0AYQB0AGMAaAAgAGYAbwByACAAbwB1AHQAcwB0AGEAbgBkAGkAbgBnACAAdwBhAHIAcgBhAG4A
+dAAgAG8AbgAgAAAAAACYDgYARwBJAFYARQBOADIAAAAAAAAPBgBHAEkAVgBFAE4AMwAAAAAAWA8I
+AEEAZwBlAG4AYwB5ADoAIAAAAAAApA8GAEEARwBFAE4AQwBZAAAAAAAsEAwAVwBfAFcAQQBSAFIA
+QQBOAFQATgBVAE0AAAAAAIQQCwBXAGEAcgByAGEAbgB0ACAAIwA6ACAAAAAoDxEAVwBBAFIAUgBB
+AE4AVABDAE8ATABMAEUAQwBUAEkATwBOAAAASA8MAEYATwBVAE4ARABXAEEAUgBSAEEATgBUAAAA
+AABsDwQAQwBOAEQAQgAAAAAAkA8HAEMATgBEAFUATgBJAEQAAADAEA8ATwBQAEUATgBCAFkAUgBF
+AFAATABJAEMAQQBJAEQAAADADwYAUwBFAFIAVgBFAFIAAAAAAKwPAQA6AAAAaBEGAEkAUwBPAFAA
+RQBOAAAAAAAQECUAIABBAG4AZAAgAEYAaQBlAGwAZAAgAEwAbwBhAGQAZQBkAFMAdQBiAEYAbwBy
+AG0AcwAgAAMAcAP4DwAAPQAgACIAVwBhAHIAcgBhAG4AdAAiAAAA9BALAEUAUgBSAE8AUgBIAEEA
+TgBEAEwARQAAAEAQBwBOAEUAWABUAEQATwBDAAAAhBEPAEcARQBUAE4ARQBYAFQARABPAEMAVQBN
+AEUATgBUAAAAnBAMAEUAUgBSAE8AUgBIAEEATgBEAEwARQAyAAAAAADMEAgATgBFAFgAVABEAE8A
+QwAyAAAAAABAEQ4ARgBsAGEAZwBnAGUAZAAgAFAAZQByAHMAbwBuAAAAAAAcEQIAVwBTAAAAAACc
+ERAATgBPAFQARQBTAFUASQBXAE8AUgBLAFMAUABBAEMARQAAAAAABBEEAEwAVQBEAEIAAAAAAMgR
+CQBMAEsAVQBQAFYAQQBMAFUARQAAAHwRBgBMAFUAQwBPAEwATAAAAAAAVBEFAEwAVQBEAE8AQwAA
+AP//BgBMAFUAVgBJAEUAVwAAAAAA//8GAEQAQgBGAEkATABFAAAAAACsEQYATABVAFAAQQBUAEgA
+AAAAAPARAQBcAAAAMBIIAEYASQBMAEUAUABBAFQASAAAAAAAGBIEAE8AUABFAE4AAAAAAP//CgBE
+AGEAdABhAGIAYQBzAGUATABVAAAAAAAEEhAARwBFAFQARABPAEMAVQBNAEUATgBUAEIAWQBLAEUA
+WQAAAAAA//8GAEwAVQBOAEEATQBFAAAAAAD//wYARgBJAEUATABEADEAAAAAAP//CQBQAFIATwBN
+AFAAVABfAE8ASwAAAFQSDgBJAG4AdgBhAGwAaQBkACAAUgBlAHAAbwByAHQAAAAAABATWwBMAG8A
+bwBrAHUAcAAgAGQAYQB0AGEAYgBhAHMAZQAgAGMAbwB1AGwAZAAgAG4AbwB0ACAAYgBlACAAbABv
+AGMAYQB0AGUAZAAgAHUAcwBpAG4AZwAgAHQAaABlACAAcgBlAHAAbABpAGMAYQAgAGkAZAAgAHAA
+cgBvAHYAaQBkAGUAZAAgAGkAbgAgAHQAaABlACAAYwBvAG4AdAByAG8AbAAgAGQAbwBjAHUAbQBl
+AG4AdAAhAAAAIBMFAEUAcgByAG8AcgAAAP//HwBDAG8AbgB0AHIAbwBsACAARABvAGMAdQBtAGUA
+bgB0ACAAaQBzACAAbgBvAHQAIABzAGUAdAAgAHUAcAAhAAAADQAIAAAAAAA4EAAABQD8DwAAAACw
+Jn7GGgAAAAwB//8AAAAAEAAAAPAAAADsAAAAAAAAAAkAAAAECmAPdA10DQAAAAAAAAAAAAAAAAAA
+AAA8DzwPHA5gDwQKcA4AAAAAjAuMCwAAAAAAAAAAAAAAAAIUEyntLmkQv10A3QERhrcAAAAAAAAA
+AAAAAAAAAAAAZAAAAJAnzGEAAAAAAAAAAAIABACgAAAAAAAAAAIAAQD//wAAEgAUAAAAAAD//wkC
+AAAAABIEAAAAABAABAD//wAAAAAGAAMAAAAJAhAACQIQAAYIBggZAAMAEACAAQAA4AAJAgAAEAAa
+AAQAZAH//wAAAAAQAAAASAJIAkABAAAAAAAAAQAAALwJvAkAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAALwJvAkAAAAABBUTKe0uaRC/XQDdARGGtwAAAAAAAAAAAAAA
+AAAAAABkAAAAQBQKYwAAAAAAAAAAAgDkAAAAAAAQAAAACgABAP//AAAHABAAtAe0ByABBgAAAAAA
+MQAAABgC/AscA1QGKAK8C0wDNApkBswLZARkBAAAAAA4AiQHlAQUB7QEdAqkBfwL9AREBywDhAQY
+AlQHAgAAABQAAAADAAAAfAIAAAQAAAB0B6QHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAApAekBwAA
+AACUB5QHAAAAAIQHhAd0B3QHAAAAAAMAAQAoAjwDIAEGAAAAAAADAAEAOAIMA4wACQIBAPAAAwAB
+AAwD5ASsAAYAAgAAABAABABsAwAAlAEAAAAAAAAFAAAA4AnYDAAAAAAAAAAAAAAAAEQKRArYDNgM
+AAAAAAAAAACEDIQMAAAAAAAAAADgCeAJSAtICwAAAAAEFBMp7S5pEL9dAN0BEYa3LhQTKe0uaRC/
+XQDdARGGt2QAAACQJ8xhAAAAAAAAAAACAAQA2AIAAPAAAAACAAEA//8AABIAFAAAAAAA//8JAgAA
+AACNBAAAAABIAgQA//8AAAAABgACAAAACQJIAgkCSAIJAhAAGQADAAIAHAOUBngBCQIAAEgCAwAC
+ACwDRAS0AQkCBABIAgMAAgA8AzQE1AEBAAgAAAADAAIATANcA+gBAQAKAAAAAwACAFwDVAT8AQEA
+DAAAAAMAAgA0BKQGHAIBAA4AAAAQAAAAFAUAAEgCAAAAAAAAAQAAAIQKhAoAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAACECoQKAAAAAAAAAAAAAAAABRQTKe0uaRC/XQDdARGGty4U
+EyntLmkQv10A3QERhrdkAAAAkCfMYQAAAAAAAAAAAgAEAPwDAABIAgAAAgABAP//AAASABQAAAAA
+AP//CQIAAAAAKAQAAAAAbAMEAP//AAAAAAkABQAAAAkCbAMJAmwDCQpIAgYIAACBCAMAAgBEBIQE
+MAIJAhAAbAMDAAIAVATUBGACCQIUAGwDAwACAGQEdAR4AgkCGABsAwMAAgB0BAAAlAIGABwAAAAD
+AAIAhASkBLACBgAgAAAAAwACAJQEAADMAgkCJABsAwMAAgCkBMQE7AIJAigAbAMDAAIAtAQ0BwwD
+CQIsAGwDAwACAMQEhAYsAwAAMAAAAAMAAgDUBHQGNAMJAkAASAIDAAIA5AQEBUgDCQJEAGwDAwAC
+APQEJAd0AwYASAAAAAMAAgAEBUQHjAMGAEwAAAADAAIApAW0BaQDBgBQAAAAEAAAAMQFAADIAwAA
+AAAAAAQAAACoCpAPAAAAAJAPkA8AAAAAAAAAAAAAAAAAAAAApA2kDTgNOA0AAAAAAAAAAAAAAACo
+CqgKAAAAAAMUEyntLmkQv10A3QERhrcAAAAAAAAAAAAAAAAAAAAAZAAAAJAnzGEAAAAAAAAAAAIA
+BAAAAAAAbAMAAAIAAQD//wAAAwACALQFtAa4AwkCVAAUBQMAAgBUBlQG4AMJAlgASAIQAAAAfAh8
+CCgEAAAAAAAABAAAANwK/A4AAAAA/A78DtwK3AoAAAAAAAAAAAAAAAAAAAAAzA7MDgAAAAAAAAAA
+AAsACwAAAAAAAAAACxQTKe0uaRC/XQDdARGGtwAAAAAAAAAAAAAAAAAAAABkAAAAkCfMYQAAAAAA
+AAAAAgAEAAAAAAAUBQAAAgABAP//AAADAAIAZAYAAPQDCQJcAMQFAwACAHQGxAZcBAZAYAAAAAMA
+AgCEBtQGgAQGAGQAAAADAAIAlAZ0CrAEAQBoAAAAAwACAKQG5Aa4BAEAagAAAAMAAgC0BlQH4AQB
+AGwAAAADAAIAxAb0BjgFAABwAAAAAwACANQGBAesCgkCMAIUBQMAAgDkBhQHyAoJAjQCSAIDAAIA
+9AZkB+QKDQA4AgAAAwACAAQH/AtADAYAPAIAAAMAAgAUB8wLYAwJAkACFAUDAAIAJAcAAHwMCQJE
+AsQFAwACADQHAACYDAkCSAJIAgMAAgBEBzQKtAwGAEwCAAADAAIAVAcAAAQPCQJQAsQFAwACAGQH
+AAAsDw0AVAIAAAMAAgA0CnwLTA8JAlgCEAANAAgAhAcAADAQAABhDBkADQAIAJQHAACIEAAAFw4Z
+AA0ACACkBwAAFBAAAGkOGQANAAgAAAAAAGgQAACfDhkABwAQABgQAABMBQAAAAAAAAsAAABMCKwJ
+AAAAAAAAAACcCZwJTAlMCQAAAAAAAAAAPAmsCWwIjAlcCVwJbAlsCVwIXAh8CXwJTAhMCAEAAAAU
+AAAA2Q4AACQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAADAAEAXAgAAEwFAAAAAAAAAwABAGwIAADMAAYAAQAAAAMAAgA8CYwJyAoJ
+AgAASAIQAAAAAAAAANAQAAAAAAAAAQAAANwP3A/cD9wPAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAhUTKe0uaRC/XQDdARGGtwAAAAAAAAAAAAAAAAAAAABk
+AAAAQBQKYwAAAAAAAAAAAgDkAAwJAADEBQAACgABAP//AAASABQAAAAAAP//CQIAAAAAAAYAAAAA
+fAjkAP//AAAAAAQAAQAAAAkCfAgJAnwIGQADAAIATAmsCcQQCQIEAHwIAwACAFwJAACsCgkCCAAU
+BQMAAgBsCQAA+BAJAgwAEAADAAIAfAkAAAgRBgAQAAAAAwACAIwJAAAgEQkCFADEBQMAAgCcCQAA
+NBEJAhgASAIDAAIArAkAAEQRCQIcABQFAwACAAAAAABYEQYAIAAAABEAEAUAAAAA/AQJAqgGAAAA
+AAAAAAAAAAAAAAAAAAAAAABIAhEAEAVECgAAFAUJAoAEAAAAAAAAAAAAAAAAAAAAAAAAAAAQABIA
+FACMC3AO/AUJggAAAAAWBAAAAAAQAAQA//8AAAAABQACAAAACQIUBQkCEAAGCAUAAgB0CgAANAYA
+AIAAAAASABQASAsAAFAGCYIAAAAAjgQAAAAASAIEAP//AAAAAAUAAgAAAAkCbAMJAkgCBggFAAIA
+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
+</rawitemdata></item>
+<item name='$$ScriptName' summary='false' sign='true'><text>Flagged Person</text></item>
+<item name='$$FormScript' summary='false' sign='true'><text>'++LotusScript Development Environment:2:5:(Options):0:66
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Sub Querysave(Source As Notesuidocument, Continue As Variant)
+Declare Sub Postopen(Source As Notesuidocument)
+Declare Sub Queryclose(Source As Notesuidocument, Continue As Variant)
+Declare Sub Querymodechange(Source As Notesuidocument, Continue As Variant)
+
+'++LotusScript Development Environment:2:5:(Declarations):0:2
+
+'++LotusScript Development Environment:2:2:BindEvents:1:129
+Private Sub BindEvents(Byval Objectname_ As String)
+	Static Source As NOTESUIDOCUMENT
+	Set Source = Bind(Objectname_)
+	On Event Querysave From Source Call Querysave
+	On Event Postopen From Source Call Postopen
+	On Event Queryclose From Source Call Queryclose
+	On Event Querymodechange From Source Call Querymodechange
+End Sub
+
+'++LotusScript Development Environment:2:2:Querysave:1:12
+Sub Querysave(Source As Notesuidocument, Continue As Variant)
+	Dim CurrentEvent As String
+	CurrentEvent="Querysave"
+	CheckForHits Source, CurrentEvent
+End Sub
+'++LotusScript Development Environment:2:2:Postopen:1:12
+Sub Postopen(Source As Notesuidocument)
+	Dim CurrentEvent As String
+	CurrentEvent="Postopen"
+	CheckForHits Source, CurrentEvent
+End Sub
+'++LotusScript Development Environment:2:2:Queryclose:1:12
+Sub Queryclose(Source As Notesuidocument, Continue As Variant)
+End Sub
+'++LotusScript Development Environment:2:2:Querymodechange:1:12
+Sub Querymodechange(Source As Notesuidocument, Continue As Variant)
+	
+End Sub<break/></text></item>
+<item name='$$$FormScript_O' sign='true'>
+<rawitemdata type='14'>
+AQAAAkxTT0IDABQIZW4AAAQAIQCLAAQAAAAUCSQDAAAAAAQAmAWECAAAAAAkABwBAAA4ADQCOAFU
+AAAAAAAAAAUAAAAYAKQDAAAAAAAAAAAAAAAANAI0AgAAAABsAewCAAAAAAAAAAAAAAAAAAAAAAAA
+AACkA6QDGAAYAAEAAAC8BLwEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAvAS8BAYAAADMAIQIzACkBQAAAACECIQIAAAAAGgGaAYAAAAAAAAAAAAAAAAAAAAA
+AAAAAPQH9AcsBywHAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAEABQBMb3R1cyBQcm9kdWN0AAAAVjAuMAAAAAAAAAAAAAAAAAAA
+AAAEAAAAiwAAAAAAAAAUCQAAJAMAAAAAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAAAA
+AAgAAABXMzJJJQMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAwAoAwAAAAAYAAkAKgAxADkAQgBBADYAQwAxADgAAABsAAMATgBFAFcAAACAAAYARABFAEwA
+RQBUAEUAAAAAAAQBCgBJAE4ASQBUAEkAQQBMAEkAWgBFAAAAAACIAAkAVABFAFIATQBJAE4AQQBU
+AEUAAAC8AAYATwBCAEoARQBDAFQAAAAAAPAAAAAAAAAA/AEXACgARwBMAE8AQgBBAEwAUwApAEYA
+TABBAEcARwBFAEQAIABQAEUAUgBTAE8ATgAAAHgBFwAoAEcAbABvAGIAYQBsAHMAKQBGAGwAYQBn
+AGcAZQBkACAAUABlAHIAcwBvAG4AAABUAgYAUwBPAFUAUgBDAEUAAAAAAFQBCABDAE8ATgBUAEkA
+TgBVAEUAAAAAALwBCgBCAEkATgBEAEUAVgBFAE4AVABTAAAAAACMAQsATwBCAEoARQBDAFQATgBB
+AE0ARQBfAAAApAEPAE4ATwBUAEUAUwBVAEkARABPAEMAVQBNAEUATgBUAAAA2AEGACUATABTAFgA
+VQBJAAAAAADAAgkAUQBVAEUAUgBZAFMAQQBWAEUAAACMAggAUABPAFMAVABPAFAARQBOAAAAAAAc
+AgoAUQBVAEUAUgBZAEMATABPAFMARQAAAAAA//8PAFEAVQBFAFIAWQBNAE8ARABFAEMASABBAE4A
+RwBFAAAAbAIMAEMAVQBSAFIARQBOAFQARQBWAEUATgBUAAAAAAD//wkAUQB1AGUAcgB5AHMAYQB2
+AGUAAADwAgwAQwBIAEUAQwBLAEYATwBSAEgASQBUAFMAAAAAAP//CABQAG8AcwB0AG8AcABlAG4A
+AAAAAKACDQBOAE8AVABFAFMARABPAEMAVQBNAEUATgBUAAAA//8GACUATABTAFgAQgBFAAAAAADY
+Ag0ATgBPAFQARQBTAEQAQQBUAEEAQgBBAFMARQAAAP//CQBOAE8AVABFAFMASQBUAEUATQAAAP//
+CQBOAE8AVABFAFMAVgBJAEUAVwAAAP//FwBOAE8AVABFAFMARABPAEMAVQBNAEUATgBUAEMATwBM
+AEwARQBDAFQASQBPAE4AAAAFABgJAAAAAOSRSsUYAAAAAACMACAJnxAAAAAAAAAAAAgAAABsAQAA
+IAEAAAAAAAACAAAAsABcAQAAAAAAAAAAAAAAAAAAAACwALAAAAAAAAAAAAAAAAAAAAAAAAAAAABc
+AVwBAAAAAAAAAAABAAAAAgAAAAYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAwABAFwBAAA8AQYIAAAAABoAAAB8Af//AAAA
+ABAAAACkBaQFWAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAEFRMp7S5pEL9dAN0BEYa3AAAAAAAAAAAAAAAAAAAAAGQAAABA
+FApjAAAAAAAAAAACAMAAAACcBAAAAAAKAAEA//8AAAMAIAAAAAAA9AAJAgAAzAAIAAAANALsApAB
+AAAAAAAAAwAAAAQCJAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAkAiQCFAIUAgAAAAAAAAAABAIE
+AgAAAAAAAAAAAgAAAAoAAABLAAAABAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMAAQAUAgAA9AAJAgAAzAADAAEAJAIAAAgBAAAB
+AAAAAwACAAAAAAAAAgYAAAAAAAgAAADsAgAAqAEAAAAAAAACAAAAzALcAgAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAANwC3AIAAAAAAAAAAAAAAADMAswCAAAAAAAAAAABAAAACgAAAGcAAAAEAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AwABANwCAAD0AAkCAADMAAMAAgAAAAAAAAIGAAAAAAAIAAAApAMAAMABAAAAAAAAAgAAAIQDlAMA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAlAOUAwAAAAAAAAAAhAOEAwAAAAAAAAAAAgAAAAAA
+AACDAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAMAAQCUAwAA9AAJAgAAzAADAAEAAAAAAAgBAAABAAAACAAAAAAAAADcAQAA
+AAAAAAIAAAA8BEwEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEwETAQAAAAAAAAAADwEPAQA
+AAAAAAAAAAIAAAAAAAAAhwAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAADAAEATAQAAPQACQIAAMwAAwABAAAAAAAIAQAAAQAA
+ABMAAACQAQAA0AAAAAEAAAABAAAAAAAAABMAXASoAQAAywAAAAAAAAATAHQEwAEAAMwAAAABAAAA
+AQAAAAAAAAATAIQE3AEAAM0AAAABAAAAAQAAAAAAAAAhAAQAgAEAAAcAQAAAAAAAOAIGAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAACAEYABgAJAswABgAJAqQFCQKkBQEAAQABAAEACQIsBwkCLAcJAiwHBgAGAAkCLAcJAiwHCQIs
+BwAACQKkBQkCLAcGAAYABgAJAvQHCQKkBQkChAgGQAYAAQABAAEAAAAJAvQHCQKkBQ0ABgAJAvQH
+CQKECAkCpAUGAAkChAgNAAkCaAYAAAAABgAAAAAAAAAaAMAAkAL//wAAAAAQAAQAaAYAAHACAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAABBQTKe0uaRC/XQDdARGGty4UEyntLmkQv10A3QERhrdkAAAAkCfMYQAAAAAAAAAAAgCY
+BTQGAABoBgAAAgABAP//AAASABQAAAAAAP//CQIAAAAAjQQAAAAApAWYBf//AAAAAAYAAgAAAAkC
+pAUJAqQFCQJoBhkAEAAAACwHAACkAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIUEyntLmkQv10A3QERhrcAAAAAAAAAAAAA
+AAAAAAAAZAAAAJAnzGEAAAAAAAAAAAIAmAX4BgAAzAAAAAIAAQD//wAAEgAUAAAAAAD//wkCAAAA
+ABIEAAAAAGgGmAX//wAAAAAGAAMAAAAJAmgGCQJoBgYIBggZABAAAAD0BwAAxAIAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAF
+FBMp7S5pEL9dAN0BEYa3LhQTKe0uaRC/XQDdARGGt2QAAACQJ8xhAAAAAAAAAAACAJgFvAcAAKQF
+AAACAAEA//8AABIAFAAAAAAA//8JAgAAAAAoBAAAAAAsB5gF//8AAAAACQAFAAAACQIsBwkCLAcJ
+CqQFBggAAIEIEAAAAIQIAADcAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAMUEyntLmkQv10A3QERhrcAAAAAAAAAAAAAAAAA
+AAAAZAAAAJAnzGEAAAAAAAAAAAIAmAUAAAAALAcAAAIAAQD//wAAEAAAAAAAAAD0AgAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAsUEyntLmkQv10A3QERhrcAAAAAAAAAAAAAAAAAAAAAZAAAAJAnzGEAAAAAAAAAAAIAmAUAAAAA
+9AcAAAIAAQD//wAABACPAAAAAADSwAAdAAAaDgBbXAFJsADKzACmGg8AR1wBy9AAAABsARoQAEdc
+AcvLAAAANAIaEQBHXAHLzAAAAOwCGhIAR1wBy80AAACkAxoTAB0aGABeJAJ9IAKlGhkAKbwEXQQC
+XiQCIzEaGgAdGh4AXtwCfVgCpRofACm8BF3MAl7cAiMxGiAAHRojAB0aJwAdAgAAABEAJAAAAAAA
+//8BAAMAAwAAAAkAIAELAJABFQCoARsAwAEhANwBJAAKAAAA
+</rawitemdata></item>
+<item name='$Body' sign='true'>
+<rawitemdata type='1'>
+gQKC/1oAAQAAAAAAAAAAAKAFAACgBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAADBjAAAAAJSEoAUJAKAFCQAAAAAAAQAAAAQAAACDBAEA3QYAAIX/hf+HAAEAAghGbGFn
+Z2VkIFBlcnNvbnMgU3ViZm9ybSAtIEhpZGRlbiAtIEV4ZWN1dGVzIGNvZGUgaW4gdGhlIHBvc3Qg
+b3BlbiBldmVudCB0byBjaGVjayBmb3IgZmxhZ3MgYW5kIHByb21wdHMgdGhlIHVzZXIgaWYgaXQg
+ZmluZHMgYW55ANIIAQD/AAAA3gYAAIX/3QYAAJH/kf9GAAAARW50ZXJwb2wgUk1TIFY2IFRlbXBs
+YXRlAENOPWVudGVycG9sLnRlYW1odWJlci5jb20vTz1UZWFtaHViZXIAAN4GAACR/4X/CAABAAAK
+</rawitemdata></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+i/8oAAEABSZBcmlhbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0cLwAAAAAAAAAAAAEDAAAA
+AAAABQEACRQAAAB5/2wAAQD39/cAAQAAAAAAAQAAAAAAAQDv7+8AAwAYAAAAAAAAAAAAAwAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAD8/zoAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAA
+AAAAAAAA
+</rawitemdata></item>
+<item name='$TITLE' sign='true'><text>Flagged Person</text></item>
+<item name='$DesignerVersion' sign='true'><text>8.5.3</text></item>
+<item name='$Flags'><text>CUA3x</text></item></note>
+

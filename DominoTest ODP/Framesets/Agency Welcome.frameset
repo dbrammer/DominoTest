@@ -1,0 +1,23 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='form' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='11fe' unid='5EE642833AEBCA4586256AC3004D8745' sequence='2'>
+<created><datetime dst='true'>20010910T090649,01-05</datetime></created>
+<modified><datetime dst='true'>20170316T154542,55-05</datetime></modified>
+<revised><datetime dst='true'>20010910T090649,02-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154542,54-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154542,54-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Ed Funk/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Ed Funk/O=Teamhuber</name></wassignedby>
+<item name='$TITLE' sign='true'><text>Agency Welcome</text></item>
+<item name='$Comment' sign='true'><text/></item>
+<item name='$FrameSet'>
+<rawitemdata type='1'>
+7/8YAAEAAwAAAAAAAAAAAAAAAAAAAAAA8P8+AAAAAAABAAAAAAAHAAcAAAAAAAUA1NDIAAUA1NDI
+AAIAAQAAAAAABQDU0MgAAAACADUAAgAvAAMAAQDx/yoAAAAAAAAAAQADAAEAAQAAAAAAAwAAAAMA
+AQDU0MgAAABUb3BUb3Dx/zAAAAAAAAAAAQADAAEAAQAAAAAABgAAAAYAAQDU0MgAAABCb3R0b21C
+b3R0b232/yUAAAAAAAMAAgADAAAAAAAAAAAAAAAAAAAAAAAAAAAAQ2FsPw==
+</rawitemdata></item>
+<item name='$DesignerVersion'><text>5</text></item>
+<item name='$Flags'><text>#34CQ</text></item></note>
+

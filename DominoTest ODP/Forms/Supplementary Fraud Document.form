@@ -1,0 +1,688 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='form' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='1316' unid='D069640AD14200208625712D00590EED' sequence='15'>
+<created><datetime>20060310T101245,25-06</datetime></created>
+<modified><datetime dst='true'>20170316T154601,40-05</datetime></modified>
+<revised><datetime>20150216T155036,35-06</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154601,39-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154601,39-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Doug Brammer/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Doug Brammer/O=Teamhuber</name></wassignedby>
+<item name='Quantity' summary='false' sign='true'><number>0</number></item>
+<item name='CheckInDateTime' summary='false' sign='true'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='CheckOutDateTime' summary='false' sign='true'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='RelDateTime' summary='false' sign='true'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='PLossDate' summary='false' sign='true'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='PValue' summary='false' sign='true'><number>0</number></item>
+<item name='PRecDate' summary='false' sign='true'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='PRecValue' summary='false' sign='true'><number>0</number></item>
+<item name='$Fonts'>
+<rawitemdata type='1'>
+i/8oAAEABRZUaW1lcyBOZXcgUm9tYW4AAAAAAAAAAAAAAAAAAAAAAA==
+</rawitemdata></item>
+<item name='OriginalModTime'><datetime dst='true'>20050921T140047,79-05</datetime></item>
+<item name='$HTMLCode' sign='true'>
+<rawitemdata type='1'>
+X/8QAAIADwAHAAAAAAAAAA==
+</rawitemdata></item>
+<item name='$TITLE'><textlist><text>Supplementary Fraud Document</text><text
+>SupplementaryFraudDoc</text></textlist></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIUAAAAAgAAAAQABAP///wAAAAAA
+</rawitemdata></item>
+<item name='$SubForms'><textlist><text>Header</text><text>Fraudulent Document</text><text
+>No DB Path</text><text>Reporting Officer</text><text>Additional Name</text><text
+>Report Approval</text><text>Footer</text><text>RulesClientSubForm</text><text
+>LoadCSSTheme</text><text>Theme1CSS</text></textlist></item>
+<item name='$SubForm_RepIDs' sign='true'><textlist><text>0000000000000000</text><text
+>0000000000000000</text><text>0000000000000000</text><text>0000000000000000</text><text
+>0000000000000000</text><text>0000000000000000</text><text>0000000000000000</text><text
+>0000000000000000</text><text>0000000000000000</text><text>0000000000000000</text></textlist></item>
+<item name='$WindowTitle' sign='true'><formula>@Implode(@Trim(OccurrenceNumber:@Implode(@Trim(Given1:Given2:Given3:Surname);" "):"Supplementary Fraud Doc");" - ")</formula></item>
+<item name='$DesignerVersion'><text>8.5.3</text></item>
+<item name='$ConflictAction'><text>1</text></item>
+<item name='$Header'>
+<rawitemdata type='1'>
+jv8yAABIZWx2AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAkGAHwmV3wmUCw=
+</rawitemdata></item>
+<item name='$Script' summary='false' sign='true'><text>'++LotusScript Development Environment:2:5:(Options):0:74
+Option Public
+Option Explicit
+
+Use "RulesUI"
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Sub ComposeResponse (UseForm As String)
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+Public thisUI As NotesUIDocument
+'++LotusScript Development Environment:2:2:ComposeResponse:1:8
+Sub ComposeResponse (UseForm As String)
+     ' This routine forces field validation prior to saving the document and composing responses
+     ' This makes sure that inheritance works properly and the hierarchy is maintained
+	
+	If UseForm="" Then Exit Sub
+	Dim workspace As New NotesUIWorkspace
+	Dim uidoc As NotesUIDocument
+	
+	Set uidoc=workspace.currentdocument
+	On Error Goto processerror
+     ' the refresh method will force field validation prior to composing new documents but because
+     ' error handling is turned on LotusScript errors are suppressed
+	If uidoc.editmode=True Then
+		Call uidoc.refresh 
+		Call uidoc.Save
+	End If
+	Call workspace.ComposeDocument( "", "", UseForm )
+	Exit  Sub
+	
+processError: 
+	Exit Sub
+End Sub<break/></text></item>
+<item name='$$Script_O' sign='true'>
+<rawitemdata type='14'>
+AQAAAkxTT0IDABQIZW4AAAQAEACUAAQAAABAA1QCAAAAAAQAGABsAQAAAAAAALQARABkAPQBeAGA
+AAAAAAAAAAIAAAC0AMQAAAAAAAAAAAAAAAAAAAAAAAAAAADEAMQAAAAAAAAAAAAAAAAAAAAAALQA
+tAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAIAAAAkAGwBJAAkAAAAAABsAWwBAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAEABQBMb3R1cyBQcm9kdWN0AAAAVjAuMAAAAAAAAAAAAAAAAAAA
+AAAEAAAAlAAAAAAAAABAAwAAVAIAAAAAAAAAAAAAAQAAAAAAAAABAAAAAAAAAAEAAAAAAAAAAAAA
+AAQAAABXMzJJJQMAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAwBYAgAAAABQAB4AKABHAEwATwBCAEEATABTACkAUwBVAFAAUABMAEUATQBFAE4AVABBAFIA
+WQBGAFIAQQBVAEQARABPAEMAAAAAAJgAAwBOAEUAVwAAAKwABgBEAEUATABFAFQARQAAAAAA8AAK
+AEkATgBJAFQASQBBAEwASQBaAEUAAAAAAKABCQBUAEUAUgBNAEkATgBBAFQARQAAACgBBgBPAEIA
+SgBFAEMAVAAAAAAAyAAAAAAAAAAwAgcAUgB1AGwAZQBzAFUASQAAANwABwBSAFUATABFAFMAVQBJ
+AAAAPAEHAFUAUwBFAEYATwBSAE0AAAAEAQYAVABIAEkAUwBVAEkAAAAAAGABDwBOAE8AVABFAFMA
+VQBJAEQATwBDAFUATQBFAE4AVAAAAP//BgAlAEwAUwBYAFUASQAAAAAA1AEPAEMATwBNAFAATwBT
+AEUAUgBFAFMAUABPAE4AUwBFAAAADAIJAFcATwBSAEsAUwBQAEEAQwBFAAAAsAEQAE4ATwBUAEUA
+UwBVAEkAVwBPAFIASwBTAFAAQQBDAEUAAAAAAP//BQBVAEkARABPAEMAAAD//w8AQwBVAFIAUgBF
+AE4AVABEAE8AQwBVAE0ARQBOAFQAAAD//wwAUABSAE8AQwBFAFMAUwBFAFIAUgBPAFIAAAAAAP//
+CABFAEQASQBUAE0ATwBEAEUAAAAAACACBwBSAEUARgBSAEUAUwBIAAAA//8EAFMAQQBWAEUAAAAA
+AP//DwBDAE8ATQBQAE8AUwBFAEQATwBDAFUATQBFAE4AVAAAAAUARAMAAAAA0WScbhgAAAAAAMwA
+aFKqCgAAAAAAAAAAGgAAACwB//8AAAAAEAAAAGwBAAAIAQAAAAAAAAMAAACAAtgCAAAAANgC2AIA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACAAoACpAKkAgQVEyntLmkQv10A3QER
+hrcAAAAAAAAAAAAAAAAAAAAAZAAAAAAAAAAAAAAAAAAAAAIAGAAAAAAAAAAAAAoAAQD//wAAAwAQ
+AMQAAAD0AAkCAAAkAAgAEAAAAAAAQAEAAAAAAAADAAAAXAE8AgAAAABcAVwBAAAAAAAAAAAAAAAA
+AAAAAAAAAAA8AjwCAAAAAAAAAAAAAAAALAIsAgAAAAABAAAADwAAAAwAAAAYAAAAAQAAAEwCTAIA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAATAJMAgAAAAAAAAAAAwABACwC
+AADgAAYAAAAAABAAAAAAAAAAfAEAAAAAAAACAAAAXAIEAwAAAABcAlwCAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAABAMEAwAAAAAAAAAAAAAAAAAAAAACFRMp7S5pEL9dAN0BEYa3AAAAAAAAAAAAAAAA
+AAAAAGQAAAAAAAAAAAAAAAAAAAACABgA/AEAACQAAAAKAAEA//8AABIAFAAAAAAA//8JAgAAAAAA
+BgAAAABsARgA//8AAAAABAABAAAACQJsAQkCbAEZAAMAAgA8AgAAZAEJAgAAbAEDAAIAAAAAAKQB
+CQIEACQADQAIAAAAAADYAQAAiQAZABEAEAUEAwAAtAEJAuIFAAAAAAAAAAAAAAAAAAAAAAAAAAAk
+ABEAEASkAgAA+AEAAKUGAAAAAAAAAAAAAAAAAAAAAAAAAAAAABIAFADYAgAAEAIKAAAAAADYBgAA
+AAAkABgA//8AAAAABgAEAAAACgAJAiQAgACAAIAAGQASABQAAAAAACQCCgAAAAAA2QYAAAAAJAAY
+AP//AAAAAAMAAQAAAAoACQIkABIAFAAAAAAANAIJggAAAAD8BQAAAABsARgA//8AAAAACgAHAAAA
+CQIkAAkCbAGmCKYIpgiECIQIgAgZAAQAmAAAAAAAOgAAGgUA0rgAHQAAGhAASVwBfbAAsjgBABwa
+EQBeLAIrbAEkphoUAF48AkssAi1cAiOmGhUACwAACAAJOkoAGhgASzwCLYACI4K4OBoAGhkASzwC
+LKQCiwCLAIsAIxoaAEs8AizYAiMaGwAaHABLLAIsBAN9sAB9sABJXAGLBYsFiwAjMRodABwaHwAa
+IAAcGiEAHQIAAAARABQAAAAAAP//AQADAAYAAAAJAEABCwAKAAAA
+</rawitemdata></item>
+<item name='$$ScriptName' summary='false' sign='true'><text>SupplementaryFraudDoc</text></item>
+<item name='$$FormScript' summary='false' sign='true'><text>'++LotusScript Development Environment:2:5:(Options):0:66
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Sub Queryopen(Source As Notesuidocument, Mode As Integer, Isnewdoc As Variant, Continue As Variant)
+
+'++LotusScript Development Environment:2:5:(Declarations):0:2
+
+'++LotusScript Development Environment:2:2:BindEvents:1:129
+Private Sub BindEvents(Byval Objectname_ As String)
+     Static Source As NOTESUIDOCUMENT
+     Set Source = Bind(Objectname_)
+     On Event Queryopen From Source Call Queryopen
+End Sub
+
+'++LotusScript Development Environment:2:2:Queryopen:1:12
+Sub Queryopen(Source As Notesuidocument, Mode As Integer, Isnewdoc As Variant, Continue As Variant)
+     Set thisUI = Source
+End Sub<break/></text></item>
+<item name='$$$FormScript_O' sign='true'>
+<rawitemdata type='14'>
+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
+AAYAdAEIAOQBDwAKAAAA
+</rawitemdata></item>
+<item name='Form' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Type' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='IncidentType' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='CFDSUniqueID' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='AllowableAuthors' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='AdditionalAuthors' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Agency' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='OccurrenceNumber' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ReportingOfficer' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ReportingOfficerRank' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ReportingOfficerBadge' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ReportingOfficerDistrict' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ReportingOfficerPlatoon' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Surname' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Given1' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Given2' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Given3' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Alias' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Nee' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='HomePhone' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='BusinessPhone' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='BusinessExt' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='CellPhone' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Email' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='DOB' summary='false'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='Sex' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='MaritalStatus' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ApparentAge' summary='false'><number>0</number></item>
+<item name='Race' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='SIN' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='DLNumber' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='DLIssuedBy' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='CommercialDL' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='DLClass' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='DLDate' summary='false'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='Employer' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Occupation' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='AlternateID' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='KnownAssoc' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='CompanyName' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='CompanyPhone' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='CompanyFax' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='PExpiration' summary='false'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='Comments' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ApprovalStatus' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ApprovalHistory' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ComposedBy' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ComposedDateTime' summary='false'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='ViewColor' summary='false'><number>0</number></item>
+<item name='ViewDisplay' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ViewFlag' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FPropTagNum' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FStatus' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='DocSerNum' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='DocDate' summary='false'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='Amount' summary='false'><number>0</number></item>
+<item name='DrawnOn' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='DrawnOnStreetNumber' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='DrawnOnStreet' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='DrawnOnTownCity' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='DrawnOnProv' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='CompNameDoc' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='AccountNum' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='PayableTo' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='SignedByPayer' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='SignedByDrawer' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ParticOnRear' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='PortionSuspect' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='PortionCompl' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='PersonAccepting' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='RecFromCmpl' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Protected' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FPropFoundAt' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FSendToLab' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FB_IssuingBank' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FB_SerialNumber' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FB_FacePlateLetter' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FB_Denomination' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FB_FacePlateNumber' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FB_BackPlateNumber' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FB_Series' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='TempCheckInDateTime' summary='false'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='TempCheckInBy' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='TempCheckInLocationRoom' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='TempCheckInLocation' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FCheckInDateTime' summary='false'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='FCheckedInBy' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FCheckOutDateTime' summary='false'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='FCheckedOutBy' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FCheckedOutPurpose' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FCanRelProp' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FNoRelReasons' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FPropRelTo' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FPropRelToAddress' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FPropRelToHomePh' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FPropRelToBusPh' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FReleaseOfficer' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FReleaseOfficerBadge' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='FRelDateTime' summary='false'>
+<rawitemdata type='400'>
+AAAAAAAAAAA=
+</rawitemdata></item>
+<item name='$Fields'><textlist><text>FRelDateTime</text><text>FReleaseOfficerBadge</text><text
+>FReleaseOfficer</text><text>FPropRelToBusPh</text><text>FPropRelToHomePh</text><text
+>FPropRelToAddress</text><text>FPropRelTo</text><text>FNoRelReasons</text><text
+>FCanRelProp</text><text>FCheckedOutPurpose</text><text>FCheckedOutBy</text><text
+>FCheckOutDateTime</text><text>FCheckedInBy</text><text>FCheckInDateTime</text><text
+>TempCheckInLocation</text><text>TempCheckInLocationRoom</text><text>TempCheckInBy</text><text
+>TempCheckInDateTime</text><text>FB_Series</text><text>FB_BackPlateNumber</text><text
+>FB_FacePlateNumber</text><text>FB_Denomination</text><text>FB_FacePlateLetter</text><text
+>FB_SerialNumber</text><text>FB_IssuingBank</text><text>FSendToLab</text><text
+>FPropFoundAt</text><text>Protected</text><text>RecFromCmpl</text><text>PersonAccepting</text><text
+>PortionCompl</text><text>PortionSuspect</text><text>ParticOnRear</text><text
+>SignedByDrawer</text><text>SignedByPayer</text><text>PayableTo</text><text
+>AccountNum</text><text>CompNameDoc</text><text>DrawnOnProv</text><text>DrawnOnTownCity</text><text
+>DrawnOnStreet</text><text>DrawnOnStreetNumber</text><text>DrawnOn</text><text
+>Amount</text><text>DocDate</text><text>DocSerNum</text><text>FStatus</text><text
+>FPropTagNum</text><text>ViewFlag</text><text>ViewDisplay</text><text>ViewColor</text><text
+>ComposedDateTime</text><text>ComposedBy</text><text>ApprovalHistory</text><text
+>ApprovalStatus</text><text>Comments</text><text>PExpiration</text><text>CompanyFax</text><text
+>CompanyPhone</text><text>CompanyName</text><text>KnownAssoc</text><text>AlternateID</text><text
+>Occupation</text><text>Employer</text><text>DLDate</text><text>DLClass</text><text
+>CommercialDL</text><text>DLIssuedBy</text><text>DLNumber</text><text>SIN</text><text
+>Race</text><text>ApparentAge</text><text>MaritalStatus</text><text>Sex</text><text
+>DOB</text><text>Email</text><text>CellPhone</text><text>BusinessExt</text><text
+>BusinessPhone</text><text>HomePhone</text><text>Nee</text><text>Alias</text><text
+>Given3</text><text>Given2</text><text>Given1</text><text>Surname</text><text
+>ReportingOfficerPlatoon</text><text>ReportingOfficerDistrict</text><text
+>ReportingOfficerBadge</text><text>ReportingOfficerRank</text><text>ReportingOfficer</text><text
+>OccurrenceNumber</text><text>Agency</text><text>AdditionalAuthors</text><text
+>AllowableAuthors</text><text>CFDSUniqueID</text><text>IncidentType</text><text
+>Type</text><text>Form</text></textlist></item>
+<item name='$Body' sign='true'>
+<rawitemdata type='1'>
+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
+AQAACoECgv9aABQAAAAAAAAAAABACwAAoAUBAIwKAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAQEAAACUhEALEwCgBQkAAAAAAAEAAAAEAAAAgwQUAN0GAACF/4X/CAABAAII
+0ggBAP8AAADeBgAAhf/dBgAArf+t/7gADgAYAAAArACsAAEAKAALAElzV2ViQ2xpZW50AAEACwAk
+JFdlYkNsaWVudADnAHQCAwAHAAoAAwAJNlMAAABmAAUACwBJc1dlYkNsaWVudACvAE4AMADjAK8A
+JgAKAAEAAACuABwAAQAPAFJ1bGVzV2ViU3ViRm9ybQCuAAQAtQOuAB4AAQASAFJ1bGVzQ2xpZW50
+U3ViRm9yba4ABAC1AwMABwASAAwACTBSNFM4UzlTMTNTrgLeBgAArgCF/wgAAQAACoECgwQUAIX/
+CAABAAAKgQKC/1oAFQAAAAAAAAAAAKAFAACgBQAAAAAAAAAAnGSBAAAAALQQKAAwnAGDAAAAANwQ
+FQAwnAKDAAAAAPEQOQQBAAAAAJSEoAUJAKAFCQAAAAAAAQAAAAQAAAC7/zwAFQAYACL8pGNkvS4A
+AAAgAAEABgBWaWN0aW0FAAgAVHlwZUxpc3R0Ah4BAwAHAAwABQAJMFMwRQCDBBUAhf8IAAEAAArd
+BgAArf+t/xYDDgAYAAAACgMKAwcAigCEAFRoaXMgZm9ybXVsYSBkZXBhcnRzIGZyb20gdGhlIG5v
+cm0gc28gdGhhdCB0aGUgZnVuY3Rpb25hbGl0eSBvZiB0aGUgRmxhZ2dlZCBQZXJzb24gc3ViZm9y
+bSBjb3VsZCBiZSByb2xsZWQgb3V0IHRvIGV4aXN0aW5nIGRhdGFiYXNlcwcACgADAAkxUwAHAIgA
+gQBUaGUgTG9hZGVkU3ViZm9ybXMgZmllbGQgd2FzIGNvbXB1dGluZyB0b28gbGF0ZSB0byBnZXQg
+cGlja2VkIHVwIGJ5IHRoZSB1c3VhbCBmb3JtdWxhIHRoZXJlZm9yZSB0aGlzIGZvcm11bGEgZ29l
+cyBkaXJlY3RseSB0byB0aGUABwAMAAUACTBSMVMABwCmAKAAcHJvZmlsZSBkb2N1bWVudC4gSXQg
+YXNzdW1lcyB0aGF0IGlmIHRoZSBGbGFnZ2VkIFBlcnNvbiBzdWJmb3JtIGlzIGxpc3RlZCB0aGVu
+IGl0IHNob3VsZCBsb2FkLiBJdCdzIGlnbm9yaW5nIHRoZSBsb2FkIGZvcm11bGEgdGhhdCBtYXkg
+ZXhpc3QgaW4gdGhlIHJ1bGVzIGVuZ2luZQcADAAFAAkwUjFTAAcAhAB+AEFuIFNSIGhhcyBiZWVu
+IHN1Ym1pdHRlZCB0byBkZWFsIHdpdGggdGhlIGlzc3VlIG9mIHRoZSBMb2FkZWRTdWJmb3JtIGZp
+ZWxkIGNvbXB1dGluZyB0b28gbGF0ZSB0byBkbyBhbnkgZ29vZCBmb3IgZXhpc3RpbmcgZG9jcwcA
+DAAFAAkwUjFTAAEAQgADAFRtcAABABwAUGVyc29uL1Byb3BlcnR5IEZvcm0gUHJvZmlsZQEAEABM
+b2FkYWJsZVN1YmZvcm1z9wIDAAcACgAEAAkwUlIAAEgAAQAOAEZsYWdnZWQgUGVyc29uBQADAFRt
+cAB0Aq8AJAAYAAEADgBGbGFnZ2VkIFBlcnNvbq4ADAABAAAArgAEALUDAwAHAAoAAwAJMFIArgLe
+BgAArgCF/wgAAQEACIECgv9aABYAAAAAAAAAAACgBQAAoAUIANACoAVwCEALEA7gELATgBYAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAgQAAAACVhKAFCgCgBQoAAABkAAEAAAAEAAAAgwQWAIX/CAAB
+AAAK3QYAAK3/cf8uAAAAAAADABgADAAAAAAAAAAAAAAAAAAAAAAAAAAAAExvYWRDU1NUaGVtZa3/
+GQAOAAgAAAANAExvYWRDU1NUaGVtZQAArgLeBgAArgCF/wgAAQAACoECgv9aABcAAAAAAAAAAACg
+BQAAoAUIANACoAVwCEALEA7gELATgBYAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAACUhKAF
+CgCgBQoAAABkAAEAAAAEAAAAgwQXAIX/CAABAAAK
+</rawitemdata></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+i/8oAAEABSZBcmlhbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0cLwAAAAEAAQAAAAEDAAAA
+AAAABQEACRQAAAB5/2wAAQD39/cAAQAAAAAAAQAAAAAAAQDv7+8AAwAZAAAAAAAAAAAAAwAAAAAA
+AAAAAAAAAAAAADlAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAD8/zoAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAA
+AAAAAAAAvv8mAAAABQAAAJ0BAAALAAAAAAAAAENhdGVnb3JpX3plAAEATny+/ygAAAAFAAAAnQEA
+AA4AAAAAAAAAX0VkaXQgRG9jdW1lbnQCAAIKvv8oAAAABQAAAJ0BAAAOAAAAAAAAAFNlbmQgRG9j
+dV9tZW50AwADCr7/IgAAAAUAAACdAQAACAAAAAAAAABfRm9yd2FyZAQABAq+/ywAAAAFAAAAnQEA
+ABIAAAAAAAAAX01vdmUgVG8gRm9sZGVyLi4uBQA9fL7/LgAAAAUAAACdAQAAEwAAAAAAAABfUmVt
+b3ZlIEZyb20gRm9sZGVyAAYAPnw=
+</rawitemdata></item>
+<item name='$ACTIONS' sign='true'>
+<rawitemdata type='1'>
+vRwvAAAAAQABAAAAAQMAAAAAAAASAQAJFAAAAL7/JgAAAAUAAACdAQAACwAAAAAAAABDYXRlZ29y
+aV96ZXUBAE58vv8oAAAABQAAAJ0BAAAOAAAAAAAAAF9FZGl0IERvY3VtZW50AgACCr7/KAAAAAUA
+AACdAQAADgAAAAAAAABTZW5kIERvY3VfbWVudAMAAwq+/yIAAAAFAAAAnQEAAAgAAAAAAAAAX0Zv
+cndhcmQEAAQKvv8sAAAABQAAAJ0BAAASAAAAAAAAAF9Nb3ZlIFRvIEZvbGRlci4uLgUAPXy+/y4A
+AAAFAAAAnQEAABMAAAAAAAAAX1JlbW92ZSBGcm9tIEZvbGRlcmYGAD58
+</rawitemdata></item>
+<item name='$Flags'><text>C</text></item></note>
+

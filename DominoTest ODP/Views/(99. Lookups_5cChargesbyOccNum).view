@@ -1,0 +1,38 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='view' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='1466' unid='DC7EA8A6FBBCAA1A86257CB500640B1B' sequence='2'>
+<created><datetime dst='true'>20140409T131244,43-05</datetime></created>
+<modified><datetime dst='true'>20170316T154631,90-05</datetime></modified>
+<revised><datetime dst='true'>20140407T102401,26-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154631,89-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154631,89-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Doug Brammer/O=Teamhuber</name><name>CN=Andrew Thompson/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Doug Brammer/O=Teamhuber</name></wassignedby>
+<item name='$FormulaClass' sign='true'><text>1</text></item>
+<item name='$TITLE' sign='true'><text>(99. Lookups\ChargesbyOccNum)|ChargesbyOccNum</text></item>
+<item name='$Index' sign='true'><text/></item>
+<item name='$Formula' summary='true' sign='true'><formula compiled='true'>
+jAACACwAAgAkMgUABwBTdGF0dXRlAAEAAwA6ICAAIgIFAAYAY2hhcmdlIgIDAAUAKgAlAAMAEAAC
+AAkAT2NjdXJyZW5jZU51bWJlciQyJENvbmZsaWN0AAQABAAAACIABQAEAEZvcm0BAA0AS0lCUlMg
+T2ZmZW5zZQAKAgMABwAOAAgACUwxUzJTM1M=
+</formula></item>
+<item name='$Collation' summary='true'>
+<rawitemdata type='2'>
+HQABAABECGYHAAAQAE9jY3VycmVuY2VOdW1iZXI=
+</rawitemdata></item>
+<item name='$ViewFormat' summary='true' sign='true'>
+<rawitemdata type='5'>
+AQACAAMACgAAAFZDCwQQABAAAAAAACUAAQAACgABAAAAAAAAAAICAAAAVkMAAAIABgA6AAAAGAIB
+AAAKAAAAAAAAAAAAAgIAAABPY2N1cnJlbmNlTnVtYmVyT2NjdXJyZW5jZU51bWJlciQyQ2hhcmdl
+OgACACwAAgAkMgUABwBTdGF0dXRlAAEAAwA6ICAAIgIFAAYAY2hhcmdlIgIDAAcADAAFAAkxUzJT
+ACYAAQAAAAEBAAkBAAAKAQEOCgAAAQCtKwEAAQABAAAAAAAAAAAAV0MBAQAJAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAA//8AAAAAAAAAAAAAAAAAAFdDAQEACQAAAAAAAAAAAAAAAAAAAAAAAAQAAAAA
+AP//AAAAAAAAAAAAAAAAAABCABAAAAABAP///wAFAP///wABAAAAAAAAAAAAAAAAAAEA////AAEA
+////AAAAAQAAAAAAAQAAAAAAAQAAAAAAAAAIAAAAAAABAA==
+</rawitemdata></item>
+<item name='$Comment' sign='true'><text/></item>
+<item name='$DesignerVersion'><text>8.5.3</text></item>
+<item name='$Class'><text>Enterpol RMS Template</text></item>
+<item name='$Flags'><text>Y</text></item></note>
+

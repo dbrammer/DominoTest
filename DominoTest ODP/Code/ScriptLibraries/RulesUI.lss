@@ -1,0 +1,1013 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+' ** Rules Engine Library: RulesUI
+' ** Contains code and declarations necessary to support Client side Rules Engine functionality
+' ** Last Modification Date: 09/01/2000
+'
+' Use of this library and any code contained within is reserved for registered users of Enterpol/Enter InfoSystems products and/or licencees of the Enterpol Rules Engine
+' Any modification to this library will void Enterpol/Enter InfoSystems support agreements unless prior authorization is granted.
+
+Option Public
+Option Explicit
+
+Use "RulesEngine" 
+
+
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Sub Terminate
+Declare Public Sub ComposeMainDocument(FormName As String)
+Declare Public Function EventQuerySave() As Integer
+Declare Public Function ActionValidateDoc(doc As NotesDocument, EventCode As Integer) As Integer
+Declare Public Function CreateDocument(FormName As String, InheritUNID As String) As NotesDocument
+Declare Public Sub GetAppointmentDate(ui As NotesUIDocument)
+Declare Public Sub ReopenDocument(ui As NotesUIDocument, editmode As Integer)
+Declare Public Function SaveDocument(doc As NotesDocument) As Integer
+Declare Public Sub EventEnterField(ui As NotesUIDocument)
+Declare Public Function SelectReportPrint
+Declare Public Function SelectNewDocument(ui As NotesUIDocument) As Integer
+Declare Private Function AllowableFormNames(v As Variant) As String
+Declare Public Sub EventPostRecalc(ui As NotesUIDocument)
+Declare Public Sub EventExitField (ui As NotesUIDocument)
+Declare Private Function AlreadyOpen(doc As NotesDocument) As Integer
+Declare Public Function EventPostOpen(doc As NotesDocument) As Integer
+Declare Public Function ValidateField(doc As NotesDocument, FieldName As String, EventType As Integer) As Integer
+Declare Public Function EventQueryClose() As Integer
+Declare Public Function TranslateField(doc As NotesDocument, FieldName As String, EventType As Integer) As Integer
+Declare Public Function SaveUI(ui As NotesUIDocument, editmode As Integer) As Integer
+Declare Public Sub EventPostRecalcDoc(doc As NotesDocument)
+Declare Public Sub LoadDefaults()
+
+'++LotusScript Development Environment:2:5:(Declarations):0:2
+
+'++LotusScript Development Environment:2:2:Terminate:1:10
+Sub Terminate
+	
+End Sub
+
+
+
+'++LotusScript Development Environment:2:2:ComposeMainDocument:1:8
+Public Sub ComposeMainDocument(FormName As String)
+	
+	Dim doc As NotesDocument
+	Dim ws As New NotesUIWorkspace
+	
+	On Error Goto ErrCreate
+	Set doc = CreateDocument(FormName, "")     
+	If doc Is Nothing Then
+		gErrors.PrintMessages DEST_MSGBOX
+	Else
+		ws.EditDocument True, doc     
+	End If     
+	Exit Sub
+	
+ErrCreate:
+	
+	Msgbox Error
+	Exit Sub
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:EventQuerySave:1:8
+Public Function EventQuerySave() As Integer
+	
+End Function
+
+
+
+
+
+
+
+
+
+'++LotusScript Development Environment:2:1:ActionValidateDoc:1:8
+Public Function ActionValidateDoc(doc As NotesDocument, EventCode As Integer) As Integer
+	Dim t$, v
+	
+	ActionValidateDoc = True
+	giStopValidationEncountered = False
+	gErrors.ClearMessages
+	Forall fld In curFormInfo.Fields
+		If Not TranslateField(doc, fld.FieldName, EventCode) Then
+			ActionValidateDoc = False
+		End If
+	End Forall
+	
+	Forall fld In curFormInfo.Fields
+		If Not ValidateField(doc, fld.FieldName, EventCode) Then
+			ActionValidateDoc = False
+		End If
+		If giStopValidationEncountered Then ' Stop further evaluation @Stop() encountered
+			Exit Forall
+		End If
+	End Forall
+	
+End Function
+
+'++LotusScript Development Environment:2:1:CreateDocument:1:8
+Public Function CreateDocument(FormName As String, InheritUNID As String) As NotesDocument
+	
+	Dim startDoc As NotesDocument
+	Dim upDoc As NotesDocument
+	Dim ws As New NotesUIWorkspace
+	Dim oldFormInfo As FormInfo
+	Dim doc As NotesDocument
+	Dim v As Variant, i%
+	Dim t$
+	
+	On Error Goto ErrCreate
+	
+     ' Save the old Form Info so that we do not need to reload the rules for any existing document calling this routine
+	Set oldFormInfo = curFormInfo
+	
+	Set curFormInfo = New FormInfo(Nothing, FormName)
+	Set curFormInfo.UIWorkspace = ws
+	
+	gErrors.ClearMessages
+	With curFormInfo
+		If  .RulesLoaded Then
+			If InheritUNID = "" Then
+                    ' The user is probably attempting to create the document from a view category
+				If .Response Then
+					gErrors.AddMessage "No current document, a view category is currently selected.  Please select a document in the view and try again. "
+					Goto CloseCreate
+				End If
+			Else
+				On Error Resume Next
+				Set startDoc = .DB.GetDocumentByUNID(InheritUNID)
+				If startDoc Is Nothing Then
+					gErrors.AddMessage "Could not locate the document to inherit from."
+					Goto CloseCreate
+				Else                    
+					On Error Goto ErrCreate
+					If .Response Then
+						If .ResponseTo(0) = "" Then
+							gErrors.AddMessage "No parent document type(s) specified for this response.  Check the Form Info Document."
+							Set .Document = Nothing
+							Goto CloseCreate
+						Else
+							Set upDoc = FindUpstreamForm(startDoc, .ResponseTo)
+							If upDoc Is Nothing Then                                        
+								gErrors.AddMessage "Unable to find an allowable parent document." & Chr(10) _
+								& "Rules have been defined to ensure this document is only a response to " & AllowableFormNames(.ResponseTo) & " documents."
+								Set .Document = Nothing
+								Goto CloseCreate
+							Else
+								.Document.MakeResponse upDoc
+								.Document.ParentDocUNID = upDoc.UniversalID
+								Set .ParentDoc = upDoc
+							End If
+						End If
+					End If                         
+					If .Inherit Then
+						Set upDoc = FindUpstreamForm(startDoc, .InheritsFrom)
+						If Not upDoc Is Nothing Then
+							.Document.InheritedDocUNID = upDoc.UniversalID
+							Set .InheritFromDoc = upDoc
+						End If
+					End If
+				End If
+			End If
+			
+               ' Check and prompt for user loadable subforms
+			If curFormInfo.PromptSubForms And curFormInfo.UserLoadableSubforms(0) <> "" Then
+				.Document.UserLoadedSubForms = ""
+				If ws.DialogBox("SelectSubform", True, True, False, True, False, False, "Select Optional Sections", .Document) Then
+					v = .Document.UserLoadedSubforms
+					For i = 0 To Ubound(v)
+						curFormInfo.LoadSubForm(v(i))
+					Next
+				End If
+			End If
+			
+               ' Check to see if any optional subforms should be loaded
+			Forall sf In curFormInfo.LoadableSubForms
+				If sf.Formula <> "" Then
+					If ParseMacro(sf.Formula, curFormInfo.Document) Then
+						curFormInfo.LoadSubForm(sf.Name)                        
+					End If
+				End If
+			End Forall
+			
+               ' This field can be used in place of @IsNewDocument for Hide When formulas
+               ' @IsNewDoc always returns false because the back end document is opened first (NotesDocument.IsNewNote is ignored)
+			LoadDefaults
+			If .CreateMacro <> "" Then
+				v = ParseMacro(.CreateMacro, .Document)
+				If giCancelCreate Then
+					If gErrors.Count > 0 Then
+						gErrors.ErrorTitle = "Create New Document" 
+					End If
+					Goto CloseCreate
+				End If
+			End If               
+			.Document.RulesDefaultsLoaded = "Yes"               
+			Set CreateDocument = .Document
+		Else
+			gErrors.AddMessage "Unable to load the Rule Engine form information. (" & FormName & ")"
+		End If
+	End With
+	
+CloseCreate:
+	
+	Set curFormInfo = oldFormInfo
+	Exit Function
+	
+ErrCreate:
+	
+	gErrors.AddMessage Error & " during Create New " & curFormInfo.Description
+	Resume CloseCreate
+	
+End Function
+
+'++LotusScript Development Environment:2:2:GetAppointmentDate:1:8
+Public Sub GetAppointmentDate(ui As NotesUIDocument)
+	
+	Dim ws As New NotesUIWorkspace
+	
+	If ws.DialogBox("AppointmentDialog", True, True, False, True, False, False, "Appointment Date/Time", ui.Document) Then          
+		ui.Reload
+	End If
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:ReopenDocument:1:8
+Public Sub ReopenDocument(ui As NotesUIDocument, editmode As Integer)
+	
+	With ui.Document
+		.RulesRemainOpen = "1"
+		SaveUI ui, editmode
+	End With
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:SaveDocument:1:8
+Public Function SaveDocument(doc As NotesDocument) As Integer
+	
+	Dim ws As New NotesUIWorkspace
+	Dim thisUI As NotesUIDocument
+	Dim changed As Integer
+	Dim t$, curText$
+	Dim thisItem As NotesItem
+	
+	On Error Goto ErrSaveDocument
+	
+	SaveDocument = False
+	Set thisUI = ws.CurrentDocument
+	
+	With curFormInfo
+         ' Remove all the fields that are not to be saved
+		Forall fld In .Fields
+			If Not fld.Save Then                    
+				If doc.HasItem(fld.FieldName) Then
+					If Not Iselement(.DeleteFields(Lcase(fld.FieldName))) Then
+						.DeleteFields(Lcase(fld.FieldName)) = ""
+					End If
+				End If
+			End If
+		End Forall
+          ' Flag fields that are on RulesClientSubform for removal in QueryClose
+'          If Not Iselement(.DeleteFields("UserLoadableSubforms")) Then
+'               .DeleteFields("UserLoadableSubforms") = ""
+'          End If
+		If Not Iselement(.DeleteFields("UserLoadedSubforms")) Then
+			.DeleteFields("UserLoadedSubforms") = ""
+		End If
+		With doc
+			curFormInfo.RemainOpen = (.RulesRemainOpen(0) = "1")
+			curFormInfo.OpenMode = (.RulesOpenMode(0) = "1")
+               ' Remove all fields that are used by Rules Engine
+			.RemoveItem "RulesOpenMode"
+			.RemoveItem "RulesRemainOpen"
+			.RemoveItem "InheritedDocUNID"
+			.RemoveItem "ParentDocUNID"
+			.RemoveItem "RulesDefaultsLoaded"
+		End With
+		Forall item In doc.Items
+			If item.SaveToDisk Then
+				t = Lcase(item.Name)
+				If Left(t,1) <> "$" Then
+					If Iselement(.FieldText(t)) Then
+                              ' Notes bug work around - item is not always a complete NotesItem reference
+						Set thisItem = doc.GetFirstItem(item.Name)
+						If Iselement(curFormInfo.Fields(item.Name)) Then
+							If (curFormInfo.Fields(item.Name).FieldType And FIELD_TYPE_RICHTEXT) <> 0 Then
+                                       ' Need to go to UI Document for text
+								curText = thisUI.FieldGetText(item.Name)
+							Else                                   
+								If Isempty(thisItem.Text) Then
+									curText = ""
+								Else
+									curText = thisItem.Text
+								End If                                   
+							End If
+						Else
+							If Isempty(thisItem.Text) Then
+								curText = ""
+							Else
+								curText = thisItem.Text
+							End If                                   
+						End If
+						If .FieldText(t) <> curText Then
+							.ChangedFields(t) = curText
+							changed = True
+						End If
+					End If
+				End If
+			End If
+		End Forall
+          ' Audit document
+		If changed And .Audit Then
+			AuditDocument doc
+			' Modified for refreshing .FieldText values in curFormInfo for Field level Auditing (4/5/2004 - JLP)
+			GetFieldText doc
+		End If          
+	End With
+	
+	SaveDocument = True
+	Exit Function
+	
+ErrSaveDocument:
+	
+	gErrors.AddMessage Error & " during document save."
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:2:EventEnterField:1:8
+Public Sub EventEnterField(ui As NotesUIDocument)
+	Dim t$
+	
+	t = ui.CurrentField
+	If Not ui Is Nothing And Not curFormInfo Is Nothing Then
+		curFormInfo.CurrentField = t
+		If Iselement(curFormInfo.Fields(Lcase(t))) Then
+			t = curFormInfo.Fields(Lcase(t)).FieldHelp & " "
+		Else
+			t = " "
+		End If
+		Print t
+	End If
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:SelectReportPrint:1:8
+Public Function SelectReportPrint
+	Dim ws As New NotesUIWorkspace
+	Dim uiview As NotesUIView
+	Dim ns As New NotesSession
+	Dim db As NotesDatabase, rulesdb As NotesDatabase
+	Dim coll As NotesDocumentCollection
+	Dim doc As NotesDocument, counter As Integer, tempdoc As NotesDocument
+	Dim reportlist As String, agentlist List As String, formatlist As String
+	Dim agent As NotesAgent, IPTempDoc As NotesDocument, unid$
+	Dim rulesview As NotesView, rulesdoc As notesdocument
+	Dim vc As NotesViewEntryCollection, ipformatview As NotesView
+	Dim uidoc As NotesUIDocument
+	
+	counter = 0
+	unid$=""
+	
+	Set db = ns.CurrentDatabase
+	
+	Set uidoc = ws.CurrentDocument
+	If Not uidoc Is Nothing Then
+		If uidoc.WindowTitle = "DefaultLogo" Or uidoc.WindowTitle = "(Untitled)"  Then
+			Set coll  = db.UnprocessedDocuments
+			If coll.Count > 0 Then
+				Set doc = coll.GetFirstDocument
+				While Not doc Is Nothing
+					counter = 0
+					unid$ = unid$ + doc.NoteID + ";"
+					Set curFormInfo = New FormInfo(doc, doc.Form(0))
+					If Isarray(curFormInfo.AllowReport) Then
+						Forall report In curFormInfo.AllowReport
+							counter = counter + 1
+							If Iselement (agentlist$(report)) = False Then
+								reportlist = reportlist + report + ";"
+								agentlist$ (report) = curForminfo.AllowReportAgents(counter-1)
+							End If
+						End Forall
+					End If
+					Set doc = coll.GetNextDocument(doc)
+				Wend
+			Else
+				Msgbox "Document(s) not selected for reports to run on!"
+				Exit Function
+			End If
+		Else
+			Set doc = uidoc.Document
+			counter = 0
+			unid$ = unid$ + doc.NoteID + ";"
+			Set curFormInfo = New FormInfo(doc, doc.Form(0))
+			If Isarray(curFormInfo.AllowReport) Then
+				Forall report In curFormInfo.AllowReport
+					counter = counter + 1
+					If Iselement (agentlist$(report)) = False Then
+						reportlist = reportlist + report + ";"
+						agentlist$ (report) = curForminfo.AllowReportAgents(counter-1)
+					End If
+				End Forall
+			End If
+		End If
+	Else
+		Set coll  = db.UnprocessedDocuments
+		If coll.Count > 0 Then
+			Set doc = coll.GetFirstDocument
+			While Not doc Is Nothing
+				counter = 0
+				unid$ = unid$ + doc.NoteID + ";"
+				Set curFormInfo = New FormInfo(doc, doc.Form(0))
+				If Isarray(curFormInfo.AllowReport) Then
+					Forall report In curFormInfo.AllowReport
+						counter = counter + 1
+						If Iselement (agentlist$(report)) = False Then
+							reportlist = reportlist + report + ";"
+							agentlist$ (report) = curForminfo.AllowReportAgents(counter-1)
+						End If
+					End Forall
+				End If
+				Set doc = coll.GetNextDocument(doc)
+			Wend
+		Else
+			Msgbox "Document(s) not selected for reports to run on!"
+			Exit Function
+		End If
+	End If
+	
+	Set rulesview = db.GetView("(RulesControl)")
+	Set rulesdoc = rulesview.GetDocumentByKey("DatabaseProfile")
+	If Not rulesdoc Is Nothing Then
+		counter = 0
+		Forall report In rulesdoc.UbiquitousReports
+			counter = counter + 1
+			If Iselement (agentlist$(report)) = False Then
+				reportlist = reportlist + report + ";"
+				agentlist$ (report) = rulesdoc.UbiquitousReportAgents(counter-1)
+			End If
+		End Forall
+	End If
+	
+	' For Agencies customed designed forms in IntelliPRINT
+	Set ipformatview = db.GetView("(SelectCustomFormats)")
+	Set vc = ipformatview.AllEntries
+	If vc.Count >= 1 Then
+		reportlist = reportlist + "Custom Reports" + ";"
+		agentlist$ ("Custom Reports") = "(ReportCustomIPReports)"
+	End If 
+	
+	Set tempdoc = New NotesDocument(db)
+	Set IPTempDoc = New NotesDocument(db)
+	IPTempDoc.Form = "IPTemp"
+	Unid$ = Left$(Unid$,Len(Unid$)-1)
+	IPTempDoc.IDS = Unid$
+	Call IPTempDoc.ReplaceItemValue("$PublicAccess","1")
+	Call IPTempDoc.Save(False,False)
+	
+	tempdoc.SortedChoices=reportlist
+	
+	If ws.DialogBox("CreateReportDialog", True, True, False, False, False, False, "New Report", tempDoc, False, False, True)  Then
+		If tempdoc.reportlist(0) <> "" Then
+			Set agent = db.GetAgent(agentlist$(tempdoc.Reportlist(0)))
+			If Not agent Is Nothing Then
+				Call agent.Run(IPTempdoc.NoteID)
+			Else
+				Msgbox "Cannot find agent - " + agentlist$(tempdoc.Reportlist(0))
+			End If
+			
+			'4/17/06 - RBV - Added code to deselect all docs after printing.  CMSU SR 6KWQYH.  Also, will help avoid accidently deleting docs.
+			Set uiview = ws.CurrentView
+			If Not uiview Is Nothing Then
+				Call uiview.DeselectAll
+			End If
+			
+		Else
+			Msgbox "No report was selected!"
+		End If
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:SelectNewDocument:1:8
+Public Function SelectNewDocument(ui As NotesUIDocument) As Integer
+	
+	Dim ws As New NotesUIWorkspace
+	Dim ns As New NotesSession
+	Dim doc As NotesDocument
+	Dim tempDoc As NotesDocument
+	Dim form$, unid$, v, i%
+	
+	Set tempDoc = ns.CurrentDatabase.CreateDocument
+	
+	If ui Is Nothing Then
+		v = ""
+		ns.SetEnvironmentVar "CurrentDocUNID", v
+		On Error Resume Next
+		v = ws.DialogBox("RelatedDocsLoader", True, True, False, True, False, False, "Wait..")
+		
+		Doevents
+		unid = ns.GetEnvironmentString("CurrentDocUNID")
+		If Len(unid) = 32 Then
+			Set doc = ns.CurrentDatabase.GetDocumentByUNID(unid)
+			If Not doc Is Nothing Then
+				doc.CopyAllItems tempDoc
+			End If
+		Else
+                    ' No document was selected in the view
+                    ' Exit Function
+		End If
+		
+	Else
+		If curFormInfo.IsNewDoc Then
+			If Not SaveUI(ui, True) Then
+				Msgbox "You can not create a new document until the current document is validated and saved.",48, "Create New"
+				Exit Function                   
+			End If
+		End If          
+		ui.Document.CopyAllItems tempDoc
+		unid = ui.Document.UniversalID
+	End If
+	
+	On Error Goto ErrSelect
+	
+	If ws.DialogBox("NewDocumentDialog", True, True, False, True, True, False, "New Activity", tempDoc)  Then
+          ' Environment variable written out by NewDocumentDialog
+          ' This is required because this routine may be called from a view
+		v = ns.GetEnvironmentString("NewDocument")
+		If v <> "" Then
+			i = Instr(v, ",")
+			form = Left(v, i -1)
+		End If
+		Set doc = CreateDocument(form, unid)
+		If doc Is Nothing Then
+			If gErrors.count > 0 Then
+				gErrors.PrintMessages DEST_MSGBOX
+			End If
+		Else
+			ws.EditDocument True, doc
+			SelectNewDocument = True               
+		End If
+	End If
+	Exit Function
+	
+ErrSelect:
+	
+	If Err = 4416 Then
+		Msgbox "Unable to create a new document." & Chr(10) & "Either a category has been selected or there is no current document.", 48
+	Else
+		Msgbox Error, 48
+	End If
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:1:AllowableFormNames:1:8
+Private Function AllowableFormNames(v As Variant) As String
+	
+	Dim t$
+	Dim i%, posn%, bounds%
+	
+	bounds = Ubound(v)
+	
+	For i = 0 To bounds
+		If t <> "" Then
+			If i = bounds Then
+				If i > 1 Then
+					t = t & ","
+				End If
+				t = t & " or "
+			Else
+				t = t & ", "
+			End If
+		End If
+		posn = Instr(v(i), "|")
+		If posn > 0 Then
+			t = t & Left(v(i), posn - 1)
+		Else
+			t = t & v(i)
+		End If
+	Next
+	AllowableFormNames = t
+	
+End Function
+
+'++LotusScript Development Environment:2:2:EventPostRecalc:1:8
+Public Sub EventPostRecalc(ui As NotesUIDocument)
+	Dim doc As NotesDocument
+	Dim reload%, v1, v2
+	Dim fldItem As NotesItem
+	
+	If curFormInfo Is Nothing Then
+		Exit Sub
+	End If
+	Set doc = ui.Document
+	reload = False
+	Forall fld In curFormInfo.Fields
+		If (fld.FieldType And FIELD_TYPE_COMPUTED) And Not (fld.FieldType And FIELD_TYPE_RICHTEXT) Then
+			If fld.Default <> "" Then
+				v1 = ParseMacro(fld.Default, doc)
+				v2 = doc.GetItemValue(fld.FieldName)
+				If Not CompareVariants(v1, v2) Then
+					doc.ReplaceItemValue fld.FieldName, v1
+					reload = True
+				End If
+			End If
+			If (fld.FieldType And FIELD_TYPE_AUTHORS) Then
+				Set fldItem = doc.GetFirstItem(fld.FieldName)
+				If Not fldItem Is Nothing Then
+					fldItem.IsAuthors = True
+				End If
+				reload = True
+			End If
+		End If
+		
+	End Forall
+	
+End Sub
+
+
+'++LotusScript Development Environment:2:2:EventExitField:1:8
+Public Sub EventExitField (ui As NotesUIDocument)
+	Dim  t$, reload%, v, fieldname$
+	Dim doc As NotesDocument
+	Dim tempDoc As NotesDocument
+	Static alreadyRunning%
+	
+	
+	Set doc = ui.Document
+	Set tempDoc = doc.ParentDatabase.CreateDocument     
+	
+	If curFormInfo Is Nothing Then
+		Exit Sub
+	End If
+	
+     ' Prevent reentrance
+	If alreadyRunning Then Exit Sub     
+	alreadyRunning = True
+	fieldname = curFormInfo.CurrentField
+	
+	If Not ui Is Nothing And fieldname <> "" Then
+		If Iselement(curFormInfo.Fields(Lcase(fieldname))) Then
+			With curFormInfo.Fields(Lcase(fieldname))
+				gErrors.ClearMessages
+				reload = False
+                    ' Do field translation
+				If TranslateField(doc, .FieldName, EXIT_EVENT) Then
+					reload = True
+				End If      
+				If reload Then
+					ui.Reload
+					ui.Refresh
+				End If
+				If gErrors.Count > 0 Then
+					gErrors.PrintMessages 2
+				End If
+				gErrors.ClearMessages
+                    ' Do validation
+				curFormInfo.CurrentActivity = RULES_VALIDATE
+				If Not ValidateField(doc, .FieldName, EXIT_EVENT) Then
+					If gErrors.Count > 0 Then
+						gErrors.PrintMessages 2
+					Else
+						Msgbox "Error validating " & .Description
+					End If
+					ui.GotoField fieldname
+					Goto ExitEvent
+				End If
+			End With
+		End If
+	End If
+	
+     ' Clear field help
+	Print " "
+	
+ExitEvent:
+	
+	Doevents
+	alreadyRunning = False
+	Exit Sub
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:AlreadyOpen:1:8
+Private Function AlreadyOpen(doc As NotesDocument) As Integer
+	
+	AlreadyOpen = False
+	If doc.IsUIDocOpen Then
+		Msgbox "The requested document is already open.  Use the Windows menu to switch to the document.", 48, "Goto Next"
+		AlreadyOpen = True
+	End If         
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:EventPostOpen:1:8
+Public Function EventPostOpen(doc As NotesDocument) As Integer
+	
+	Dim unid$
+	Dim ws As New NotesUIWorkspace
+	
+	EventPostOpen = False
+	
+	Set curFormInfo = New FormInfo(doc, doc.Form(0))
+	Set curFormInfo.UIWorkspace = ws
+	
+	With curFormInfo
+          ' Check to see if any optional subforms should be loaded
+		Forall sf In .LoadableSubForms
+			If sf.Formula <> "" Then
+				If ParseMacro(sf.Formula, .Document) Then
+					.LoadSubForm(sf.Name)
+				End If
+			End If
+		End Forall
+		If .RulesLoaded Then
+          ' Check to see if defaults have already been loaded on the backend document
+          ' This also indicates that this is a new document
+			If .Document.RulesDefaultsLoaded(0) = "" Then
+                    ' This document may have been created with an @Command([Compose]) or from the menu
+				unid = doc.InheritDocUNID(0)
+				If unid <> "" Then
+					Set .InheritFromDoc = .DB.GetDocumentByUNID(unid)
+				End If
+				unid = doc.ParentDocUNID(0)
+				If unid <> "" Then
+					Set .ParentDoc = .DB.GetDocumentByUNID(unid)
+				Else
+                         '****** RBV 6/29/2001 *** Added this to stop ParentDoc from being set to blank if inheritFromDoc is blank.
+                         '  Was causing problems with Registration documents.
+					If Not (.inheritFromDoc Is Nothing) Then
+						Set .ParentDoc = .InheritFromDoc
+					End If
+				End If                
+				
+				LoadDefaults
+			Else
+				.IsNewDoc = True
+			End If
+		Else
+			gErrors.AddMessage "Unable to open rules profile for " & doc.Form(0)
+			Exit Function
+		End If
+	End With
+	
+	EventPostOpen = True
+	
+End Function
+
+'++LotusScript Development Environment:2:1:ValidateField:1:8
+Public Function ValidateField(doc As NotesDocument, FieldName As String, EventType As Integer) As Integer
+	Dim i%, v As Variant, t$
+	
+	On Error Goto ErrValidate     
+	ValidateField = False
+	With curFormInfo
+		.CurrentActivity = RULES_VALIDATE
+		.CurrentField = FieldName
+		With curFormInfo.Fields(Lcase$(FieldName))
+               ' Check data type first
+			If (.FieldType And FIELD_TYPE_RICHTEXT) = 0  And ((.SVDuring And EventType) > 0 Or (.CVDuring And EventType) > 0) Then
+				v = doc.GetItemValue(FieldName)
+				If Not Isarray(v) Then
+                         ' Document item will not have any values if the data type is incorrect
+					If (.FieldType And FIELD_TYPE_NUMERIC) Then
+						gErrors.AddMessage .Description & " must be numeric."
+						Exit Function
+					End If
+					If (.FieldType And FIELD_TYPE_TIME) Then
+						gErrors.AddMessage .Description & " must be a valid date."
+						Exit Function
+					End If
+				End If
+				For i = 0 To Ubound(v)
+					Select Case True
+					Case (.FieldType And FIELD_TYPE_NUMERIC) <> 0
+						If Not Isnumeric(v(i)) And v(i) <> "" Then
+							gErrors.AddMessage .Description & " must be numeric."
+							Exit Function
+						End If
+					Case (.FieldType And FIELD_TYPE_TIME) <> 0
+						If Not Isdate(v(i)) And v(i) <> "" Then
+							gErrors.AddMessage .Description & " must be a valid date/time."
+							Exit Function
+						End If
+					End Select
+				Next
+			End If
+			If .SValidation <> "" And (.SVDuring And EventType) > 0 Then
+				v = ParseMacro(.SValidation, doc)
+				If Isarray(v) Then
+					If Isnumeric(v(0)) Then
+						If Not v(0) Then
+							Exit Function
+						End If                 
+					End If
+				End If
+			End If
+			If .CValidation <> "" And (.CVDuring And EventType) > 0 Then
+				v = ParseMacro(.CValidation, doc)
+				If Isarray(v) Then
+					If Isnumeric(v(0)) Then
+						If Not v(0) Then
+							Exit Function
+						Else
+                                   ' Clear error messages if an @Stop was encountered and it returns True
+							If giStopValidationEncountered Then
+								gErrors.ClearMessages
+							End If
+						End If
+					End If
+				End If
+			End If
+		End With
+		ValidateField = True
+	End With
+	
+CloseValidate:
+	
+	curFormInfo.CurrentActivity = 0
+	Exit Function
+	
+ErrValidate:
+	
+	gErrors.AddMessage "Rules Engine Error during field validation"
+	Resume CloseValidate
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EventQueryClose:1:8
+Public Function EventQueryClose() As Integer
+     ' Only set return value to false if document is NOT to be closed
+	
+	EventQueryClose = True
+	
+End Function
+
+'++LotusScript Development Environment:2:1:TranslateField:1:8
+Public Function TranslateField(doc As NotesDocument, FieldName As String, EventType As Integer) As Integer
+	
+	Dim i%, t$
+	Dim newV As Variant, oldV As Variant
+	
+	On Error Goto ErrTranslate
+	With curFormInfo
+		.CurrentField = FieldName
+		.CurrentActivity = RULES_TRANSLATE
+		With .Fields(Lcase$(FieldName))
+               ' Check data type first
+			If (.FieldType And FIELD_TYPE_RICHTEXT)  = 0 And ((.STDuring And EventType) > 0 Or (.CTDuring And EventType) > 0) Then
+				oldV = doc.GetItemValue(FieldName)
+				If Not Isarray(oldV) Then
+                         ' Document item will not have any values if the data type is incorrect
+					If (.FieldType And FIELD_TYPE_NUMERIC) Then
+						gErrors.AddMessage .Description & " must be numeric."
+						Exit Function
+					End If
+					If (.FieldType And FIELD_TYPE_TIME) Then
+						gErrors.AddMessage .Description & " must be a valid date."
+						Exit Function
+					End If
+				End If
+				If .STranslation <> "" And (.STDuring And EventType) > 0 Then
+					newV = ParseMacro(.STranslation, doc)
+					If Not CompareVariants(oldV, newV) Then
+						doc.ReplaceItemValue FieldName, newV
+						oldV = newV
+					End If
+					TranslateField = True
+				End If
+				If .CTranslation <> "" And (.CTDuring And EventType) > 0 Then
+					newV = ParseMacro(.CTranslation, doc)
+					If Not CompareVariants(oldV, newV) Then
+						doc.ReplaceItemValue FieldName, newV
+					End If
+					TranslateField = True
+				End If
+			Else
+                    'Changed the following line from TRUE to FALSE to keep the Rules engine from forcin a refresh when no translation is performed - RBV 6/6/2001
+				TranslateField = False
+                     'Changed the following line back - RBV 9/23/2003
+                    'See service request 3TI-MBU
+				TranslateField = True
+			End If
+		End With          
+	End With
+	
+CloseTranslate:
+	
+	curFormInfo.CurrentActivity = 0
+	Exit Function
+	
+ErrTranslate:
+	
+	gErrors.AddMessage "Rules Engine Error during field translation"
+	Resume CloseTranslate
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:SaveUI:1:8
+Public Function SaveUI(ui As NotesUIDocument, editmode As Integer) As Integer
+	
+	Dim ws As New NotesUIWorkspace          
+	On Error Goto ErrSaveUI
+	
+	If editmode Then
+		ui.Document.RulesOpenMode = "1"
+	Else
+		ui.Document.RulesOpenMode = "0"
+	End If     
+	
+	ui.Save
+	SaveUI = True
+	Exit Function
+	
+ErrSaveUI:
+	
+	Exit Function
+	
+End Function
+
+
+'++LotusScript Development Environment:2:2:EventPostRecalcDoc:1:8
+Public Sub EventPostRecalcDoc(doc As NotesDocument)
+	Dim reload%, v1, v2
+	Dim fldItem As NotesItem
+	
+	If curFormInfo Is Nothing Then
+		Exit Sub
+	End If
+	reload = False
+	ForAll fld In curFormInfo.Fields
+		If (fld.FieldType And FIELD_TYPE_COMPUTED) And Not (fld.FieldType And FIELD_TYPE_RICHTEXT) Then
+			If fld.Default <> "" Then
+				v1 = ParseMacro(fld.Default, doc)
+				v2 = doc.GetItemValue(fld.FieldName)
+				If Not CompareVariants(v1, v2) Then
+					doc.ReplaceItemValue fld.FieldName, v1
+					reload = True
+				End If
+			End If
+			If (fld.FieldType And FIELD_TYPE_AUTHORS) Then
+				Set fldItem = doc.GetFirstItem(fld.FieldName)
+				If Not fldItem Is Nothing Then
+					fldItem.IsAuthors = True
+				End If
+				reload = True
+			End If
+		End If
+	End ForAll
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:LoadDefaults:1:8
+Public Sub LoadDefaults()
+	
+	Dim item As NotesItem
+	Dim mode As Integer
+	Dim tRange As NotesDateRange
+	Dim v, t
+	Dim ns As New NotesSession
+	
+	With curFormInfo
+		.CurrentActivity = RULES_DEFAULT
+		Forall fld In .Fields
+			If Not (fld.Save And .Document.HasItem(fld.FieldName)) Or .Document.IsNewNote Then
+				If fld.Default <> "" Then
+					v = ParseMacro(fld.Default, .Document)
+					If (fld.FieldType And FIELD_TYPE_TIME) > 0 Then                              
+						If Ubound(v) = 0 Then
+							.Document.ReplaceItemValue fld.FieldName, v  
+						Else
+                                   ' Date Range?
+							If Isdate(v(0)) And Isdate(v(1)) Then
+								Set item = .Document.GetFirstItem(fld.FieldName)
+								If item Is Nothing Then
+									Set item = New NotesItem(.Document, fld.FieldName, Now)
+								End If
+								Set tRange = ns.CreateDateRange
+								t = Format(Datevalue(v(0)), "Short Date") & " " & Format(v(0), "h:nn:ss AMPM")
+								t = t & " - " & Format(Datevalue(v(1)), "Short Date") & " " & Format(v(1), "h:nn:ss AMPM")
+								tRange.Text = t
+								Set item.Values = tRange
+							Else
+								.Document.ReplaceItemValue fld.FieldName, v  
+							End If                                   
+						End If
+					Elseif (fld.FieldType And FIELD_TYPE_RICHTEXT) > 0 Then
+						If Isarray(v) Then
+							.Document.ReplaceItemValue fld.FieldName, v
+						End If
+					ElseIf (fld.FieldType And FIELD_TYPE_AUTHORS) > 0 Then
+						.Document.ReplaceItemValue fld.FieldName, v
+						.Document.GetFirstItem(fld.FieldName).IsAuthors = True
+					Else                                          
+						.Document.ReplaceItemValue fld.FieldName, v
+					End If                         
+				End If
+			End If
+		End Forall
+	End With
+	
+End Sub

@@ -1,0 +1,49 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='filter' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='3a6' unid='64721037473B013C86257BA5006857E9' sequence='3'>
+<created><datetime dst='true'>20130711T135942,49-05</datetime></created>
+<modified><datetime dst='true'>20170316T154339,36-05</datetime></modified>
+<revised><datetime dst='true'>20070709T115247,11-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154339,35-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154339,35-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Brian Henry/O=Enterpol</name><name>CN=Ed Funk/O=Teamhuber</name><name
+>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name='$TITLE' sign='true'><text>Manually Set Occurrence Number</text></item>
+<item name='$Formula' sign='true'><formula>Number:=@Prompt([OkCancelEdit];"Set Occurrence Number";"Enter the number";@Right(@Text(@Year(@Today));2)+"-");
+@Environment("ManuallySetOccNum";Number);
+@Command([ToolsRunMacro];"(Apply Occurrence Number)"); @All</formula></item>
+<item name='$Type'><text>3</text></item>
+<item name='$Operation'><text>0</text></item>
+<item name='$Scan'><text>3</text></item>
+<item name='$LeftToDo' summary='true'>
+<rawitemdata type='3'>
+BgAAAgAAAwCiAwAABAAAAAAAAAABAAAAAAAAAAAAd5t2AJxoJYWhPW0AMWUlhUdPTEEAAAAAAAAA
+AMwAAABTdGFydGVkIHJ1bm5pbmcgYWdlbnQgJ01hbnVhbGx5IFNldCBPY2N1cnJlbmNlIE51bWJl
+cicgb24gMDMvMDgvMjAwMCAwNDozNjozMiBQTQ0KMSBkb2N1bWVudChzKSB3ZXJlIG1vZGlmaWVk
+IGJ5IGZvcm11bGENCkRvbmUgcnVubmluZyBhZ2VudCAnTWFudWFsbHkgU2V0IE9jY3VycmVuY2Ug
+TnVtYmVyJyBvbiAwMy8wOC8yMDAwIDA0OjM2OjM4IFBNDQoADQqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+qqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqqq
+</rawitemdata></item>
+<item name='$AssistVersion'><datetime dst='true'>20070709T115320,21-05</datetime></item>
+<item name='$Flags'><text/></item>
+<item name='$POID'><datetime dst='true'>20070709T115247,11-05</datetime></item></note>
+

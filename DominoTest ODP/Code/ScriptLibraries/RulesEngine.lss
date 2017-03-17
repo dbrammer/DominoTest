@@ -1,0 +1,2335 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+Option Public
+Option Explicit
+
+Use "RulesGlobal"
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Sub Terminate
+Declare Sub ProcessFunctionTokens(doc As NotesDocument, FieldName As String)
+Declare Private Function EvaluateText(params As Variant, doc As NotesDocument) As Variant
+Declare Private Function EvaluateDate(params As Variant, doc As NotesDocument) As Variant
+Declare Private Function EvaluateSoundex(params As Variant, doc As NotesDocument)
+Declare Sub ProcessTokens(doc As NotesDocument, customformdocid As String)
+Declare Public Function ExecuteFunction(cmd$, params As Variant,doc As NotesDocument, tempDoc As NotesDocument) As Variant
+Declare Private Function CheckParams(params, count%, module$) As Integer
+Declare Private Function GetPhrase(txt As String, posn%) As String
+Declare Private Function EvaluateUserName() As Variant
+Declare Private Function EvaluateDBLookup(params As Variant, doc As NotesDocument) As Variant
+Declare Private Function EvaluateSum(params As Variant, doc As NotesDocument) As Variant
+Declare Private Function EvaluateImplode(params, doc As NotesDocument) As Variant
+Declare Private Function EvaluateSubstring(cmd As String, params As Variant, doc As NotesDocument) As Variant
+Declare Public Sub GetParams(Byval txt$, vars As Variant, doc As NotesDocument, eval%)
+Declare Private Function HasParams(params As Variant) As Integer
+Declare Private Function EvaluateWord(params As Variant, doc As NotesDocument) As Variant
+Declare Public Function PerformCompare(v1, v2, op$)
+Declare Private Function EvaluateName(params As Variant, doc As NotesDocument) As Variant     
+Declare Private Function GetResponseFieldValues(doc As NotesDocument, fieldNames As Variant, formNames As Variant) As Variant
+Declare Private Function EvaluateTime(params As Variant, doc As NotesDocument) As Variant
+Declare Private Function EvaluateAdjust(params As Variant, doc As NotesDocument) As Variant
+Declare Private Function EvaluateExplode(params As Variant, doc As NotesDocument) As Variant
+Declare Private Function PerformMath(val1, val2, op As String, doc As NotesDocument) As Variant
+Declare Private Function SingleValue(var As Variant) As Variant
+Declare Private Function EvaluateUnique(params As Variant, doc As NotesDocument)
+Declare Public Function CheckSyntax(macro As String) As Integer
+Declare Private Function EvaluateDBColumn(params As Variant, doc As notesdocument) As Variant
+Declare Private Function EvaluateIf(params, doc As NotesDocument) As Variant
+Declare Private Function EvaluateUserRoles() As Variant
+Declare Private Function EvaluateProperCase(Byval txt As String) As Variant
+Declare Public Function ParseMacro(txt As String, doc As NotesDocument) As Variant
+Declare Private Function EvaluateMatches(params As Variant, doc As NotesDocument) As Variant
+Declare Private Function EvaluateTrim(params As Variant, doc As NotesDocument) As Variant
+Declare Private Function EvaluateSubset(params As Variant, doc As NotesDocument) As Variant
+Declare Private Function EvaluateReplace(params As Variant, doc As NotesDocument)     
+Declare Private Function EvaluateIsMember(params As Variant, doc As NotesDocument) As Variant
+Declare Private Function EvaluatePrompt(params As Variant) As Variant
+Declare Function RetrieveXMLNode(dbserver As String, dbpath As String, UniversalID As String, Tag As String, Instance As Integer) As String
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+'RulesEngine:
+
+' ** Rules Engine Library: RulesEngine
+' ** Contains code and declarations necessary to support Web and Client side Rules Engine functionality
+' ** Last Modification Date: 09/01/2000
+'
+' Use of this library and any code contained within is reserved for registered users of Enterpol/Enter InfoSystems products and/or licencees of the Enterpol Rules Engine
+' Any modification to this library will void Enterpol/Enter InfoSystems support agreements unless prior authorization is granted.
+
+
+
+'++LotusScript Development Environment:2:2:Terminate:1:10
+Sub Terminate
+	
+	Set curFormInfo = Nothing
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:ProcessFunctionTokens:1:8
+Sub ProcessFunctionTokens(doc As NotesDocument, FieldName As String)
+	'Look for embedded [FUNCTION...] tokens and perform substitution in the DXL version of the doc
+	Dim StrTmp As String
+	Dim IntTmp As Integer
+	Dim session As New NotesSession
+	Dim filename As String
+	Dim stream As NotesStream
+	Dim exporter As NotesDXLExporter
+	Dim DXLDoc As String
+	Dim v As Variant
+	Dim result As String
+	Dim BeginStr As String
+	Dim EndStr As String
+	
+	On Error Goto Errhandle
+	
+	'Const XSLTStr = "" _
+	'&		|<xsl:stylesheet version="1.0" xmlns:xsl="http://www.w3.org/1999/XSL/Transform">| '
+	'&		|		<xsl:template match="/">| _
+	'&		|			<xsl:apply-templates/>| _
+	'&		|		</xsl:template>| _
+	'&		|		<xsl:template match="document">| _
+	'&		|			<xsl:attribute name="form">| _
+	'&		|				<xsl:text>IPTemp</xsl:text>| _
+	'&		|					</xsl:attribute>| _
+	'&		|				<xsl:apply-templates/>| '
+	'&		|				</xsl:template>| _
+	'&		|</xsl:stylesheet>|
+	
+	  REM Export document as DXL
+	Set stream = session.CreateStream
+	Set exporter = session.CreateDXLExporter
+	Call exporter.SetInput(doc)
+	Call exporter.SetOutput(stream)
+	exporter.OutputDOCTYPE = False 
+	Call exporter.Process
+	
+	' sets variable = dxl document
+	DXLDoc = stream.ReadText
+	'Print DXLDoc
+	
+	' Loop to find all tokens in rich text
+	Dim tokenSearch() As String
+	Dim searchloop As Integer
+	Dim tokenList List As String
+	Dim replaceStr As String, token As String, formula As String
+	Dim startpos As Integer, endpos As Integer, i As Integer, count As Integer, j As Integer
+	
+	searchloop = 1
+	startpos = 1
+	endpos = 1
+	startpos = Instr(startpos, DXLDoc, "[FUNCTION_")
+	
+	If startpos = 0 Then
+		' no function tokens to process so we are done
+		Exit Sub
+	Else
+		While Not startpos = 0
+			endpos = Instr(startpos + 1, DXLDoc, "]")
+			If endpos <> 0 Then
+				Redim Preserve tokenSearch(searchloop)
+				tokenSearch(searchloop) = Mid(DXLDoc, startpos, endpos - startpos + 1)
+				searchloop = searchloop + 1
+			End If
+			startpos = Instr(startpos + 1, DXLDoc, "[FUNCTION_")
+		Wend
+	End If
+	
+	' Loop through tokens
+	For i = 1 To Ubound(tokenSearch)
+		token = tokenSearch(i)
+		' get rid of brackets
+		token = Left(token,Len(token)-1)
+		token = Right(token,Len(token)-1)
+		
+		IntTmp=Instr(token, ";")
+		StrTmp=Left(token,IntTmp-1)
+		
+		
+		' Result
+		If StrTmp <> "" Then
+			
+			Select Case StrTmp
+			Case "FUNCTION_DXLReplace"
+				v = Split(token,";")
+				result = RetrieveXMLNode(v(1), v(2), v(3), v(4), Cint(v(5)))
+				BeginStr = Left(DXLDoc, Instr(DXLDoc,token)-2)
+				EndStr = Right(DXLDoc, Len(DXLDoc)-(Instr(DXLDoc,token)+Len(token)))
+				
+				' Build new DXL doc
+				DXLDoc = BeginStr + result + EndStr
+				
+			Case Else
+				
+			End Select
+			
+		End If
+		
+		
+	Next
+	
+	' change the form name and get rid of the response information. Single quotes in xml yet doc renders in browser with double quotes.
+	StrTmp = |form='Custom Form' parent=|
+	BeginStr = Left(DXLDoc, Instr(DXLDoc,StrTmp)-1)
+	StrTmp = |<noteinfo noteid=|
+	EndStr = Right(DXLDoc, Len(DXLDoc)-(Instr(DXLDoc,StrTmp))+1)
+	DXLDoc = BeginStr + |form='IPTemp'>| + EndStr
+	'Print DXLDoc
+	
+	'Import DXL
+	Dim importer As NotesDXLImporter
+	
+	REM Open xml file named after current database
+	'Call stream.Close
+	'filename = "c:\" & Format(Now,"HHMMSS")  & "_doc.xml"
+	'If Not stream.Open(filename) Then
+	'	Messagebox "Cannot open " & filename,, "Error"
+	'	Exit Sub
+	'End If
+	
+	Call stream.Truncate
+	Call stream.WriteText(DXLDoc)
+	
+	'Dim transformer As NotesXSLTransformer
+	'Dim XSLTStream As NotesStream
+	'Set XSLTStream  = session.CreateStream
+	'XSLTStream.WriteText XSLTStr
+	'Set transformer=session.CreateXSLTransformer(stream, XSLTStream, stream)
+	'Call transformer.Process
+	
+	StrTmp = stream.ReadText
+	'Print StrTmp
+	
+	Set importer = session.CreateDXLImporter(stream, session.CurrentDatabase)
+	Call importer.Process
+	
+	Dim NewDoc As NotesDocument
+	Dim rtitem As NotesRichTextItem
+	
+	StrTmp = importer.GetFirstImportedNoteId
+	Set NewDoc = session.CurrentDatabase.GetDocumentByID(StrTmp)
+	Set rtitem = NewDoc.GetFirstItem("SupplementaryInfo")
+	Call doc.RemoveItem("SupplementaryInfo")
+	
+	Call rtitem.CopyItemToDocument( doc, "" )
+	
+	Exit Sub
+	
+Errhandle:    
+   ' Use the Err function to return the error number and 
+   ' the Error$ function to return the error message.
+	' err 4601 is raised when there is an attachment in the rich text field. I researched the issue and it appears that when an attachment is present 
+	' Notes wants the doc to be saved prior to running it through the DXL processor. It should be up to the user to save the doc (or not) so I will suppress the error
+	' since tokens and attachments aren't likely to be mixed in a custom form. Brian henry April 2011.
+	
+	If Not Err = 4601 Then
+		Messagebox "Error" & Str(Err) & ": " & Error$
+	End If
+	
+	Exit Sub
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:EvaluateText:1:8
+Private Function EvaluateText(params As Variant, doc As NotesDocument) As Variant
+	Dim vals As Variant
+	
+	Const txt1 = "@Text(tVar1)"
+	Const txt2 = "@Text(tVar1; tVar2)"
+	doc.ReplaceItemValue "tVar1", params(0)
+	If Ubound(params) = 0 Then
+		vals = Evaluate(txt1, doc)
+	Else
+		doc.ReplaceItemValue "tVar2", params(1)
+		vals = Evaluate(txt2, doc)
+	End If
+	EvaluateText = vals
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:EvaluateDate:1:8
+Private Function EvaluateDate(params As Variant, doc As NotesDocument) As Variant
+	Dim vals As Variant
+	Const txt1 = "@Date(tVar1; tVar2; tVar3)"
+	Const txt2 = "@Date(tVar1)"
+	
+	If Ubound(params) = 0 Then
+		doc.ReplaceItemValue "tVar1", params(0)
+		vals = Evaluate(txt2, doc)
+	Elseif CheckParams(params,2, "@Date") Then
+		doc.ReplaceItemValue "tVar1", params(0)
+		doc.ReplaceItemValue "tVar2", params(1)
+		doc.ReplaceItemValue "tVar3", params(2)
+		vals = Evaluate(txt1, doc)
+	End If
+	EvaluateDate = vals
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateSoundex:1:8
+Private Function EvaluateSoundex(params As Variant, doc As NotesDocument)
+	Dim vals As Variant
+	
+	If Isarray(params) Then
+		Const txt = "@Soundex(tVar1)"
+		doc.ReplaceItemValue "tVar1", params(0)
+		vals = Evaluate(txt, doc)
+		EvaluateSoundex = vals
+	End If          
+	
+End Function
+
+
+'++LotusScript Development Environment:2:2:ProcessTokens:1:8
+Sub ProcessTokens(doc As NotesDocument, customformdocid As String)
+	Dim s As New NotesSession
+	Dim db As NotesDatabase
+	Dim parentdoc As NotesDocument, persondoc As NotesDocument, occdoc As NotesDocument
+	Dim rtItem As NotesRichTextItem
+	Dim rtRange As NotesRichTextRange
+	Dim tokenArray(1 To 20, 1 To 2) As String
+	Dim userTokenArray As Variant
+	Dim replaceStr As String, token As String, formula As String
+	Dim startpos As Integer, endpos As Integer, i As Integer, count As Integer, j As Integer
+	Dim resultArray As Variant, subArray As Variant
+	
+	Dim SigDoc As NotesDocument
+	Dim SigRTItem As NotesRichTextItem
+	Dim EmpView As NotesView
+	
+	Set db = s.CurrentDatabase
+	
+	' Get the SupplementaryInfo from the Custom Form
+	Set rtItem = doc.GetFirstItem("SupplementaryInfo")
+	
+	' Check if there is at least one token present in the rich text. If not, then just exit.
+	If Instr(rtItem.Text,"[") = 0 Then
+		Exit Sub
+	End If
+	
+	' NotesRichTextRange FindAndReplace method crashes the server on OS/400.
+	' See http://www-1.ibm.com/support/docview.wss?uid=swg21252947	
+	' Do not perform substitution if on OS/400 platform.	
+	If s.Platform = "OS/400" Then
+		Exit Sub
+	End If
+	
+	' Create main list of Custom Form Tokens
+	Dim tokenList List As String
+	' General Tokens
+	tokenList("[AGENCY]") = {Agency}
+	' Today's Date Tokens	
+	tokenList("[TODAY]") = {@Today}
+	tokenList("[TODAY_DAYORDINAL]") = {day:=@Day(@Today);@Text(day)+@If(day=1;"st";day=21;"st";day=31;"st";day=2;"nd";day=22;"nd";day=3;"rd";day=23;"rd";"th")}
+	tokenList("[TODAY_MONTHNAME]") = {month:=@Month(@Today);@If(month=1;"January";month=2;"February";month=3;"March";month=4;"April";month=5;"May";month=6;"June";month=7;"July";month=8;"August";month=9;"September";month=10;"October";month=11;"November";month=12;"December";"")} 
+	tokenList("[TODAY_YEAR]") = {@Year(@Today)}
+	tokenList("[TODAY_MONTH]") = {@Month(@Today)}
+	tokenList("[TODAY_DAY]") = {@Day(@Today)}
+	' Occurrence Tokens
+	tokenList("[OCC_NUMBER]") = {OccurrenceNumber}
+	tokenList("[OCC_DATEREPORTED]") = {@Text(@GetRelativeField("DateReported";"OccurrenceReport");"D0S0")}
+	tokenList("[OCC_INCIDENTTYPE]") = {@GetRelativeField("IncidentType";"OccurrenceReport")}
+	tokenList("[OCC_REPORTINGOFFICER]") = {@GetRelativeField("ReportingOfficer";"OccurrenceReport")}
+	tokenList("[OCC_DISTDIV]") = {@GetRelativeField("Division";"OccurrenceReport")}
+	tokenList("[OCC_PATROLAREA]") = {@GetRelativeField("PatrolArea";"OccurrenceReport")}
+	tokenList("[OCC_ADDRESS]") = {@Trim(@Implode(@Implode(@Trim(@Implode(@Trim(@GetRelativeField("StreetNumber";"OccurrenceReport"):@GetRelativeField("Street";"OccurrenceReport"));" "):@Implode(@Trim(@GetRelativeField("TownCity";"OccurrenceReport"):@GetRelativeField("Prov";"OccurrenceReport"));", "));", "):@GetRelativeField("LocDisplay";"OccurrenceReport"):@GetRelativeField("LocationDetail";"OccurrenceReport");" "))}
+	' Person Tokens
+	tokenList("[PERSON_FIRSTNAME]") = {Given1}
+	tokenList("[PERSON_MIDDLENAME]") = {Given2}
+	tokenList("[PERSON_LASTNAME]") = {Surname}
+	tokenList("[PERSON_NAME]") = {@If(CompanyName<>"";CompanyName;@Trim(Surname + ", " + Given1 + " " + Given2 + " " + Given3))}
+	tokenList("[PERSON_DOB]") = {@Text(DOB;"D0S0")}
+	tokenList("[PERSON_SSN]") = {SIN}
+	tokenList("[PERSON_SEX]") = {mytmp := Sex;@If(mytmp = "M";"Male";"Female")}
+	tokenList("[PERSON_RACE]") = {mytmp := Race;@If(mytmp = "A";"Asian";mytmp = "B";"Black";mytmp="I";"American Indian";mytmp="W";"White";"Unknown")}
+	tokenList("[PERSON_PHONE]") = {HomePhone}
+	tokenList("[PERSON_CELLPHONE]") = {CellPhone}
+	tokenList("[PERSON_BUSINESSPHONE]") = {@If(CompanyPhone<>"";CompanyPhone;BusinessPhone)}
+	tokenList("[PERSON_ADDRESS]") = {@Trim(@Implode(@Implode(@Trim(@Implode(@Trim(StreetNumber:Street);" "):@Implode(@Trim(TownCity:Prov);", "));", "):LocDisplay:LocationDetail;" "))}
+	tokenList("[PERSON_STREET]") = {StreetNumber+" "+Street}
+	tokenList("[PERSON_CITY]") = {TownCity}
+	tokenList("[PERSON_PROV]") = {Prov}
+	tokenList("[PERSON_POSTALCODE]") = {PostalCode}
+	tokenList("[PERSON_ARRESTDATE]") = {@Text(ArrestDateTime;"D0S0")}
+	tokenList("[PERSON_CHARGES]") = {@Trim(@GetPeerField("Charge";"SupplementaryTicket":"Charge/Caution"))}
+	tokenList("[PERSON_TICKET_CHARGE]") = {Charge}
+	tokenList("[PERSON_KIBRS_CHARGES]") = {@GetPeerField("Charge";"KIBRS Incident Clearance")}
+	tokenList("[PERSON_DL]") = {@Ucase(DLIssuedBy) + "/" + DLNumber}
+	tokenList("[PERSON_HEIGHT]") = {@Text(Height)}
+	tokenList("[PERSON_WEIGHT]") = {@Text(Weight)}
+	tokenList("[PERSON_INVOLVEMENT]") = {@Implode(Type;", ")}
+	
+%REM BEGIN	
+ There are issues with using the @GetPeerField function for these.  @GetPeerField returns
+ a list of values, but it does not return anything from a document that has the field blank.
+ For example:  @GetPeerField(<FieldName>;"Person/Property") finds two people:
+ Smith, John and Jones, Mary Sue
+ @GetPeerField("Surname";"Person/Property"), returns the list "Smith":"Jones"
+ @GetPeerField("Given1";"Person/Property"), returns the list "John":"Mary"
+ @GetPeerField("Given2";"Person/Property"), returns the list "Sue"
+ Since John does not have a middle name, nothing is returned from him and the list is shorter.
+ The size of the list is not consistent so names cannot be matched together.  It looks like John's
+ middle name is Sue.
+%END REM
+	
+'	tokenList("[PERSON_MVDESC]") = {@Subset(@GetPeerField("LicNum";"SupplementaryMV");1) + " " + @Subset(@GetPeerField("VMake";"SupplementaryMV");1) + " " + @Subset(@GetPeerField("VModel";"SupplementaryMV");1) + " " + @Subset(@GetPeerField("Style";"SupplementaryMV");1) + " " + @Subset(@GetPeerField("Colour";"SupplementaryMV");1)}
+'	tokenList("[PERSON_PROPERTY]") = {[PROPERTY_LIST]|f1:=@Text(@GetPeerField("Quantity";"SupplementaryProperty"));f2:=@GetPeerField("PMake";"SupplementaryProperty");f3:=@GetPeerField("PModel";"SupplementaryProperty");f4:=@GetPeerField("Item";"SupplementaryProperty");f5:=@GetPeerField("PSerialNum";"SupplementaryProperty");f1+" "+f2+" "+f3+" "+f4+" "+f5}
+	
+	' Get user-created custom form tokens from Custom Form document.
+	Dim controldoc As NotesDocument
+	Dim controlview As NotesView	
+	Dim ludb As New NotesDatabase( "", "" )
+	Dim ludoc As NotesDocument
+	Dim dbFile As String
+	Dim UserTokens As Variant
+	
+	Set controlview = db.GetView("(Control)")
+	Set controldoc = controlview.GetFirstDocument
+	If Not controldoc Is Nothing And customformdocid <> "" Then
+		If Instr(controldoc.LUPath(0),"\") <> 0 Then
+		'Path provided in file name
+			dbFile = controldoc.LUPath(0)
+		Else
+		'no path provided, so append path of current database
+			dbFile = Strleftback(db.FilePath,"\") + "\" + controldoc.LUPath(0)
+		End If
+		ludb.Open db.Server,dbFile
+		If ludb.IsOpen Then
+			Set ludoc = ludb.GetDocumentByUNID(customformdocid)
+			UserTokens = ludoc.Field2
+		Else
+			Print "Lookup database could not be located using the path provided in the control document!"
+		End If
+	Else
+		Print "Control Document is not setup!"
+		Exit Sub
+	End If
+	' Place new tokens in list.
+	If UserTokens(0) <> "" Then
+		For j = 0 To Ubound(UserTokens)
+			token = Left(UserTokens(j),Instr(UserTokens(j),"|")-1)		
+			formula = Right(UserTokens(j),Len(UserTokens(j))-Instr(UserTokens(j),"|"))
+			tokenList(token) = formula
+		Next
+	End If	
+	
+	' Loop to find all tokens in rich text
+	Dim tokenSearch() As String
+	Dim searchloop As Integer
+	searchloop = 1
+	startpos = 1
+	endpos = 1
+	startpos = Instr(startpos, rtItem.Text, "[")
+	While Not startpos = 0
+		endpos = Instr(startpos + 1, rtItem.Text, "]")
+		If endpos <> 0 Then
+			Redim Preserve tokenSearch(searchloop)
+			tokenSearch(searchloop) = Mid(rtitem.Text, startpos, endpos - startpos + 1)
+			searchloop = searchloop + 1
+		End If
+		startpos = Instr(startpos + 1, rtItem.Text, "[")
+	Wend
+	
+	' Loop through tokens
+	For i = 1 To Ubound(tokenSearch)
+		token = tokenSearch(i)
+		' Retrieve formula from list, if it exists.
+		If Iselement(tokenList(token)) Then
+			formula = tokenList(token)
+		Else
+			formula = ""
+		End If
+		' Get formula results
+		If formula <> "" Then
+			resultArray = ParseMacro(formula,doc)
+		Else
+			resultArray = ""
+		End If
+		
+		' Perform find and replace
+		Dim rtNav As NotesRichTextNavigator
+		Set rtNav = rtItem.CreateNavigator
+		Dim foundStr As Boolean
+		Dim repRange As NotesRichTextRange
+		Set repRange = rtItem.CreateRange
+		Set rtRange = rtItem.CreateRange
+		Dim k As Integer
+		k = 1
+		If Isarray(resultArray) Then
+			If Ubound(resultArray) >= 1 Then
+				While rtNav.FindFirstString(token, RT_FIND_CASEINSENSITIVE)
+					Call repRange.SetBegin(rtNav)
+				'	Call repRange.SetEnd(rtNav)
+				'	Call repRange.Remove
+					Call rtItem.BeginInsert(rtNav)
+					Call rtItem.AppendText(resultArray(0))	
+					' appends computed text. Token is removed below
+					While k <= Ubound(resultArray)					
+						Call rtItem.AddNewline(1)
+						Call rtItem.AppendText(resultArray(k))
+						k = k + 1					
+					Wend
+					Call rtItem.EndInsert
+					Call rtItem.Compact
+					Call rtItem.Update
+					' replaces token with space
+					count = rtRange.FindAndReplace(token, " ", RT_FIND_CASEINSENSITIVE)
+					If count > 0 Then
+						Call rtItem.Update					
+					End If			
+					Set repRange = rtItem.CreateRange
+					Set rtNav = rtItem.CreateNavigator
+				Wend				
+			Else
+				replaceStr = resultArray(0)
+				If Len(replaceStr) = 0 Then
+					replaceStr = " "
+				End If				
+				count = rtRange.FindAndReplace(token, replaceStr, RT_FIND_CASEINSENSITIVE + RT_REPL_ALL)
+				If count > 0 Then
+					Call rtItem.Update	
+				End If				
+			End If
+		End If
+	Next
+	
+%REM BEGIN		
+		If Not Isempty(resultArray) Then
+			replaceStr = resultArray(0)
+			' NotesRichTextRange's FindAndReplace will not work if replaceStr has a length of zero.
+			' When we have a replaceStr that is length zero, we substitute a space instead.
+			If Len(replaceStr) = 0 Then
+				replaceStr = " "
+			End If
+			count = rtRange.FindAndReplace(token, replaceStr, RT_FIND_CASEINSENSITIVE + RT_REPL_ALL)
+			If count > 0 Then
+				Call rtItem.Update
+			End If					
+		End If		
+%END REM
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:ExecuteFunction:1:8
+Public Function ExecuteFunction(cmd$, params As Variant,doc As NotesDocument, tempDoc As NotesDocument) As Variant
+	Dim dc As NotesDocumentCollection
+	Dim rDoc As NotesDocument
+	Dim item As NotesItem
+	Dim lludb As notesdatabase
+	
+	Dim v As Variant, temp As Variant, ar As Variant
+	Dim i%, t$
+	
+	On Error Goto ErrExecute
+	gvErrorMsg = ""
+	
+	Redim v(0)
+     ' Required by some functions needing only one parameter
+	If Isarray(params) Then
+		temp = params(0)
+	Else
+		Redim temp(0)
+		temp(0) = params
+	End If
+	
+     ' Alphabetically sorted @ commands
+     ' Called funtions preceded by 'Evaluate' use the LotusScript Evaluate command to execute Macro phrases
+     ' Alphabetic listing (except actions which are listed at the end)
+	
+	Select Case Ucase(cmd) 
+	Case "ABS"
+		v(0) = Abs(SingleValue(temp))
+		
+	Case "ADJUST"
+		v = EvaluateAdjust(params, tempDoc)
+		
+	Case "AUTHOR"
+		v = doc.Authors
+		
+	Case "BEGINS"
+		If CheckParams(params, 1, "@" & cmd) Then
+			v(0) = Instr(SingleValue(params(0)) , SingleValue(params(0))) = 1
+		End If
+	Case "CALENDARSLOT"
+		v(0) = curFormInfo.CalendarSlot
+		
+	Case "CANCELSAVE"
+		giCancelSave = True
+		t = Cstr(temp(0))
+		If t <> "" Then
+			gErrors.AddMessage t
+		End If
+		
+	Case "CANCELCREATE"
+		giCancelCreate = True
+		t = Cstr(temp(0))
+		If t <> "" Then
+			gErrors.AddMessage t
+		End If
+		
+	Case "CHAR"
+		v(0) = Chr(SingleValue(temp))
+		
+	Case "CONTAINS"
+		v = ( Instr(SingleValue(params(0)), SingleValue(params(1))) > 0 )
+		
+	Case "COPYRICHTEXTFIELD"
+          ' Copies a rich text field from one document to another.  Includes any font information as well.
+          ' CopyRichTextField( DocumentUniqueID, SourceFieldName, [DestFieldName], [DatabasePath] (4th parameter added 4/29/05
+		' for the use of Custom Forms and Local Lookups Database)
+		Dim dbfile As String
+		
+		If Ubound(params) >= 3 Then
+			v = params(3)
+			t = Cstr(v(0))
+			If Trim(t) <> "" Then
+				If Instr(t,"\") <> 0 Then
+					' Path provided in file name
+					dbfile = t
+				Else
+					' no path provided, so append path of current database
+					dbfile = Strleftback(doc.ParentDatabase.FilePath,"\") + "\" + t
+				End If
+				Set lludb = New NotesDatabase(doc.ParentDatabase.Server,dbfile)
+			End If
+		Else
+			Set lludb = doc.ParentDatabase
+		End If
+		If Ubound(params) >= 1 Then
+			v = params(0)
+			t = Cstr(v(0))
+			If Len(t) = 32 Then
+				On Error Resume Next
+				Set rDoc = lludb.GetDocumentByUNID(t)
+				If Not rDoc Is Nothing Then
+					v = params(1)
+					t = Cstr(v(0))
+					Set item = rDoc.GetFirstItem(t)
+					If Not item Is Nothing Then
+						If Ubound(params) >= 2 Then
+							v = params(2)
+							t = Cstr(v(0))
+						End If
+						If Trim(t) <> "" Then
+							item.CopyItemToDocument doc, t
+						Else
+							item.CopyItemToDocument doc, ""
+						End If
+						Set item = rDoc.GetFirstItem("$Fonts")
+						If Not item Is Nothing Then
+							item.CopyItemToDocument doc, ""
+						End If
+						v = params(0)
+						t = Cstr(v(0))
+						Call ProcessTokens(doc,t)
+						' pass the new doc and the name of the field to perform the substitutions on.
+						Call ProcessFunctionTokens(doc, "SupplementaryInfo")
+					End If					
+				End If
+			End If
+		End If
+          ' Never return an array
+		v = ""
+		
+	Case "CREATED"
+		v(0) = doc.Created
+		
+	Case "DATE"
+		v = EvaluateDate(params, tempDoc)
+		
+	Case "DATEDIFF"
+		If CheckParams(params, 2, "@" & cmd) Then
+			v = params(2)
+			t = Cstr(v(0))
+			v = params(1)               
+			If Isdate(temp(0)) And Isdate(v(0)) Then
+				Select Case Ucase(t)
+				Case "Y"
+					v(0) = Int(Abs(Cdbl(Dateserial(Year(v(0)), Month(v(0)), Day(v(0)))) - Cdbl(Dateserial(Year(temp(0)), Month(temp(0)), Day(temp(0))))) / 365.25)
+				Case "D"
+					v(0) = Int(Abs(Cdbl(Dateserial(Year(v(0)), Month(v(0)), Day(v(0)))) - Cdbl(Dateserial(Year(temp(0)), Month(temp(0)), Day(temp(0))))))
+				Case Else
+					gErrors.AddMessage "Invalid unit type for @DateDiff"
+					Redim v(0)  
+				End Select
+			Else
+				gErrors.AddMessage "@DateDiff requires two valid dates."
+				Redim v(0)
+			End If
+		End If
+		
+	Case "DAY"     
+		v(0) = Day(temp(0))
+		
+	Case "DBCOLUMN"
+		v = EvaluateDBColumn(params, tempDoc)
+		
+	Case "DBLOOKUP"
+		v = EvaluateDBLookup(params, tempDoc)
+		
+	Case "DBNAME"
+		Redim v(1)
+		With curFormInfo.Document.ParentDatabase
+			v(0) = .Server
+			v(1) = .FilePath
+		End With
+		
+	Case "DELETEFIELD"
+		With curFormInfo
+			If Not .CurrentField = "" Then
+				If Not Iselement(.DeleteFields(.CurrentField)) Then
+					.DeleteFields(.CurrentField) = ""
+				End If
+			End If
+		End With
+		
+	Case "DO"
+		For i = 0 To Ubound(params)
+			If i = Ubound(params) Then
+				v = ParseMacro(params(i), doc)
+				If giReturnEncountered Then
+					Exit For
+				End If
+			End If
+		Next
+		
+	Case "DOCUMENTUNIQUEID"
+		v(0) = doc.UniversalID
+		
+	Case "ELEMENTS"
+		v(0) = Ubound(temp) + 1
+		If v(0) = 1 And temp(0) = "" Then
+			v(0) = 0
+		End If
+		
+	Case "ERROR"
+		gErrors.AddMessage "@Error has been forced"
+		v(0) = False
+		
+	Case "EXPLODE"
+		v = EvaluateExplode(params, tempDoc)
+		
+	Case "EVALUATEBOOL"
+		If Isarray(temp) Then               
+			For i = 0 To Ubound(temp)
+				If Trim(temp(i)) <> "" Then
+					v = ParseMacro(temp(i), doc)
+					If giReturnEncountered Then
+						Exit For
+					End If
+					If v(0) = False Then
+						Exit For
+					Else
+						v(0) = True
+					End If
+				End If
+			Next
+		Else
+			v(0) = True
+		End If
+		
+	Case "FAILURE"
+		gErrors.AddMessage(temp(0))
+		v(0) = False
+		
+	Case "FALSE", "NO"
+		v = False
+		
+	Case "FORMAT"
+          ' Duplicates the LotusScript format function
+		If CheckParams(params,1, "@" & cmd) Then
+			v = params(1)
+			v(0) = Format(temp(0), v(0))
+		End If
+		
+	Case "FORMNAME"
+		v(0) = curFormInfo.FormName
+		
+	Case "GETCHILDFIELD"          
+          ' Returns an array of values from a specified field(s) on all children on a specified form(s)
+          ' @GetChildField( <FieldName>; <FormName>)          
+		If CheckParams(params,1, "@" & cmd) Then               
+			v = GetResponseFieldValues(curFormInfo.Document, params(0), params(1))
+		End If
+		
+	Case "GETPARENTFIELD"          
+          ' Returns values from a specified field on the parent document
+          ' @GetParentField( <FieldName> )
+		If Not curFormInfo.ParentDoc Is Nothing Then
+			v = curFormInfo.ParentDoc.GetItemValue(temp(0))
+		End If
+		
+	Case "GETPEERFIELD"          
+          ' Returns an array of values from a specified field(s) on all peers (at same level) of a specified form(s)
+          ' @GetPeerField( <FieldName>; <FormName>)
+		If Not curFormInfo.ParentDoc Is Nothing Then
+			If CheckParams(params, 1, "@" & cmd) Then
+				v = GetResponseFieldValues( curFormInfo.ParentDoc, params(0), params(1))
+			End If
+		End If
+		
+	Case "GETPROFILEFIELD"
+		ar = params(1)
+		t = ar(0)
+		If Ubound(params) = 2 Then
+			ar = params(2)
+			Set rDoc =  curFormInfo.DB.GetProfileDocument(temp(0), ar(0))
+		Else
+			Set rDoc = curFormInfo.DB.GetProfileDocument(temp(0))
+		End If
+		If Not rDoc Is Nothing Then
+			v = rDoc.GetItemValue(t)  
+		End If
+		
+	Case "GETRELATIVEFIELD"
+          ' Returns an array of values from a specified field(s) on the first form of the specified type encountered up the response hierarchy
+          ' @GetRelativeField( <FieldName>; <FormName>)
+		If Not curFormInfo.ParentDoc Is Nothing Then
+			If CheckParams(params, 1, "@" & cmd) Then
+                    ' Function defined in RulesGlobal
+				Set rDoc = FindUpstreamForm(curFormInfo.ParentDoc, params(1))
+				If Not rDoc Is Nothing Then
+					For i = 0 To Ubound(temp)
+						MergeArrays v, rDoc.GetItemValue(temp(i))
+					Next
+				End If
+			End If
+		End If
+		
+	Case "HASCHILDFORM"
+          ' Determines if a particular child form exists
+		v(0) = False
+		Set dc = curFormInfo.Document.Responses
+		If dc.Count > 0 Then
+			Set rDoc = dc.GetFirstDocument
+			Do While Not rDoc Is Nothing
+				If Ucase(rDoc.Form(0)) = Ucase(temp(0)) Then
+					v(0) = True
+					Exit Do
+				End If
+				Set rDoc = dc.GetNextDocument(rDoc)
+			Loop
+		End If
+		
+	Case "HOUR"
+		v(0) = Hour(temp(0))
+		
+	Case "IMPLODE"
+		v = EvaluateImplode(params, tempDoc)
+		
+	Case "INHERITEDDOCUMENTUNIQUEID"
+		If Not curFormInfo.ParentDoc Is Nothing Then
+			v(0) = curFormInfo.ParentDoc.UniversalID
+		End If
+		
+	Case "INTEGER"
+		v(0) = Int(SingleValue(temp))
+		
+	Case "ISAVAILABLE"
+		v = doc.HasItem(temp(0)) <> 0
+		
+	Case "ISERROR"
+		v = (gErrors.Count > 0)
+		
+	Case "ISMEMBER"
+		v = EvaluateIsMember(params, tempDoc)
+		v(0) = CBool(v(0))
+		
+	Case "ISNEWDOC"
+		v = curFormInfo.IsNewDoc
+		
+	Case "ISNOTMEMBER"
+		v = EvaluateIsMember(params, tempDoc)
+		If Cstr(v(0)) = "0" Then
+			v(0) = CBool(1)
+		Else
+			v(0) = CBool(0)
+		End If
+		
+	Case "ISNUMBER"
+		v = True
+		For i = 0 To Ubound(temp)
+			If Not Isnumeric(temp(i)) Then
+				v = False
+			End If
+		Next
+		
+	Case "ISRESPONSEDOC"
+		v = Not curFormInfo.ParentDoc Is Nothing
+		
+	Case "ISTIME"
+		v = True
+		For i = 0 To Ubound(temp)
+			If Not Isdate(temp(i)) Then
+				v = False
+			End If
+		Next
+		
+	Case "ISUNAVAILABLE"
+		v = (doc.HasItem(temp(0)) = 0)
+		
+	Case "LCASE", "LOWERCASE"
+		Redim v(Ubound(temp))
+		For i = 0 To Ubound(temp)
+			v(i) = Lcase(temp(i))
+		Next
+		
+	Case "LEFT", "LEFTBACK", "RIGHT", "RIGHTBACK"
+		v = EvaluateSubString(cmd, params, tempDoc)
+		
+	Case "LENGTH"
+		Redim v(Ubound(temp))
+		For i = 0 To Ubound(temp)
+			v(i) = Len(temp(i))
+		Next
+		
+	Case "MATCHES"
+		v = EvaluateMatches(params, tempDoc)
+		
+	Case "MONTH"
+		v(0) = Month(temp(0))
+		
+	Case "MSGBOX"
+		If giInternet Then
+               ' Do not know how to handle this over the internet yet
+		Else
+			Redim temp(2)
+			For i = 0 To 2
+				v = params(i)
+				temp(i) = v(0)
+			Next
+			v(0) = Msgbox(temp(0), temp(1), temp(2))               
+		End If
+		
+	Case "NAME"
+		v = EvaluateName(params, tempDoc)
+		
+	Case "NOW"
+		v(0) = Now 
+		
+	Case "PROMPT"
+		v = EvaluatePrompt(params)
+		
+	Case "PROPERCASE"
+		Redim v(Ubound(temp))
+		For i = 0 To Ubound(temp)
+			v(i) = EvaluateProperCase(temp(i))
+		Next
+		
+	Case "REPLACE"
+		v = EvaluateReplace(params, tempDoc)
+		
+	Case "REPLACETOKENS"
+		Call ProcessTokens(doc, temp(0))
+		v = ""
+		
+	Case "RETURN"
+		giReturnEncountered = True          
+		v = temp
+		
+	Case "SETDOCFIELD"
+		If CheckParams(params, 2, "@" & cmd) Then
+			Set rDoc = curFormInfo.DB.GetDocumentByUNID(temp(0))
+			v = params(1)
+			t = v(0)
+			v = params(2)
+			If Not rDoc Is Nothing Then
+				rDoc.ReplaceItemValue t, v
+				rDoc.Save False,False
+			End If
+		End If
+		Redim v(0)
+		
+	Case "SETFIELD"
+		If CheckParams(params, 1, "@" & cmd) Then
+			curFormInfo.Document.ReplaceItemValue temp(0), params(1)
+		End If
+		
+	Case "SOUNDEX"
+		v = EvaluateSoundex(temp, tempDoc)
+		
+	Case "STOP"
+		v = temp
+		giReturnEncountered = True
+		giStopValidationEncountered = True
+		
+	Case "SUBSET"
+		v = EvaluateSubset(params, tempDoc)
+		
+	Case "SUM"
+		v = EvaluateSum(params, tempDoc)
+		
+	Case "TEXTTONUMBER"
+		If Isnumeric(temp(0)) Then
+			v(0) = Cdbl(temp(0))
+		End If
+		
+	Case "TIME"
+		v = EvaluateTime(params, tempDoc)
+		
+	Case "TODAY"
+		v(0) = Today
+		
+	Case "TOMORROW"
+		v(0) = Today + 1
+		
+	Case "TEXT"
+		v = EvaluateText(params, tempDoc)
+		
+	Case "TRACE"
+		If Isnumeric(temp(0)) Then
+			giDebug = Cint(temp(0))
+		Else
+			gvErrorMsg = "Missing or invalid parameter for @Trace"
+		End If
+		
+	Case "TRIM"
+		v = EvaluateTrim(params, tempDoc)
+		
+	Case "TRUE", "SUCCESS"
+		v = True
+	Case "UCASE", "UPPERCASE"
+		Redim v(Ubound(temp))
+		For i = 0 To Ubound(temp)
+			v(i) = Ucase(temp(i))
+		Next
+		
+	Case "UNIQUE"
+		v = EvaluateUnique(params, tempDoc)
+		
+	Case "UPDATEDOCUMENTS"
+          ' @UpdateDocuments( <server>;  <database>; <viewName>; <key>;  <sourcefields>; <destfields>)
+		If CheckParams(params, 5, "@" & cmd) Then
+			i = UpdateDocuments(params(0), params(1), params(2), params(3), params(4), params(5), curFormInfo.Document)
+			If i = 0 Then
+				v(0) = True                    
+			Else
+				gErrors.AddMessage "Unable to update documents: Error Code " & i
+				v(0) = False
+			End If
+		End If
+		
+	Case "UPDATEPARENT"
+          ' Modifies a field on the parent document
+          ' @UpdateParent( <FieldName>; <values> )
+		If CheckParams(params, 1, "@" & cmd) Then
+			With curFormInfo
+				If Not .ParentDoc Is Nothing Then
+					.ParentDoc.ReplaceItemValue temp(0), params(1)
+					.ParentChanged = True
+				End If
+			End With
+		End If
+		
+	Case "USERNAME"
+		v(0) = EvaluateUserName()
+		
+	Case "USERROLES"
+		v = EvaluateUserRoles()
+		
+	Case "VAL"
+		v(0) = ""
+		For i = 1 To Len(temp(0))
+			t = Mid(temp(0),i , 1)
+			If Isnumeric(t) Then
+				v(0) = v(0) & t
+			End If
+		Next
+		If Isnumeric(v(0)) Then
+			v(0) = Cstr(Cdbl(v(0)))
+		Else
+			v(0) = ""
+		End If
+		
+	Case "WEEKDAY"
+		v(0) = Weekday(temp(0))
+		
+	Case "WORD"
+		v(0) = EvaluateWord(params, tempDoc)
+		
+	Case "YEAR"
+		v(0) =Year(temp(0))
+		
+	Case "YESTERDAY"
+		v(0) = Today - 1    
+		
+	Case Else
+		gvErrorMsg = "Unrecognized command near @" & cmd
+		giSyntaxErrorEncountered = True
+	End Select
+	
+	ExecuteFunction = v
+	
+CloseExecute:
+	
+	If gvErrorMsg <> "" Then
+		gErrors.AddMessage gvErrorMsg
+		gvErrorMsg = ""
+	End If
+	Exit Function
+	
+ErrExecute:
+	
+	gvErrorMsg = Error & " during @" & Lcase(cmd)
+	gErrors.LotusScriptError = True
+	Resume CloseExecute
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:CheckParams:1:8
+Private Function CheckParams(params, count%, module$) As Integer
+	Dim i%
+     ' Checks to make sure the correct number of parameters are passed.
+	
+	If Isarray(params)  Then
+		i = Ubound(params)
+	End If
+	If i = count Then
+		CheckParams = True
+	Elseif i > count Then
+		gErrors.AddMessage "Too many parameters in " & module
+		giSyntaxErrorEncountered = True
+	Else
+		gErrors.AddMessage "Missing parameter in " & module
+		giSyntaxErrorEncountered = True
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:GetPhrase:1:8
+Private Function GetPhrase(txt As String, posn%) As String
+	
+     ' Returns a phrase in txt starting at position posn
+	
+	Dim i%, c$, c2$, w$, lent%, pcount%
+	Dim insideQuote As Integer, insideFunct As Integer, insideParen As Integer, slash As Integer
+	
+	lent = Len(txt)
+	w = ""
+	Do
+		c = Mid(txt, posn, 1)
+		If insideFunct Then
+               ' Currently inside an @Function
+			Select Case c
+			Case "("
+				pcount = pcount + 1
+				insideParen = True
+			Case ")"
+				pcount = pcount - 1
+				If pcount <= 0 Then
+                         ' End of parenthesized phrase encountered
+					If pcount = 0 Then
+						w = w & c
+						posn = posn + 1
+					End If
+					Exit Do
+				End If
+			Case ";", " ", ":"
+				If Not insideParen Then
+					If pcount = 0 Then
+						If c = ";" Then
+							posn = posn + 1
+						End If
+						Exit Do
+					End If
+				End If
+			Case "@"
+				If Not insideParen Then
+					w = ""
+					Exit Do
+				End If
+			End Select
+		Elseif insideParen Then
+               ' Currently inside parenthesis
+			Select Case c
+			Case "("
+				pcount = pcount + 1
+			Case ")"
+				pcount = pcount - 1
+				If pcount = 0 Then
+					posn = posn + 1
+					w = w & c
+					Exit Do
+				End If
+			End Select
+		Elseif insideQuote Then
+               ' Currently inside a string in quotes
+			If c = """" Then
+				If posn < lent Then
+					If Mid(txt, posn + 1, 1) = c Then
+                             ' Double double quotes encountered
+						w = w & c
+						posn = posn + 1
+					Else
+                              ' End of quoted string encountered
+						w = w & c
+						Exit Do
+					End If
+				End If
+			Elseif c = "\" Then
+                    ' Check for and strip out double back-slashes
+				If slash Then
+					c = ""
+				End If
+				slash = Not slash
+			End If
+		Else
+			Select Case c
+			Case "@"
+				If w = "" Then
+					insideFunct = True  ' Function phrase encountered
+				Else
+                         ' This should never happen
+					gvErrorMsg = "Unexpected @ encountered in '" & txt & "."
+					giSyntaxErrorEncountered = True
+					w = ""
+					Exit Do
+				End If
+			Case "("
+				If w = "" Then
+					insideParen = True
+					pcount = 1
+				Else
+					Exit Do
+				End If
+			Case " "
+                    ' Trim off any additional spaces
+				Do While posn + 1 <= lent
+					c2 = Mid(txt, posn + 1, 1)
+					If c2 = " " Then
+						posn = posn + 1
+					Else
+						Exit Do
+					End If
+				Loop
+				c = ""
+				If w <> "" Then
+					Exit Do
+				End If
+			Case ";"
+				If w = "" Then
+					w = c
+					posn = posn + 1
+				End If
+				Exit Do
+			Case """"
+				If w = "" Then
+					insideQuote = True
+				Else
+					Exit Do
+				End If
+			Case ">", "<",  "!", ":", "*"
+				If w = "" Then
+					w = c
+					posn = posn + 1
+					If posn < lent Then
+						c2 = Mid(txt, posn, 1)
+						If c2 = "=" Then
+                                   ' Compound operators :=, >=, <=, != encountered
+							w = w & c2
+							posn = posn + 1
+						Elseif c = "<" And c2 = ">" Then
+                                   ' <> Encountered
+							w = w & c2
+							posn = posn + 1
+						End If
+					End If
+				End If
+				Exit Do
+			Case "+", "&", "|", "=", "-", "+"
+				If w = "" Then
+					w = c
+					posn = posn + 1
+				End If
+				Exit Do
+			Case ")"
+                    ' This should never be encountered by itself but always be embedded in a phrase
+				giSyntaxErrorEncountered = True
+				gvErrorMsg =  "Extra right parenthesis in '" & txt & "''."
+				w = ""
+				Exit Do
+			Case Chr(13), Chr(10)
+                    ' Ignore line CR & LF characters
+				c = ""
+			End Select
+		End If
+		w = w & c
+		posn = posn + 1
+		If posn > lent Then
+			Exit Do
+		End If
+	Loop
+	GetPhrase = w
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateUserName:1:8
+Private Function EvaluateUserName() As Variant
+	Dim doc As NotesDocument     
+	Dim t
+	
+	If giInternet Then
+		Set doc = curFormInfo.Document.DocumentContext
+          ' Requires that a CGI variable by the same name exists on the document
+		t = doc.Remote_User(0)
+		If t = "" Then
+			t =  "Web User"
+		End If
+		EvaluateUserName = t
+	Else
+		Dim ns As New NotesSession
+		EvaluateUserName = ns.UserName
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateDBLookup:1:8
+Private Function EvaluateDBLookup(params As Variant, doc As NotesDocument) As Variant
+	Dim vals As Variant
+	
+	If CheckParams(params, 4, "@DBLookup") Then
+		Const Lookup = "@DBLookup("""":""NoCache""; tVar2; tVar3; tVar4; tVar5);"
+		If Not doc Is Nothing Then
+			doc.ReplaceItemValue "tVar1", params(0)
+			doc.ReplaceItemValue "tVar2", params(1)
+			doc.ReplaceItemValue "tVar3", params(2)
+			doc.ReplaceItemValue "tVar4", params(3)
+			If Isnumeric(params(4)) Then
+				doc.ReplaceItemValue "tVar5", Cint(params(4))
+			Else
+				doc.ReplaceItemValue "tVar5", params(4)
+			End If
+			vals = Evaluate(Lookup, doc)
+			If Not Isarray(vals) Then
+				Redim vals(0)
+				vals(0) = ""
+			End If
+			EvaluateDBLookup = vals
+		End If
+	End If
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateSum:1:8
+Private Function EvaluateSum(params As Variant, doc As NotesDocument) As Variant
+	
+	Dim vals As Variant
+	
+	On Error Goto ErrSum
+	doc.ReplaceItemValue "tVar1", params(0)
+	If Ubound(params) > 2 Then
+		doc.ReplaceItemValue "tVar4", params(3)
+		doc.ReplaceItemValue "tVar3", params(2)
+		doc.ReplaceItemValue "tVar2", params(1)
+		vals = Evaluate("@Sum(tVar1; tVar2; tVar3; tVar4)", doc)
+	Elseif Ubound(params) > 1 Then
+		doc.ReplaceItemValue "tVar3", params(2)
+		doc.ReplaceItemValue "tVar2", params(1)
+		vals = Evaluate("@Sum(tVar1; tVar2; tVar3)", doc)
+	Elseif Ubound(params) > 0 Then
+		doc.ReplaceItemValue "tVar2", params(1)
+		vals = Evaluate("@Sum(tVar1; tVar2)", doc)
+	Else
+		vals = Evaluate("@Sum(tVar1)", doc)
+	End If
+	EvaluateSum  = vals
+	Exit Function
+	
+ErrSum:
+	
+	giSyntaxErrorEncountered = True
+	gvErrorMsg = "Error encountered in @Sum"
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateImplode:1:8
+Private Function EvaluateImplode(params, doc As NotesDocument) As Variant
+	Dim vals As Variant
+	
+	Const txt1 = "@Implode(tVar1; tVar2)"
+	Const txt2 = "@Implode(tVar1)"
+	
+	If Isarray(params) Then  
+		doc.ReplaceItemValue "tVar1", params(0)
+		If Ubound(params) = 0 Then
+			vals = Evaluate(txt2, doc)
+		Else     
+			doc.ReplaceItemValue "tVar2", params(1)
+			vals = Evaluate(txt1, doc)
+		End If
+		EvaluateImplode = vals
+	Else
+		CheckParams params, 0, "@Implode"
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateSubstring:1:8
+Private Function EvaluateSubstring(cmd As String, params As Variant, doc As NotesDocument) As Variant
+	Dim vals As Variant
+	
+	If CheckParams(params,1, "@" & Lcase(cmd)) Then
+		Const txt1 = "@Left(tVar1; tVar2)"
+		Const txt2 = "@LeftBack(tVar1; tVar2)"
+		Const txt3 = "@Right(tVar1; tVar2)"
+		Const txt4 = "@RightBack(tVar1; tVar2)"
+		doc.ReplaceItemValue "tVar1", params(0)
+		doc.ReplaceItemValue "tVar2", params(1)
+		Select Case cmd
+		Case "LEFT"
+			vals = Evaluate(txt1, doc)
+		Case "LEFTBACK"
+			vals = Evaluate(txt2, doc)
+		Case "RIGHT"
+			vals = Evaluate(txt3, doc)
+		Case "RIGHTBACK"
+			vals = Evaluate(txt4, doc)
+		End Select
+		EvaluateSubstring = vals
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:2:GetParams:1:8
+Public Sub GetParams(Byval txt$, vars As Variant, doc As NotesDocument, eval%)
+     ' Returns evaluated paramaters for an @Function in passed variant "vars"
+     ' txt should be a semi-colon delimited list
+	
+	Dim count%, t$, c$, i%
+	Dim insideQuotes%, pcount%
+	Redim vars(0)
+	
+	On Error Goto ErrGetParams
+	
+	count = 0
+	For i = 1 To Len(txt)
+		c = Mid(txt,i,1)
+		Select Case c
+		Case """"
+			If insideQuotes Then
+                    ' Ignore semi-colons that occur within parentheses
+				If i < Len(txt) Then
+                         ' Do not turn off quotes if there are two double-quotes
+					If Mid(txt, i + 1, 1) <> c Then
+						insideQuotes = False
+					Else
+						i = i + 1
+					End If
+				End If
+			Else
+				insideQuotes = True
+			End If
+		Case ";"
+			If pcount = 0 And Not insideQuotes Then
+				Redim Preserve vars(count)
+				If eval Then
+					vars(count) = ParseMacro(Trim(t), doc)
+				Else
+					vars(count) = Trim(t)
+				End If
+				count = count + 1
+				c = ""
+				t = ""
+			End If
+		Case "("
+			pcount = pcount + 1
+		Case ")"
+			pcount = pcount -1
+		End Select
+		t = t & c
+	Next
+	Redim Preserve vars(count)
+	If eval Then
+		vars(count) = ParseMacro(Trim(t), doc)
+	Else
+		vars(count) = Trim(t)
+	End If
+	Exit Sub
+	
+ErrGetParams:
+	
+	gvErrorMsg = ""
+	gErrors.AddMessage "LotusScript Error: " & Error & " parsing " & txt
+	gErrors.LotusScriptError = True
+	Exit Sub
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:HasParams:1:8
+Private Function HasParams(params As Variant) As Integer
+	
+	HasParams = True
+	If Isarray(params) Then
+		If Ubound(params) = 0 Then
+			If Not Isarray(params(0)) Then
+				If params(0) = "" Then
+					HasParams = False
+				End If
+			End If
+		End If
+	Else
+		If params = "" Then
+			HasParams = False
+		End If
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateWord:1:8
+Private Function EvaluateWord(params As Variant, doc As NotesDocument) As Variant
+	Dim vals As Variant
+	
+	If CheckParams(params,2, "@Word") Then
+		Const txt = "@Word(tVar1; tVar2; tVar3)"
+		doc.ReplaceItemValue "tVar1", params(0)
+		doc.ReplaceItemValue "tVar2", params(1)
+		doc.ReplaceItemValue "tVar3", params(2)
+		vals = Evaluate(txt, doc)
+		EvaluateWord = vals
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:PerformCompare:1:8
+Public Function PerformCompare(v1, v2, op$)
+	Dim bool As Integer
+	Dim vala, valb, i%, j%
+	
+	If Isarray(v1) Then
+		vala = v1(0)
+	Else
+		vala = v1
+	End If
+	If Isarray(v2) Then
+		valb = v2(0)
+	Else
+		valb = v2
+	End If
+	bool = False
+	Select Case op
+	Case "="
+		bool = (vala = valb)
+	Case "<"
+		bool = (vala < valb)
+	Case ">"
+		bool = (vala > valb)
+	Case ">="
+		bool = (vala >= valb)
+	Case "<="
+		bool = (vala <= valb)
+	Case "<>", "!="
+		bool = (vala <> valb)
+	Case "&", "|"
+		If Isnumeric(vala) And Isnumeric(valb) Then
+			If op = "&" Then
+				bool = (vala And valb)
+			Else
+				bool = (vala Or valb)
+			End If
+			bool = bool <> 0
+		Else
+			gvErrorMsg = "Attempted " & op & " with non-numeric values."
+			giSyntaxErrorEncountered = True
+		End If
+	Case "*="
+		For i = 0 To Ubound(v1)
+			For j = 0 To Ubound(v2)
+				If v1(i) = v2(j) Then
+					bool = True
+					Exit For
+				End If
+			Next
+			If bool Then Exit For
+		Next
+	End Select
+	PerformCompare = bool
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateName:1:8
+Private Function EvaluateName(params As Variant, doc As NotesDocument) As Variant     
+	Dim vals As Variant
+	Dim v
+	Const txt1 = "@Name([A]; tVar1)"
+	Const txt2 = "@Name([C]; tVar1)"
+	Const txt3 = "@Name([CN]; tVar1)"
+	Const txt4 = "@Name([G]; tVar1)"
+	Const txt5 = "@Name([O]; tVar1)"
+	Const txt6 = "@Name([Abbreviate]; tVar1)"
+	
+	If CheckParams(params,1, "@Name") Then
+		doc.ReplaceItemValue "tVar1", params(1)
+		v = params(0)
+		Select Case Ucase(v(0))
+		Case "[A]"
+			vals = Evaluate(txt1, doc)
+		Case "[C]"
+			vals = Evaluate(txt2, doc)
+		Case "[CN]"
+			vals = Evaluate(txt3, doc)
+		Case "[G]"
+			vals = Evaluate(txt4, doc)
+		Case "[O]"
+			vals = Evaluate(txt5, doc)
+		Case Else
+			vals = Evaluate(txt6, doc)
+		End Select
+		EvaluateName = vals
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:GetResponseFieldValues:1:8
+Private Function GetResponseFieldValues(doc As NotesDocument, fieldNames As Variant, formNames As Variant) As Variant
+	
+	Dim rDoc As NotesDocument
+	Dim dc As NotesDocumentCollection
+	Dim v As Variant
+	Dim i%, k%
+	
+	Dim flds As Variant
+	Dim forms As Variant
+	
+	Redim v(0)
+	
+	If Isarray(fieldNames) Then
+		flds = fieldNames
+	Else
+		Redim flds(0)
+		flds(0) = fieldNames
+	End If
+	
+	If Isarray(formNames) Then
+		forms = formNames
+	Else
+		Redim forms(0)
+		forms(0) = formNames
+	End If
+	
+	Set dc = doc.Responses
+	If Not dc Is Nothing Then
+		Set rDoc = dc.GetFirstDocument
+		Do While Not rDoc Is Nothing
+			If rDoc.IsValid And Not rDoc.IsDeleted Then
+				If Not rDoc.HasItem("$Conflict") Then
+					For i = 0 To UBound(forms)
+						If UCase(forms(i)) = UCase(rDoc.Form(0)) Then
+							For k = 0 To UBound(flds)
+								MergeArrays v, rDoc.GetItemValue(flds(k))
+							Next
+						End If
+					Next
+				End If
+			End If
+			Set rDoc = dc.GetNextDocument(rDoc)
+		Loop
+	End If
+	GetResponseFieldValues = v
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateTime:1:8
+Private Function EvaluateTime(params As Variant, doc As NotesDocument) As Variant
+	Dim vals As Variant
+	Const txt = "@Time(tVar1; tVar2; tVar3)"
+	Const txt2 = "@Time(tVar1; tVar2; tVar3; tVar4; tVar5; tVar6)"
+	
+	If Ubound(params) > 2 Then
+		doc.ReplaceItemValue "tVar1", params(0)
+		doc.ReplaceItemValue "tVar2", params(1)
+		doc.ReplaceItemValue "tVar3", params(2)
+		If CheckParams(params,5, "@Time") Then
+			doc.ReplaceItemValue "tVar4", params(3)
+			doc.ReplaceItemValue "tVar5", params(4)
+			doc.ReplaceItemValue "tVar6", params(5)
+			vals = Evaluate(txt2, doc)
+		Else      
+			vals = Evaluate(txt, doc)          
+		End If
+	Else
+		Redim vals(0)
+	End If
+	EvaluateTime = vals     
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateAdjust:1:8
+Private Function EvaluateAdjust(params As Variant, doc As NotesDocument) As Variant
+	Dim vals As Variant
+	Dim v
+	Const txt = "@Adjust(tVar1; tVar2; tVar3; tVar4; tVar5; tVar6; tVar7)"
+	
+	If CheckParams(params, 6, "@Adjust") Then
+		doc.ReplaceItemValue "tVar1", params(0)
+		doc.ReplaceItemValue "tVar2", params(1)
+		doc.ReplaceItemValue "tVar3", params(2)
+		doc.ReplaceItemValue "tVar4", params(3)
+		doc.ReplaceItemValue "tVar5", params(4)
+		doc.ReplaceItemValue "tVar6", params(5)
+		doc.ReplaceItemValue "tVar7", params(6)
+		vals = Evaluate(txt, doc)
+		EvaluateAdjust = vals
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateExplode:1:8
+Private Function EvaluateExplode(params As Variant, doc As NotesDocument) As Variant
+	
+	Dim vals As Variant
+	On Error Goto ErrExplode
+	
+	doc.ReplaceItemValue "tVar1", params(0)
+	If Ubound(params) > 1 Then
+		doc.ReplaceItemValue "tVar3", params(2)
+		doc.ReplaceItemValue "tVar2", params(1)
+		vals = Evaluate("@Explode(tVar1; tVar2; tVar3)", doc)
+	Elseif Ubound(params) > 0 Then
+		doc.ReplaceItemValue "tVar2", params(1)
+		vals = Evaluate("@Explode(tVar1; tVar2)", doc)
+	Else
+		vals = Evaluate("@Explode(tVar1)", doc)
+	End If
+	EvaluateExplode = vals
+	Exit Function
+	
+ErrExplode:
+	
+	giSyntaxErrorEncountered = True
+	gvErrorMsg = "Error encountered in @Explode"
+	Exit Function
+	
+End Function
+
+'++LotusScript Development Environment:2:1:PerformMath:1:8
+Private Function PerformMath(val1, val2, op As String, doc As NotesDocument) As Variant
+	Dim vals As Variant
+	
+	Const plus = "tempVar1 + tempVar2"
+	Const minus  = "tempVar1 - tempVar2"
+	
+	doc.ReplaceItemValue "tempVar1", val1
+	doc.ReplaceItemValue "tempVar2", val2
+	If op = "+" Then
+		vals = Evaluate(plus, doc)
+	Else
+		vals = Evaluate(minus, doc)
+	End If
+	PerformMath = vals
+	
+End Function
+
+' Collect two dimensional array of tokens and their corresponding formulas.
+' tokenArray( i, 1 ) is the token itself, such as "[NAME]"
+' tokenArray( i, 2 ) is any formula, which will be evaluated and replace the tag in the RT field.
+' tokenArray( i, 3 ) is a string that indicates which document should be used as the context for the formula's evaluation.
+' This function will collect the tokens from the local lookups that correspond to the entries in tokenSearchArray.
+' The retrieved values will be stored in tokenArray.
+
+'++LotusScript Development Environment:2:1:SingleValue:1:8
+Private Function SingleValue(var As Variant) As Variant
+	
+	Dim v As Variant
+	
+	v = var
+	Do While Isarray(v)
+		v = v(0)
+	Loop
+	SingleValue = v
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateUnique:1:8
+Private Function EvaluateUnique(params As Variant, doc As NotesDocument)
+	Dim vals As Variant
+	
+	Const txt1 = "@Unique(tVar1)"
+	Const txt2 = "@Unique"
+	If HasParams(params) Then
+		If CheckParams(params,0, "@Unique") Then          
+			doc.ReplaceItemValue "tVar1", params(0)
+			vals = Evaluate(txt1, doc)
+			EvaluateUnique = vals
+		End If
+	Else
+		vals = Evaluate(txt2, doc)
+		EvaluateUnique = vals
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:CheckSyntax:1:8
+Public Function CheckSyntax(macro As String) As Integer
+	Dim infoSave As FormInfo
+	Dim v
+	
+	If Not curFormInfo Is Nothing Then
+		Set infoSave = curFormInfo
+	End If
+	
+	gErrors.ClearMessages
+	Set curFormInfo = New FormInfo(Nothing, "RulesSyntaxCheck")
+	v = ParseMacro(macro, curFormInfo.Document)
+	CheckSyntax = Not gErrors.SyntaxError
+	
+	If Not infoSave Is Nothing Then
+		Set curFormInfo = infoSave
+	End If
+	
+End Function
+
+
+'++LotusScript Development Environment:2:1:EvaluateDBColumn:1:8
+Private Function EvaluateDBColumn(params As Variant, doc As notesdocument) As Variant
+	Dim vals As Variant
+	
+	If CheckParams(params, 3, "@DBColumn") Then
+		Const Lookup = "@DBColumn("""":""NoCache""; tVar2; tVar3; tVar4);"
+		If Not doc Is Nothing Then
+			doc.ReplaceItemValue "tVar1", params(0)
+			doc.ReplaceItemValue "tVar2", params(1)
+			doc.ReplaceItemValue "tVar3", params(2)
+			If Isnumeric(params(3)) Then
+				doc.ReplaceItemValue "tVar4", Cint(params(3))
+			Else
+				doc.ReplaceItemValue "tVar4", params(3)
+			End If
+			
+			vals = Evaluate(Lookup, doc)
+			If Not Isarray(vals) Then
+				Redim vals(0)
+				vals(0) = ""
+			End If
+			EvaluateDBColumn = vals
+		End If
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateIf:1:8
+Private Function EvaluateIf(params, doc As NotesDocument) As Variant
+	
+	Dim v, i%, bool%, value, t$
+	t = params(0)
+	v = ParseMacro(t, doc)
+	For i = 0 To Ubound(params) - 1 Step 2
+		If Isarray(v) Then
+			value = v(0)
+		Else
+			value = v
+		End If
+		If value = True Then
+			t = params(i + 1)
+			v = ParseMacro(t, doc)
+			Exit For
+		Else
+			t = params(i + 2)
+			v = ParseMacro(t, doc)
+		End If
+	Next
+	EvaluateIf = v
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateUserRoles:1:8
+Private Function EvaluateUserRoles() As Variant
+	Const roles = "@UserRoles"
+	
+	EvaluateUserRoles = Evaluate(roles, curFormInfo.Document)
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateProperCase:1:8
+Private Function EvaluateProperCase(Byval txt As String) As Variant
+	Dim t$, c$, isspace As Integer, i%
+	
+	isspace = False
+	For i = 1 To Len(txt)
+		c = Mid(txt,i,1)
+		If isspace Or i = 1 Then
+			c = Ucase(c)
+			isspace = False
+		Else
+			c = Lcase(c)
+		End If
+		If c = " " Then
+			isspace = True
+		End If
+		t = t & c
+	Next
+	EvaluateProperCase = t
+	
+End Function
+
+'++LotusScript Development Environment:2:1:ParseMacro:1:8
+Public Function ParseMacro(txt As String, doc As NotesDocument) As Variant
+     ' Returns a variant containing an array of one or more items
+     ' doc is the current Notes Document, txt is the current macro to be parsed
+	Dim i%, j%, position%, posn%, count%, bool%
+	Dim cmd$, op$, varName$, macro$, phrase$, t$, c$
+	Dim v, prevv, params
+	Static iteration%
+	
+	Dim expectingOp As Integer
+	Dim negationFlag As Integer
+	Dim numericFlag As Integer
+	Dim negativeFlag As Integer
+	
+	iteration = iteration + 1
+	expectingOp = False
+	negationFlag = False
+	negativeFlag = False
+	count = 0
+	position = 1
+	
+	On Error Goto ErrParseMacro
+	
+	With curFormInfo
+		Do
+			Redim v(0)
+			bool = True
+			phrase = GetPhrase(txt, position)
+			If giSyntaxErrorEncountered Then
+				Exit Do
+			End If
+			If phrase = "" Then 
+				Exit Do
+			End If
+			c = Left(phrase, 1)
+			If phrase = ";" Then
+				If expectingOp Then
+					count = 0
+				Elseif count > 0 Then
+					gvErrorMsg = "Unexpected "";"" near " & Mid(txt, position)
+					giSyntaxErrorEncountered = True
+					Exit Do
+				End If
+			Else
+				If expectingOp Then
+					Select Case phrase
+					Case "=", "&", "|", ":", ">", "<", ">=", "<=", "<>", "!=", ":=", "*=", "+", "-"
+						op = phrase
+					Case Else
+						giSyntaxErrorEncountered = True
+						gvErrorMsg = "Missing operator near " & phrase
+						Exit Do
+					End Select
+				Else
+					Select Case c
+					Case "@"
+                             ' A function has been encountered
+						t = ""
+						i = Instr(phrase, "(")
+						Redim params(0)
+						If i = 0 Then
+                                   ' No parameters for this @Function
+							cmd = Ucase(Trim(Mid(phrase, 2)))
+							v = ExecuteFunction(cmd, params, doc, .TempDoc)
+						Else
+							cmd = Ucase(Trim(Mid(phrase, 2, i - 2)))
+							If Right(phrase, 1) = ")" Then
+								t = Mid(phrase, i + 1, Len(phrase) - i - 1)
+                                        ' Any paramaters for the current command will be returned in params
+                                        ' This is necessary because Notes will not allow a variant array of variant arrays to be passed by a function
+                                        ' @IF is a special case - We do not want to evaluate the macros unless necessary
+								If cmd = "IF" Then
+									GetParams t, params, doc, False
+									If Ubound(params) Mod 2 = 0 And Ubound(params) > 1 Then
+										v = EvaluateIF(params, doc)
+									Else
+										gErrors.AddMessage "An odd number of arguments are required for an @If statement"
+										giSyntaxErrorEncountered = True
+										Exit Do
+									End If
+								Else
+									GetParams t, params, doc, True
+									v = ExecuteFunction(cmd, params, doc, .TempDoc)
+								End If
+							Else
+								gvErrorMsg = "Missing parenthesis after " & phrase
+								giSyntaxErrorEncountered = True
+								Exit Do
+							End If
+						End If
+						If giReturnEncountered Or giSyntaxErrorEncountered Then
+                                   ' @Return or syntax error was encountered we are done
+							prevv = v
+							Exit Do
+						End If
+					Case "("                             
+						If Right(phrase,1) <> ")" Then
+							gvErrorMsg = "Missing parenthesis after " & phrase
+							giSyntaxErrorEncountered = True
+							Exit Do
+						End If
+                              ' Recursive call required to evaluate contents of parenthesis
+						macro = Mid(phrase, 2, Len(phrase) - 2)
+						v = ParseMacro(macro, doc)
+						If giReturnEncountered Or giSyntaxErrorEncountered Then
+                                   ' @Return or syntax error was encountered we are done
+							prevv = v
+							Exit Do
+						End If                                              
+					Case """"
+						If Right(phrase, 1) = c Then
+                                   ' String enclosed in quotes - strip off quotes and save it
+							v(0) = Mid(phrase, 2, Len(phrase) - 2)
+							position = position + 1
+						Else
+							gvErrorMsg = "Missing closing quote after " & phrase
+							giSyntaxErrorEncountered = True
+							Exit Do
+						End If
+					Case "[", "{"
+						If c = "[" Then
+							t = "]"
+						Else
+							t = "}"
+						End If
+						If Right(phrase, 1) = t Then
+							v(0) = phrase
+						Else
+							gvErrorMsg = "Missing closing "  & t &  " bracket after " & phrase
+							giSyntaxErrorEncountered = True
+							Exit Do
+						End If
+					Case "-"
+						negativeFlag = Not negativeFlag
+						expectingOp = True
+					Case "!"
+						negationFlag = Not negationFlag
+						expectingOp = True
+					Case "=", "&", "|", ":", ";", "+", ">", "<"
+						gvErrorMsg = "Unexpected operator " & phrase
+						giSyntaxErrorEncountered = True
+						Exit Do
+					Case Else
+                              ' Phrase can be a numeric constant, field name on current document or parent document, 
+                              ' predefined variable, or a temporary variable
+						macro = ""
+						posn = position
+						If Isnumeric(phrase) Then
+                                   ' Phrase is numeric - convert it from string to numeric and save it
+							v(0) = Cdbl(phrase)
+						Elseif GetPhrase(txt, posn) = ":=" Then
+                                   ' Assignment operator - this is a temporary variable name
+							varName = phrase
+							op = ":="
+							position = posn
+							count = count + 1
+							expectingOp = True
+						Else
+							If .TempDoc.HasItem(phrase) Then
+                                        ' Check to see if it has already been evaluated on the temporary document
+								v = .TempDoc.GetItemValue(phrase)
+							Elseif Iselement(curFormInfo.Variables(phrase)) Then
+                                        ' Predefined variable that has not been evaluated in this scope - save it
+								v = ParseMacro(curFormInfo.Variables(phrase).Macro, doc)
+								.TempDoc.ReplaceItemValue phrase, v
+							Elseif .CurrentActivity = RULES_DEFAULT Then
+                                        ' Document defaults are being loaded use inheritance if necessary
+                                        ' Form field is a special case because it is the only field on the document that has been preassigned 
+								If .InheritFromDoc Is Nothing Or Not .Inherit Or (doc.HasItem(phrase) And (Lcase(phrase) <> "form")) Then
+                                             ' Must (or should be) a field on the current document
+									v = doc.GetItemValue(phrase)
+								Else
+                                             ' Inherit value from InheritFromDoc stored in curFormInfo
+									v = .InheritFromDoc.GetItemValue(phrase)
+								End If
+							Else
+								v = doc.GetItemValue(phrase)
+							End If
+						End If
+						If negativeFlag Then
+							If Not Isarray(v(0)) And Isnumeric(v(0)) Then
+								v(0) = -v(0)
+								negativeFlag = False
+							End If
+						End If
+					End Select
+				End If
+				If op = "" Then
+					If negationFlag Then
+						If Not Isarray(v) Then
+							prevv = Not v
+							negationFlag = False
+						End If
+						If Not expectingOp Then
+							negationFlag = False
+						End If
+					Else
+						prevv = v
+					End If                         
+				Else
+					If op = "!" Then
+						prevv = Not v
+						op = ""
+					Else
+						If count > 1 And Not expectingOp Then
+							Select Case op
+							Case "=", ">", "<", "<=", ">=", "<>", "!=", "&", "|", "*="
+								If negationFlag Then
+									If Isarray(v) Then
+										v(0) = Not(v(0))
+									Else
+										v = Not v
+									End If
+								End If
+								prevv = PerformCompare(prevv, v, op)
+								negationFlag = False
+							Case "+", "-"
+								prevv = PerformMath(prevv, v, op, .TempDoc)
+							Case ":"  ' List/Array item
+								If Isarray(prevv) Then                                             
+									j = Ubound(prevv) + 1
+									Redim Preserve prevv(j + Ubound(v))
+									For i = 0 To Ubound(v)
+										prevv(j + i) = v(i)
+									Next
+								Else
+									gvErrorMsg = "Unexpected ':' near " & phrase
+									giSyntaxErrorEncountered = True
+								End If
+							Case ":="
+                                       ' Assignment operator
+								If varName = "" Then
+									gvErrorMsg = "Assignment operator must be preceeded by a variable name"
+									giSyntaxErrorEncountered = True
+									Exit Do
+								Else
+									.TempDoc.ReplaceItemValue varName, v
+									varName = ""
+									Redim prevv(0)
+								End If
+							End Select
+							op = ""
+						End If
+					End If
+				End If
+				count = count + 1
+			End If
+			expectingOp = Not expectingOp
+			If position > Len(txt) Then Exit Do
+		Loop
+		If Iteration = 1 Then
+               ' Reset @Return flag               
+			If Not .ParentDoc Is Nothing And .ParentChanged Then
+				.ParentDoc.Save True, False
+			End If
+			If giSyntaxErrorEncountered Then
+				gErrors.SyntaxError = True
+			End If
+			giReturnEncountered = False
+			giSyntaxErrorEncountered = False
+		End If
+	End With
+	
+CloseParseMacro:
+	
+	If gvErrorMsg <> "" Then
+		gErrors.AddMessage gvErrorMsg
+		gvErrorMsg = ""
+	Else
+		ParseMacro = prevv
+	End If
+	iteration = iteration - 1
+	Exit Function
+	
+ErrParseMacro:
+	
+	gvErrorMsg = Error & " parsing " & Mid(txt, position)
+	gErrors.LotusScriptError = True
+	Resume CloseParseMacro
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateMatches:1:8
+Private Function EvaluateMatches(params As Variant, doc As NotesDocument) As Variant
+	
+	Dim vals As Variant
+	
+	Const txt = "@Matches(tVar1; tVar2)"
+	doc.ReplaceItemValue "tVar1", params(0)     
+	If Ubound(params) = 1 Then
+		doc.ReplaceItemValue "tVar2", params(1)
+		vals = Evaluate(txt, doc)
+	End If
+	EvaluateMatches = vals
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateTrim:1:8
+Private Function EvaluateTrim(params As Variant, doc As NotesDocument) As Variant
+	Dim vals As Variant
+	
+	If CheckParams(params,0, "@Trim") Then
+		Const txt = "@Trim(tVar1)"
+		doc.ReplaceItemValue "tVar1", params(0)
+		vals = Evaluate(txt, doc)
+		EvaluateTrim = vals
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateSubset:1:8
+Private Function EvaluateSubset(params As Variant, doc As NotesDocument) As Variant
+	Dim vals As Variant
+	
+	If Ubound(params) = 1 Then
+		Const txt = "@Subset(tVar1; tVar2)"
+		doc.ReplaceItemValue "tVar1", params(0)
+		doc.ReplaceItemValue "tVar2", params(1)
+		vals = Evaluate(txt, doc)
+		EvaluateSubset = vals
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateReplace:1:8
+Private Function EvaluateReplace(params As Variant, doc As NotesDocument)     
+	Dim vals As Variant
+	
+	If CheckParams(params,2, "@Replace") Then
+		Const txt = "@Replace(tVar1; tVar2; tVar3)"
+		doc.ReplaceItemValue "tVar1", params(0)
+		doc.ReplaceItemValue "tVar2", params(1)
+		doc.ReplaceItemValue "tVar3", params(2)
+		vals = Evaluate(txt, doc)
+		EvaluateReplace = vals
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluateIsMember:1:8
+Private Function EvaluateIsMember(params As Variant, doc As NotesDocument) As Variant
+	Dim vals As Variant
+	
+	If CheckParams(params, 1, "@IsMember") Then
+		Const txt = "@IsMember(tVar1; tVar2)"
+		doc.ReplaceItemValue "tVar1", params(0)
+		doc.ReplaceItemValue "tVar2", params(1)
+		vals = Evaluate(txt, doc)
+		EvaluateIsMember = vals
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:EvaluatePrompt:1:8
+Private Function EvaluatePrompt(params As Variant) As Variant
+	
+	Dim doc As NotesDocument
+	Dim ns As New NotesSession     
+	Dim vals As Variant
+	Dim promptType As Variant, temp As Variant
+	Dim choices As Variant
+	Dim title$, prompt$
+	
+	If curFormInfo.UIWorkspace Is Nothing Then
+		gErrors.AddMessage "Can not use @Prompt unless UIWorkspace has been initialized."
+		EvaluatePrompt = False
+		Exit Function
+	End If
+	
+     ' @Prompt( [ style ] : [ NoSort ] ; title ; prompt ; defaultChoice ; choiceList)
+	
+	If Ubound(params) > 1 Then
+		temp = params(1)
+		title = temp(0)
+		temp = params(2)
+		prompt = temp(0)
+		
+		temp = params(0)
+		promptType = temp(0)                   
+		
+		Select Case Lcase(promptType)
+		Case "[okcancellist]", "[okcancellistmulti]"
+			If CheckParams(params,4, "@Prompt") Then
+				choices = params(4)
+				Set doc = ns.CurrentDatabase.CreateDocument
+				doc.Choices = choices
+				doc.Prompt = prompt
+				doc.ReturnValue = params(3)
+				If Lcase(promptType) = "[okcancellist]" Then
+					If Not curFormInfo.UIWorkspace.DialogBox("SelectOption", True, True, False, False, False, False, title, doc) Then
+						Exit Function
+					End If
+				Else
+					If Not curFormInfo.UIWorkspace.DialogBox("SelectOptions", True, True, False, False, False, False, title, doc) Then
+						Exit Function
+					End If
+				End If
+				EvaluatePrompt = doc.ReturnValue
+			End If
+		Case "[ok]"
+			Msgbox prompt,64, title
+		Case "[yesno]"
+			EvaluatePrompt = (Msgbox(prompt, 36, title) = 6)
+		End Select                    
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:1:RetrieveXMLNode:1:8
+Function RetrieveXMLNode(dbserver As String, dbpath As String, UniversalID As String, Tag As String, Instance As Integer) As String
+	Dim session As New notessession
+	Dim db As NotesDatabase
+	Dim StrTmp As String
+	Dim v As Variant
+	Dim doc As NotesDocument
+	Dim filename As String
+	Dim stream As NotesStream
+	Dim exporter As NotesDXLExporter
+	
+	On Error Goto ErrHandle
+	
+	' if instance not specified look for the first one
+	If Instance = 0 Then Instance = 1
+	
+	Set db = session.GetDatabase(dbserver,dbpath)
+	Set doc = db.GetDocumentByUNID(UniversalID)
+	
+	
+	REM Open xml file named after current database
+	Set stream = session.CreateStream
+	'filename = "c:\" & Left(LUDatabase.FileName, Len(LUDatabase.FileName) - 4) & "_doc.xml"
+	'If Not stream.Open(filename) Then
+	'	Messagebox "Cannot open " & filename,, "Error"
+	'	Exit Sub
+	'End If
+	Call stream.Truncate
+	
+	  REM Export document as DXL
+	Set exporter = session.CreateDXLExporter
+	Call exporter.SetInput(doc)
+	Call exporter.SetOutput(stream)
+	exporter.OutputDOCTYPE = False 
+	Call exporter.Process
+	
+	' sets variable = dxl document
+	StrTmp = stream.ReadText
+	'Print StrTmp
+	
+	' Parses out node of first picture it encounters
+	StrTmp = Strright( StrTmp, "<" & Tag , 5, Instance)
+	'Print StrTmp
+	StrTmp = Strleft(StrTmp, "</" & Tag)
+	'Print StrTmp
+	
+	'Put the full tags back in
+	If StrTmp <> "" Then StrTmp = "<" & Tag & StrTmp & "</" & Tag & ">"
+	'Print StrTmp
+	
+	'return value
+	RetrieveXMLNode = StrTmp
+	Exit Function
+	
+Errhandle:    
+   ' Use the Err function to return the error number and 
+   ' the Error$ function to return the error message.
+	'Messagebox "Error" & Str(Err) & ": " & Error$
+	
+	'pass the error back as a result to the calling routine
+	RetrieveXMLNode = "Error" & Str(Err) & ": " & Error$
+	Exit Function
+	
+End Function

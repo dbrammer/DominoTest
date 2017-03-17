@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="filter" maintenanceversion="1.8" replicaid="862580E50071C5D2" version="9.0" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="68a" sequence="25" unid="E6E188102F6AACC5852565F0006DBD95">
+<created><datetime dst="true">19980424T155839,57-04</datetime></created>
+<modified><datetime dst="true">20170316T154442,20-05</datetime></modified>
+<revised><datetime dst="true">20070709T115544,66-05</datetime></revised>
+<lastaccessed><datetime dst="true">20170316T154442,19-05</datetime></lastaccessed>
+<addedtofile><datetime dst="true">20170316T154442,19-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Cliff Mees/O=Enterpol</name><name>CN=James Milne/O=Enterpol</name><name>CN=Rodney Viessman/O=Teamhuber</name><name>CN=Jesse Peters/O=Teamhuber</name><name>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name="$TITLE" sign="true"><text>RulesWeb</text></item>
+<item name="$PublicAccess"><text>1</text></item>
+
+
+<item name="$Flags"><text>s34Q</text></item>
+<item name="$POID"><datetime dst="true">20070709T115544,66-05</datetime></item></note>

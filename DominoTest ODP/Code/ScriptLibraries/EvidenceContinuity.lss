@@ -1,0 +1,806 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+Option Public
+Option Declare   
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Class ReleaseTransaction
+Declare Class ContinuityTransaction
+Declare Sub Initialize
+Declare Sub CheckInProperty(propertyDocument As NotesDocument)
+Declare Function GetOfficerBadgeByName(officerName As String) As String
+Declare Sub CheckOutMultipleProperty(propertyDocumentCollection As NotesDocumentCollection)
+Declare Sub ReleaseMultipleProperty(propertyDocumentCollection As NotesDocumentCollection)
+Declare Sub TransactMultipleProperty(propertyDocumentCollection As NotesDocumentCollection, transactionType As Integer)
+Declare Sub CheckInMultipleProperty(propertyDocumentCollection As NotesDocumentCollection)
+Declare Function GetNextBarcode As String
+Declare Sub CheckOutProperty(propertyDocument As NotesDocument)
+Declare Sub ReleaseProperty(propertyDocument As NotesDocument)
+Declare Sub TransactProperty(propertyDocument As NotesDocument, transactionType As Integer)
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+Const CHECK_IN = 0
+Const CHECK_OUT = 1
+Const RELEASE = 2
+
+Class ReleaseTransaction
+	
+	Public ReleaseName As String
+	Public ReleaseAddress As String
+	Public ReleaseHomePhone As String
+	Public ReleaseBusinessPhone As String
+	Public ReleaseOfficerName As String
+	Public ReleaseOfficerBadge As String
+	Public ReleaseDateTime As NotesDateTime
+	
+	Sub New(inputName As String, inputAddress As String, inputHomePhone As String, inputBusinessPhone As String, _
+	inputOfficerName As String, inputDateTime As NotesDateTime)
+		
+		ReleaseName = inputName
+		ReleaseAddress = inputAddress
+		ReleaseHomePhone = inputHomePhone
+		ReleaseBusinessPhone = inputBusinessPhone
+		ReleaseOfficerName = inputOfficerName
+		ReleaseOfficerBadge = GetOfficerBadgeByName(ReleaseOfficerName)
+		Set ReleaseDateTime = inputDateTime
+		
+	End Sub
+	
+End Class
+
+Class ContinuityTransaction
+	
+	PropertyDocument As NotesDocument
+	
+	TransactionType As Integer
+	TransactionDateTime As NotesDateTime
+	TransactionBy As String
+	TransactionLocation As String
+	TransactionLocationRoom As String
+	TransactionPurpose As String
+	TransactionStatus As String
+	
+	ReleaseDetails As ReleaseTransaction
+	Barcode As String
+	
+	Sub New(inputPropertyDocument As NotesDocument, inputType As Integer, inputDateTime As NotesDateTime, _
+	inputBy As String, inputLocationRoom As String, inputLocation As String, inputPurpose As String, _
+	inputBarcode, inputStatus As String, inputReleaseDetails As ReleaseTransaction)		
+		
+		Set PropertyDocument = inputPropertyDocument
+		TransactionType = inputType
+		Set TransactionDateTime = inputDateTime
+		TransactionBy = inputBy
+		TransactionLocationRoom = inputLocationRoom
+		TransactionLocation = inputLocation
+		TransactionPurpose = inputPurpose
+		TransactionStatus = inputStatus
+		Set ReleaseDetails = inputReleaseDetails
+		Barcode = inputBarcode
+		
+	End Sub
+	
+	Sub Save
+		
+		Dim currentSession As NotesSession
+		Dim currentDatabase As NotesDatabase		
+		Dim transactionDateTimeItem As NotesItem
+		Dim releaseDateTimeItem As NotesItem
+		Dim continuityDocument As NotesDocument
+		
+		Set currentSession = New NotesSession
+		Set currentDatabase = currentSession.CurrentDatabase		
+		
+		' Create Continuity Notes document.
+		Set continuityDocument = New NotesDocument(currentDatabase)
+		
+		' Add values to Continuity document.
+		continuityDocument.Form = "EvidenceContinuity"
+		continuityDocument.TransactionType = TransactionType
+		continuityDocument.TransactionBy = TransactionBy
+		continuityDocument.TransactionLocationRoom = TransactionLocationRoom
+		continuityDocument.TransactionLocation = TransactionLocation
+		continuityDocument.TransactionPurpose = TransactionPurpose
+		continuityDocument.TransactionStatus = TransactionStatus
+		
+		' Add release values to Continuity document, if needed.
+		If Not ReleaseDetails Is Nothing Then
+			
+			continuityDocument.ReleaseName = ReleaseDetails.ReleaseName
+			continuityDocument.ReleaseAddress = ReleaseDetails.ReleaseAddress
+			continuityDocument.ReleaseHomePhone = ReleaseDetails.ReleaseHomePhone
+			continuityDocument.ReleaseBusinessPhone = ReleaseDetails.ReleaseBusinessPhone
+			continuityDocument.ReleaseOfficerName = ReleaseDetails.ReleaseOfficerName
+			continuityDocument.ReleaseOfficerBadge = ReleaseDetails.ReleaseOfficerBadge
+			
+			Set releaseDateTimeItem = New NotesItem(continuityDocument, "ReleaseDateTime", ReleaseDetails.ReleaseDateTime)		
+			releaseDateTimeItem.IsSummary = True
+			
+		End If
+		
+		' Set date/time value to field on document.
+		Set transactionDateTimeItem = New NotesItem(continuityDocument, "TransactionDateTime", TransactionDateTime)		
+		transactionDateTimeItem.IsSummary = True
+		
+		' Set OrigUNID field on document to match Property document.
+		If PropertyDocument.HasItem("OrigUNID") Then
+			continuityDocument.OrigUNID = PropertyDocument.OrigUNID(0)
+		Else
+			continuityDocument.OrigUNID = PropertyDocument.UniversalID
+		End If
+		
+		' Modify Property document.
+		If Barcode <> "" Then
+			PropertyDocument.BarCodeID = Barcode
+		End If
+		If PropertyDocument.Form(0) = "SupplementaryProperty" Then
+			
+			If TransactionType = CHECK_IN Then
+				
+				PropertyDocument.CheckInDateTime = continuityDocument.TransactionDateTime
+				PropertyDocument.CheckedInBy = continuityDocument.TransactionBy
+				PropertyDocument.PPropStoredAt = continuityDocument.TransactionLocation
+				PropertyDocument.PPropStoredAtRoom = continuityDocument.TransactionLocationRoom
+				PropertyDocument.PStatus = continuityDocument.TransactionStatus
+				
+				PropertyDocument.CheckOutDateTime = ""
+				PropertyDocument.CheckedOutBy =""
+				PropertyDocument.CheckedOutPurpose = ""
+				
+				PropertyDocument.PropRelTo = ""
+				PropertyDocument.PropRelToAddress = ""
+				PropertyDocument.PropRelToHomePh = ""
+				PropertyDocument.PropRelToBusPh = ""
+				PropertyDocument.ReleaseOfficer = ""
+				PropertyDocument.ReleaseOfficerBadge = ""
+				PropertyDocument.RelDateTime = ""
+								
+			Elseif TransactionType = CHECK_OUT Then
+				
+				PropertyDocument.CheckOutDateTime = continuityDocument.TransactionDateTime
+				PropertyDocument.CheckedOutBy = continuityDocument.TransactionBy
+				PropertyDocument.PPropStoredAtRoom = continuityDocument.TransactionLocationRoom
+				PropertyDocument.PPropStoredAt = ""
+				PropertyDocument.CheckedOutPurpose = continuityDocument.TransactionPurpose
+				PropertyDocument.PStatus = continuityDocument.TransactionStatus
+				
+				PropertyDocument.CheckInDateTime = ""
+				PropertyDocument.CheckedInBy =""
+				
+				PropertyDocument.PropRelTo = ""
+				PropertyDocument.PropRelToAddress = ""
+				PropertyDocument.PropRelToHomePh = ""
+				PropertyDocument.PropRelToBusPh = ""
+				PropertyDocument.ReleaseOfficer = ""
+				PropertyDocument.ReleaseOfficerBadge = ""
+				PropertyDocument.RelDateTime = ""
+				
+			Elseif TransactionType = RELEASE Then
+				
+				PropertyDocument.CheckInDateTime = ""
+				PropertyDocument.CheckedInBy = ""
+				PropertyDocument.PPropStoredAt = ""
+				
+				PropertyDocument.CheckOutDateTime = ""
+				PropertyDocument.CheckedOutBy =""
+				PropertyDocument.CheckedOutPurpose = ""
+				
+				PropertyDocument.PPropStoredAtRoom = continuityDocument.TransactionLocationRoom
+				PropertyDocument.PropRelTo = ReleaseDetails.ReleaseName
+				PropertyDocument.PropRelToAddress = ReleaseDetails.ReleaseAddress
+				PropertyDocument.PropRelToHomePh = ReleaseDetails.ReleaseHomePhone
+				PropertyDocument.PropRelToBusPh = ReleaseDetails.ReleaseBusinessPhone
+				PropertyDocument.ReleaseOfficer = ReleaseDetails.ReleaseOfficerName
+				PropertyDocument.ReleaseOfficerBadge = ReleaseDetails.ReleaseOfficerBadge
+				PropertyDocument.RelDateTime = continuityDocument.TransactionDateTime
+				PropertyDocument.PStatus = continuityDocument.TransactionStatus
+				
+			End If
+			
+		Elseif PropertyDocument.Form(0) = "SupplementaryBicycle" Then
+			
+			If TransactionType = CHECK_IN Then
+				
+				PropertyDocument.BCheckInDateTime = continuityDocument.TransactionDateTime
+				PropertyDocument.BCheckedInBy = continuityDocument.TransactionBy
+				PropertyDocument.BPropStoredAt = continuityDocument.TransactionLocation
+				PropertyDocument.BPropStoredAtRoom = continuityDocument.TransactionLocationRoom
+				PropertyDocument.BiStatus = continuityDocument.TransactionStatus
+				
+				PropertyDocument.BCheckOutDateTime = ""
+				PropertyDocument.BCheckedOutBy =""
+				PropertyDocument.BCheckedOutPurpose = ""
+				
+			Elseif TransactionType = CHECK_OUT Then
+				
+				PropertyDocument.BCheckOutDateTime = continuityDocument.TransactionDateTime
+				PropertyDocument.CheckedOutBy = continuityDocument.TransactionBy
+				PropertyDocument.BPropStoredAtRoom = continuityDocument.TransactionLocationRoom
+				PropertyDocument.BPropStoredAt = ""
+				PropertyDocument.BCheckedOutPurpose = continuityDocument.TransactionPurpose
+				PropertyDocument.BiStatus = continuityDocument.TransactionStatus
+				
+				PropertyDocument.BCheckInDateTime = ""
+				PropertyDocument.BCheckedInBy =""
+				
+			Elseif TransactionType = RELEASE Then
+				
+				PropertyDocument.BCheckInDateTime = ""
+				PropertyDocument.BCheckedInBy = ""
+				PropertyDocument.BPropStoredAt = ""
+				
+				PropertyDocument.BCheckOutDateTime = ""
+				PropertyDocument.BCheckedOutBy =""
+				PropertyDocument.BCheckedOutPurpose = ""
+				
+				PropertyDocument.BPropStoredAtRoom = continuityDocument.TransactionLocationRoom
+				PropertyDocument.BPropRelTo = ReleaseDetails.ReleaseName
+				PropertyDocument.BPropRelToAddress = ReleaseDetails.ReleaseAddress
+				PropertyDocument.BPropRelToHomePh = ReleaseDetails.ReleaseHomePhone
+				PropertyDocument.BPropRelToBusPh = ReleaseDetails.ReleaseBusinessPhone
+				PropertyDocument.BReleaseOfficer = ReleaseDetails.ReleaseOfficerName
+				PropertyDocument.BReleaseOfficerBadge = ReleaseDetails.ReleaseOfficerBadge
+				PropertyDocument.BRelDateTime = continuityDocument.TransactionDateTime
+				PropertyDocument.BiStatus = continuityDocument.TransactionStatus
+				
+			End If
+			
+		Elseif PropertyDocument.Form(0) = "SupplementaryFraudDoc" Then
+			
+			If TransactionType = CHECK_IN Then
+				
+				PropertyDocument.FCheckInDateTime = continuityDocument.TransactionDateTime
+				PropertyDocument.FCheckedInBy = continuityDocument.TransactionBy
+				PropertyDocument.FPropStoredAt = continuityDocument.TransactionLocation
+				PropertyDocument.FPropStoredAtRoom = continuityDocument.TransactionLocationRoom
+				PropertyDocument.FStatus = continuityDocument.TransactionStatus
+				
+				PropertyDocument.FCheckOutDateTime = ""
+				PropertyDocument.FCheckedOutBy =""
+				PropertyDocument.FCheckedOutPurpose = ""
+				
+			Elseif TransactionType = CHECK_OUT Then
+				
+				PropertyDocument.FCheckOutDateTime = continuityDocument.TransactionDateTime
+				PropertyDocument.FCheckedOutBy = continuityDocument.TransactionBy
+				PropertyDocument.FPropStoredAtRoom = continuityDocument.TransactionLocationRoom
+				PropertyDocument.FPropStoredAt = ""
+				PropertyDocument.FCheckedOutPurpose = continuityDocument.TransactionPurpose
+				PropertyDocument.FStatus = continuityDocument.TransactionStatus
+				
+				PropertyDocument.FCheckInDateTime = ""
+				PropertyDocument.FCheckedInBy =""
+				
+			Elseif TransactionType = RELEASE Then
+				
+				PropertyDocument.FCheckInDateTime = ""
+				PropertyDocument.FCheckedInBy = ""
+				PropertyDocument.FPropStoredAt = ""
+				
+				PropertyDocument.FCheckOutDateTime = ""
+				PropertyDocument.FCheckedOutBy =""
+				PropertyDocument.FCheckedOutPurpose = ""
+				
+				PropertyDocument.FPropStoredAtRoom = continuityDocument.TransactionLocationRoom
+				PropertyDocument.FPropRelTo = ReleaseDetails.ReleaseName
+				PropertyDocument.FPropRelToAddress = ReleaseDetails.ReleaseAddress
+				PropertyDocument.FPropRelToHomePh = ReleaseDetails.ReleaseHomePhone
+				PropertyDocument.FPropRelToBusPh = ReleaseDetails.ReleaseBusinessPhone
+				PropertyDocument.FReleaseOfficer = ReleaseDetails.ReleaseOfficerName
+				PropertyDocument.FReleaseOfficerBadge = ReleaseDetails.ReleaseOfficerBadge
+				PropertyDocument.FRelDateTime = continuityDocument.TransactionDateTime
+				PropertyDocument.FStatus = continuityDocument.TransactionStatus
+				
+			End If
+			
+		Elseif PropertyDocument.Form(0) = "SupplementaryMV" Then
+			
+			If TransactionType = CHECK_IN Then
+				
+				PropertyDocument.MVCheckInDateTime = continuityDocument.TransactionDateTime
+				PropertyDocument.MVCheckedInBy = continuityDocument.TransactionBy
+				PropertyDocument.MVPropStoredAt = continuityDocument.TransactionLocation
+				PropertyDocument.MVPropStoredAtRoom = continuityDocument.TransactionLocationRoom
+				PropertyDocument.VehStatus = continuityDocument.TransactionStatus
+				
+				PropertyDocument.MVCheckOutDateTime = ""
+				PropertyDocument.MVCheckedOutBy =""
+				PropertyDocument.MVCheckedOutPurpose = ""
+				
+			Elseif TransactionType = CHECK_OUT Then
+				
+				PropertyDocument.MVCheckOutDateTime = continuityDocument.TransactionDateTime
+				PropertyDocument.MVCheckedOutBy = continuityDocument.TransactionBy
+				PropertyDocument.MVPropStoredAtRoom = continuityDocument.TransactionLocationRoom
+				PropertyDocument.MVPropStoredAt = ""
+				PropertyDocument.MVCheckedOutPurpose = continuityDocument.TransactionPurpose
+				PropertyDocument.VehStatus = continuityDocument.TransactionStatus
+				
+				PropertyDocument.MVCheckInDateTime = ""
+				PropertyDocument.MVCheckedInBy =""
+				
+			Elseif TransactionType = RELEASE Then
+				
+				PropertyDocument.MVCheckInDateTime = ""
+				PropertyDocument.MVCheckedInBy = ""
+				PropertyDocument.MVPropStoredAt = ""
+				
+				PropertyDocument.MVCheckOutDateTime = ""
+				PropertyDocument.MVCheckedOutBy =""
+				PropertyDocument.MVCheckedOutPurpose = ""
+				
+				PropertyDocument.MVPropStoredAtRoom = continuityDocument.TransactionLocationRoom
+				PropertyDocument.MVPropRelTo = ReleaseDetails.ReleaseName
+				PropertyDocument.MVPropRelToAddress = ReleaseDetails.ReleaseAddress
+				PropertyDocument.MVPropRelToHomePh = ReleaseDetails.ReleaseHomePhone
+				PropertyDocument.MVPropRelToBusPh = ReleaseDetails.ReleaseBusinessPhone
+				PropertyDocument.MVReleaseOfficer = ReleaseDetails.ReleaseOfficerName
+				PropertyDocument.MVReleaseOfficerBadge = ReleaseDetails.ReleaseOfficerBadge
+				PropertyDocument.MVRelDateTime = continuityDocument.TransactionDateTime
+				PropertyDocument.VehStatus = continuityDocument.TransactionStatus
+				
+			End If			
+			
+		End If
+		
+		' Save changes to Property document. This is done first in case field validation causes the .Save to fail.
+		' If Save fails, exit without saving continuity document.
+		If Not PropertyDocument.Save(False, False) Then
+			Exit Sub
+		End If
+		
+		' Save Continuity document.
+		continuityDocument.Save False, False		
+		
+	End Sub
+	
+End Class
+'++LotusScript Development Environment:2:2:Initialize:1:10
+Sub Initialize
+	
+End Sub
+
+
+'++LotusScript Development Environment:2:2:CheckInProperty:1:8
+Sub CheckInProperty(propertyDocument As NotesDocument)
+	
+	Call TransactProperty(propertyDocument, CHECK_IN)
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:GetOfficerBadgeByName:1:8
+Function GetOfficerBadgeByName(officerName As String) As String
+	
+	Dim currentSession As NotesSession
+	Dim currentDatabase As NotesDatabase
+	
+	Dim controlView As NotesView
+	Dim controlDocument As NotesDocument
+	
+	Dim localLookupsDatabase As NotesDatabase
+	Dim employeeView As NotesView
+	Dim employeeDocument As NotesDocument
+	
+	Set currentSession = New NotesSession
+	Set currentDatabase = currentSession.CurrentDatabase
+	
+	' Opens the Local Lookups database based on the LUPath value from RMS's Control Document.
+	Set controlView = currentDatabase.GetView("(Control)")
+	If Not controlView Is Nothing Then
+		Set controlDocument = controlView.GetFirstDocument
+	End If
+	If Not controlDocument Is Nothing Then
+		Set LocalLookupsDatabase = currentSession.GetDatabase( _
+		currentDatabase.Server, _
+		Replace(currentDatabase.FilePath, currentDatabase.FileName,"") & "/" + controlDocument.LUPath(0) _
+		)
+	End If
+	
+	If Not localLookupsDatabase Is Nothing Then
+		If localLookupsDatabase.IsOpen Then
+			Set employeeView = localLookupsDatabase.GetView("Employeebyname")
+		End If
+	End If
+	
+	If Not employeeView Is Nothing Then
+		Set employeeDocument = employeeView.GetDocumentByKey(officerName, True)
+	End If
+	
+	If Not employeeDocument Is Nothing Then
+		GetOfficerBadgeByName = employeeDocument.Field3(0)
+	End If
+	
+End Function
+
+'++LotusScript Development Environment:2:2:CheckOutMultipleProperty:1:8
+Sub CheckOutMultipleProperty(propertyDocumentCollection As NotesDocumentCollection)
+	
+	Call TransactMultipleProperty(propertyDocumentCollection, CHECK_OUT)
+	
+End Sub
+
+
+'++LotusScript Development Environment:2:2:ReleaseMultipleProperty:1:8
+Sub ReleaseMultipleProperty(propertyDocumentCollection As NotesDocumentCollection)
+	
+	Call TransactMultipleProperty(propertyDocumentCollection, RELEASE)
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:TransactMultipleProperty:1:8
+Sub TransactMultipleProperty(propertyDocumentCollection As NotesDocumentCollection, transactionType As Integer)
+	
+	Dim currentSession As NotesSession
+	Dim currentDatabase As NotesDatabase
+	Dim currentWorkspace As NotesUIWorkspace
+	
+	Dim dialogDocument As NotesDocument
+	Dim userConfirmation As Variant
+	
+	Dim continuityTrans As ContinuityTransaction
+	Dim releaseTrans As ReleaseTransaction
+	
+	Dim canRelPropItem As NotesItem
+	Dim confirmRelease As Boolean
+	
+	Dim propertyDocument As NotesDocument
+	
+	Dim barcodeNumber As String
+	
+	' Get handle to current session, database and workspace.
+	Set currentSession = New NotesSession
+	Set currentDatabase = currentSession.CurrentDatabase	
+	Set currentWorkspace = New NotesUIWorkspace
+	
+	' Check for "Can Release Property" if this is a Release transaction.
+	' Prompt user to confirm release if property is listed as "cannot be released".
+	If transactionType = RELEASE Then
+		
+		Set propertyDocument = propertyDocumentCollection.GetFirstDocument
+		While Not propertyDocument Is Nothing
+			
+			Select Case propertyDocument.Form(0)
+			Case "SupplementaryProperty":
+				Set canRelPropItem = propertyDocument.GetFirstItem("CanRelProp")
+			Case "SupplementaryBicycle":
+				Set canRelPropItem = propertyDocument.GetFirstItem("BCanRelProp")
+			Case "SupplementaryFraudDoc":
+				Set canRelPropItem = propertyDocument.GetFirstItem("FCanRelProp")
+			Case "SupplementaryMV":
+				Set canRelPropItem = propertyDocument.GetFirstItem("MVCanRelProp")
+			End Select
+			
+			If Not canRelPropItem Is Nothing Then
+				If canRelPropItem.Values(0) = "No" Then
+					confirmRelease = True
+				End If
+			End If			
+			
+			Set propertyDocument = propertyDocumentCollection.GetNextDocument(propertyDocument)
+			
+		Wend
+		
+		If confirmRelease Then			
+			userConfirmation = Cbool(currentWorkspace.Prompt(PROMPT_YESNO, "Confirm Property Release", "One or more property items " & _
+			"selected are listed as 'cannot be released'." & Chr(10) & "Would you like to proceed?"))
+			If Not userConfirmation Then
+				Exit Sub
+			End If		
+		End If
+		
+	End If
+	
+	' Create dialog document.
+	Set dialogDocument = New NotesDocument(currentDatabase)
+	
+	' Set fields on dialog document before displaying.
+	dialogDocument.TransactionType = transactionType
+	dialogDocument.TransactionDateTime = Now
+	dialogDocument.MultipleProperty = "Y"
+	
+	' Prompt user for transaction details.
+	userConfirmation = currentWorkspace.Dialogbox("(Dialog - EvidenceTransaction)", True, True, False, False, False, False, _
+	"Evidence Transaction", dialogDocument, True, False, True)
+	
+	' Exit if user cancels transaction.
+	If Not userConfirmation Then
+		Exit Sub
+	End If
+	
+	' Do not set location (only location - room) on Check Out.
+	If transactionType = CHECK_OUT Then
+		dialogDocument.TransactionLocation = ""
+	End If
+	
+	' Set release information, if any.
+	If transactionType = RELEASE Then		
+		
+		dialogDocument.TransactionLocationRoom = ""
+		dialogDocument.TransactionLocation = ""
+		
+		Set releaseTrans = New ReleaseTransaction(dialogDocument.ReleaseName(0), dialogDocument.ReleaseAddress(0), _
+		dialogDocument.ReleaseHomePhone(0), dialogDocument.ReleaseBusinessPhone(0), dialogDocument.TransactionBy(0), _
+		dialogDocument.GetFirstItem("TransactionDateTime").DateTimeValue)
+		
+	End If
+	
+	Set propertyDocument = propertyDocumentCollection.GetFirstDocument
+	While Not propertyDocument Is Nothing
+		
+		If propertyDocument.HasItem("BarCodeID") Then		
+			If propertyDocument.BarCodeID(0) <> "" Then
+				dialogDocument.Barcode = propertyDocument.BarCodeID(0)
+			Else
+				dialogDocument.Barcode = GetNextBarcode()
+			End If
+		End If
+		
+		' Create Continuity Transaction.
+		Set continuityTrans = New ContinuityTransaction(propertyDocument, transactionType, _
+		dialogDocument.GetFirstItem("TransactionDateTime").DateTimeValue, dialogDocument.TransactionBy(0), _
+		dialogDocument.TransactionLocationRoom(0), dialogDocument.TransactionLocation(0), _
+		dialogDocument.TransactionPurpose(0), barcodeNumber, dialogDocument.Status(0), releaseTrans)
+		
+		' Save Continuity Transaction (which also updates the Property document).
+		continuityTrans.Save
+		
+		Set propertyDocument = propertyDocumentCollection.GetNextDocument(propertyDocument)
+	Wend
+	
+End Sub
+
+
+'++LotusScript Development Environment:2:2:CheckInMultipleProperty:1:8
+Sub CheckInMultipleProperty(propertyDocumentCollection As NotesDocumentCollection)
+	
+	Call TransactMultipleProperty(propertyDocumentCollection, CHECK_IN)
+	
+End Sub
+
+
+
+'++LotusScript Development Environment:2:1:GetNextBarcode:1:8
+Function GetNextBarcode As String
+	
+	Dim currentSession As NotesSession
+	Dim currentDatabase As NotesDatabase
+	
+	Dim controlView As NotesView
+	Dim controlDocument As NotesDocument
+	
+	Dim barcodeView As NotesView
+	Dim barcodeDocumentCollection As NotesDocumentCollection
+	Dim barcodeDocument As NotesDocument
+	Dim barcodeAssignment As Boolean
+	Dim barcodeMethod As String
+	Dim barcodeNumber As String
+	
+	Dim barcodeAttempts As Integer
+	Dim tempBarcodeNumber As String
+	
+	Dim evalTemp As Variant	
+	Dim occurrenceNumber As String
+	
+	Dim tmpNumber As Integer
+	Dim maxPropertyNumber As Integer
+	
+	' Get handle to current database.
+	Set currentSession = New NotesSession
+	Set currentDatabase = currentSession.CurrentDatabase
+	
+	' Get handle to Control Document.
+	Set controlView = currentDatabase.GetView("(Control)")
+	Set controlDocument = controlView.GetFirstDocument
+	If controlDocument Is Nothing Then
+		Exit Function
+	End If
+	
+	' Check Control Document to see whether barcode should be assigned.
+	If controlDocument.HasItem("EC_BarcodeUse") Then
+		If Not controlDocument.EC_BarcodeUse(0) = "Y" Then
+			Exit Function
+		End If
+	End If
+	If controlDocument.HasItem("EC_BarcodeAssignment") Then
+		If Not controlDocument.EC_BarcodeAssignment(0) = "Automatic" Then
+			Exit Function
+		End If
+	End If
+	
+	' Create unique barcode number.
+	evalTemp = Evaluate({@Unique}, controlDocument)
+	barcodeNumber = evalTemp(0)
+	
+	' Search barcode view for existing barcode to ensure uniqueness.
+	Set barcodeView = currentDatabase.GetView("Barcode")
+	Call barcodeView.Refresh		
+	Set barcodeDocumentCollection = barcodeView.GetAllDocumentsByKey(barcodeNumber, False)
+	barcodeAttempts = 1
+	While Not barcodeDocumentCollection.Count = 0 And barcodeAttempts <= 10
+		
+		evalTemp = Evaluate({@Unique}, controlDocument)
+		barcodeNumber = evalTemp(0)		
+		barcodeAttempts = barcodeAttempts + 1
+		Set barcodeDocumentCollection = barcodeView.GetAllDocumentsByKey(barcodeNumber, False)
+		
+	Wend
+	
+	' Return barcode number.
+	GetNextBarcode = barcodeNumber
+	
+End Function
+
+'++LotusScript Development Environment:2:2:CheckOutProperty:1:8
+Sub CheckOutProperty(propertyDocument As NotesDocument)
+	
+	Call TransactProperty(propertyDocument, CHECK_OUT)
+	
+End Sub
+
+
+
+
+'++LotusScript Development Environment:2:2:ReleaseProperty:1:8
+Sub ReleaseProperty(propertyDocument As NotesDocument)
+	
+	Call TransactProperty(propertyDocument, RELEASE)
+	
+End Sub
+
+'++LotusScript Development Environment:2:2:TransactProperty:1:8
+Sub TransactProperty(propertyDocument As NotesDocument, transactionType As Integer)
+	
+	Dim currentSession As NotesSession
+	Dim currentDatabase As NotesDatabase
+	Dim currentWorkspace As NotesUIWorkspace
+	
+	Dim controlView As NotesView
+	Dim controlDocument As NotesDocument
+	
+	Dim dialogDocument As NotesDocument
+	Dim userConfirmation As Variant
+	
+	Dim continuityTrans As ContinuityTransaction
+	Dim releaseTrans As ReleaseTransaction
+	
+	Dim canRelPropItem As NotesItem
+	Dim noRelReasonsItem As NotesItem
+	
+	' Get handle to current session, database and workspace.
+	Set currentSession = New NotesSession
+	Set currentDatabase = currentSession.CurrentDatabase	
+	Set currentWorkspace = New NotesUIWorkspace	
+	
+	' Check for "Can Release Property" if this is a Release transaction.
+	' Prompt user to confirm release if property is listed as "cannot be released".
+	If transactionType = RELEASE Then
+		
+		Select Case propertyDocument.Form(0)
+		Case "SupplementaryProperty":
+			Set canRelPropItem = propertyDocument.GetFirstItem("CanRelProp")
+			Set noRelReasonsItem = propertyDocument.GetFirstItem("NoRelReasons")
+		Case "SupplementaryBicycle":
+			Set canRelPropItem = propertyDocument.GetFirstItem("BCanRelProp")
+			Set noRelReasonsItem = propertyDocument.GetFirstItem("BNoRelReasons")
+		Case "SupplementaryFraudDoc":
+			Set canRelPropItem = propertyDocument.GetFirstItem("FCanRelProp")
+			Set noRelReasonsItem = propertyDocument.GetFirstItem("FNoRelReasons")
+		Case "SupplementaryMV":
+			Set canRelPropItem = propertyDocument.GetFirstItem("MVCanRelProp")
+			Set noRelReasonsItem = propertyDocument.GetFirstItem("MVNoRelReasons")
+		End Select
+		
+		If Not canRelPropItem Is Nothing And Not noRelReasonsItem Is Nothing Then
+			If canRelPropItem.Values(0) = "No" Then
+				If noRelReasonsItem.Values(0) <> "" Then
+					userConfirmation = Cbool(currentWorkspace.Prompt(PROMPT_YESNO, "Confirm Property Release", "This property is " & _
+					"listed as 'cannot be released'. Reason: " & propertyDocument.NoRelReasons(0) & Chr(10) & "Would you like " & _ 
+					"to proceed?"))
+				Else
+					userConfirmation = Cbool(currentWorkspace.Prompt(PROMPT_YESNO, "Confirm Property Release", "This property is " & _
+					"listed as 'cannot be released'. No reason listed." & Chr(10) & "Would you like to proceed?"))
+				End If
+				If userConfirmation = False Then
+					Exit Sub
+				End If				
+			End If
+		End If
+		
+	End If
+	
+	' Create dialog document.
+	Set dialogDocument = New NotesDocument(currentDatabase)
+	
+	' Get handle to control document.
+	Set controlView = currentDatabase.GetView("(Control)")
+	Set controlDocument = controlView.GetFirstDocument	
+	
+	' Set fields on dialog document before displaying.
+	
+	dialogDocument.TransactionType = transactionType
+	dialogDocument.TransactionDateTime = Now
+	
+	If Not controlDocument Is Nothing Then
+		If controlDocument.HasItem("EC_BarcodeUse") Then
+			dialogDocument.BarcodeUse = controlDocument.EC_BarcodeUse(0)
+		End If
+		If controlDocument.HasItem("EC_BarcodeAssignment") Then
+			dialogDocument.BarcodeAssignment = controlDocument.EC_BarcodeAssignment(0)
+		End If
+		If controlDocument.HasItem("EC_BarcodeRequired") Then
+			dialogDocument.BarcodeRequired = controlDocument.EC_BarcodeRequired(0)
+		End If
+	End If
+	
+	If propertyDocument.HasItem("BarCodeID") Then		
+		If propertyDocument.BarCodeID(0) <> "" Then
+			dialogDocument.Barcode = propertyDocument.BarCodeID(0)
+		Else
+			dialogDocument.Barcode = GetNextBarcode()
+		End If
+	Else
+		dialogDocument.Barcode = GetNextBarcode()
+	End If
+	
+	dialogDocument.PropertyForm = propertyDocument.Form(0)
+	Select Case propertyDocument.Form(0)
+	Case "SupplementaryProperty":
+		dialogDocument.TransactionLocation = propertyDocument.PPropStoredAt(0)
+		dialogDocument.TransactionLocationRoom = propertyDocument.PPropStoredAtRoom(0)
+		dialogDocument.Status = propertyDocument.PStatus(0)
+	Case "SupplementaryBicycle":
+		dialogDocument.TransactionLocation = propertyDocument.BPropStoredAt(0)
+		dialogDocument.TransactionLocationRoom = propertyDocument.BPropStoredAtRoom(0)
+		dialogDocument.Status = propertyDocument.BiStatus(0)
+	Case "SupplementaryFraudDoc":
+		dialogDocument.TransactionLocation = propertyDocument.FPropStoredAt(0)
+		dialogDocument.TransactionLocationRoom = propertyDocument.FPropStoredAtRoom(0)
+		If propertyDocument.HasItem("FStatus") Then
+			dialogDocument.Status = propertyDocument.FStatus(0)
+		End If
+	Case "SupplementaryMV":
+		dialogDocument.TransactionLocation = propertyDocument.MVPropStoredAt(0)
+		dialogDocument.TransactionLocationRoom = propertyDocument.MVPropStoredAtRoom(0)
+		dialogDocument.Status = propertyDocument.VehStatus(0)
+	End Select
+	
+	' Prompt user for transaction details.
+	userConfirmation = currentWorkspace.Dialogbox("(Dialog - EvidenceTransaction)", True, True, False, False, False, False, _
+	"Evidence Transaction", dialogDocument, True, False, True)
+	
+	' Exit if user cancels transaction.
+	If Not userConfirmation Then
+		Exit Sub
+	End If
+	
+	' Do not set location (only location - room) on Check Out.
+	If transactionType = CHECK_OUT Then
+		dialogDocument.TransactionLocation = ""
+	End If
+	
+	' Set release information, if any.
+	If transactionType = RELEASE Then		
+		
+		dialogDocument.TransactionLocationRoom = ""
+		dialogDocument.TransactionLocation = ""
+		
+		Set releaseTrans = New ReleaseTransaction(dialogDocument.ReleaseName(0), dialogDocument.ReleaseAddress(0), _
+		dialogDocument.ReleaseHomePhone(0), dialogDocument.ReleaseBusinessPhone(0), dialogDocument.TransactionBy(0), _
+		dialogDocument.GetFirstItem("TransactionDateTime").DateTimeValue)
+		
+	End If
+	
+	' Create Continuity Transaction.	
+	Set continuityTrans = New ContinuityTransaction(propertyDocument, transactionType, _
+	dialogDocument.GetFirstItem("TransactionDateTime").DateTimeValue, dialogDocument.TransactionBy(0), _
+	dialogDocument.TransactionLocationRoom(0), dialogDocument.TransactionLocation(0), _
+	dialogDocument.TransactionPurpose(0), dialogDocument.Barcode(0), dialogDocument.Status(0), releaseTrans)
+	
+	' Save Continuity Transaction (which also updates the Property document).
+	continuityTrans.Save
+	
+End Sub
+
+
+
+
+

@@ -1,0 +1,24 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='sharedfield' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='12e' unid='210F5B9EA74097AB85256074005EA8C5' sequence='20'>
+<created><datetime dst='true'>19940620T131355,89-04</datetime></created>
+<modified><datetime dst='true'>20170316T154244,56-05</datetime></modified>
+<revised><datetime dst='true'>20070709T115243,38-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154244,55-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154244,55-05</datetime></addedtofile></noteinfo>
+<updatedby><name>Brian Henry</name><name>CN=Ed Funk/O=Teamhuber</name><name
+>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name='$TITLE'><text>MaritalDisplay</text></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAAAAAAAAAAAAAAAAAAAAA
+</rawitemdata></item>
+<item name='$Body' summary='true' sign='true'>
+<rawitemdata type='1'>
+gQKDBAEAhf8IAAEAAAqF/wgAAQAACor/TACAAQAFADACAAAAAAAAAgEAAAoaAAAADyYAAA4AAAAA
+ABoAAAAYAAUADQBNYXJpdGFsU3RhdHVzAAMATWFyaXRhbERpc3BsYXmF/wgAAQAACg==
+</rawitemdata></item>
+<item name='$Flags'><text/></item></note>
+

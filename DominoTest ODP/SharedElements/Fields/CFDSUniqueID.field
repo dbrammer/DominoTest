@@ -1,0 +1,28 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='sharedfield' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='12a' unid='1A0229EB0CA5B437852560B7007336AD' sequence='22'>
+<created><datetime dst='true'>19940826T165826,37-04</datetime></created>
+<modified><datetime dst='true'>20170316T154244,36-05</datetime></modified>
+<revised><datetime dst='true'>20070709T115243,48-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154244,35-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154244,35-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Brian Henry/O=Enterpol</name><name>CN=Ed Funk/O=Teamhuber</name><name
+>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name='$TITLE' sign='true'><text>CFDSUniqueID</text></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAAAAAAQAAAAAAAAAAAAAA
+</rawitemdata></item>
+<item name='CFDSUniqueID' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='$Fields'><text>CFDSUniqueID</text></item>
+<item name='$Body' summary='true' sign='true'>
+<rawitemdata type='1'>
+gQKDBAEAhf8IAAEAAAqK/0gAgAAABQAwAgAAAAAAAAIBAAAKGAAAAAAAAAAMAAAAAAAYAAAACgCQ
+AFYBAwAHAAwABQAJMFMwRQBDRkRTVW5pcXVlSUSF/wgAAQAACg==
+</rawitemdata></item>
+<item name='$Flags'><text/></item></note>
+

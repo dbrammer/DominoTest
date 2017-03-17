@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?><note class="filter" maintenanceversion="1.8" replicaid="862580E50071C5D2" version="9.0" xmlns="http://www.lotus.com/dxl">
+<noteinfo noteid="212" sequence="9" unid="1FD6081C88F899D78625792F00626790">
+<created><datetime dst="true">20111020T125450,40-05</datetime></created>
+<modified><datetime dst="true">20170316T154301,54-05</datetime></modified>
+<revised><datetime>20141217T155351,08-06</datetime></revised>
+<lastaccessed><datetime dst="true">20170316T154301,53-05</datetime></lastaccessed>
+<addedtofile><datetime dst="true">20170316T154301,53-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Andrew Thompson/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Andrew Thompson/O=Teamhuber</name></wassignedby>
+<item name="$DesignerVersion" sign="true"><text>7</text></item>
+<item name="$TITLE" sign="true"><text>EvidenceContinuity</text></item>
+<item name="$PublicAccess" sign="true"><text>1</text></item>
+
+
+<item name="$Flags"><text>s34Q</text></item>
+<item name="$POID"><datetime>20141217T155351,08-06</datetime></item></note>

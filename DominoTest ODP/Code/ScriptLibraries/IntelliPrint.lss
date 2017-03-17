@@ -1,0 +1,185 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+Option Public
+Option Explicit 
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Sub Initialize
+Declare Function GetFormatsDatabase
+Declare Function GetIPTempDatabase As NotesDatabase
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+' Call this function to intialize IntelliPRINTPLUS datasource
+' szCurSer - Server name, If null local is assumed
+' szCurDB - Full path of the database on which documents that need to print reside, cannot be null
+' sz CurView - Name of view which contains documents that need to print
+Declare Function IPSInitialize Lib "NIPrint.dll" (Byval szCurSer As String, Byval szCurDB As String, Byval szCurView As String) As Long
+' Opens a Format in a specified server and database
+' LHandle - Handle returned by IPSInitialize, cannot be null
+' SzFormat - qualified path of format
+' iFormatStore - (0 - Current Database, 1 - Other Database)
+' szServer - (not necessary for Current Database), Name of server, if null local is assumed
+' szOtherDB - (valid only for Other Dtabase option), Full path of other database
+Declare Function IPSOpenFormat Lib "NIPrint.dll" (Byval lHandle As Long, Byval szFormat As String, Byval iFormatStore As Integer, Byval szServer As String, Byval szOtherDB As String) As Long
+Declare Function IPSEdit Lib "NIPrint.dll" (Byval lHandle As Long, Byval szID As String) As Long
+Declare Function IPSPreview Lib "NIPrint.dll" (Byval lHandle As Long, Byval szID As String, Byval iPrintSetUp As Integer) As Long
+Declare Function IPSExport Lib "NIPrint.dll" (Byval lHandle As Long, Byval szID As String, Byval szFilePath As String,Byval ExportType As Integer) As Long
+Declare Function IPSPrint Lib "NIPrint.dll" (Byval lHandle As Long, Byval szID As String, Byval iPrintSetUp As Integer) As Long
+Declare Function IPSPrintSetUp Lib "NIPrint.dll" (Byval lHandle As Long, Byval iCopies As Integer, Byval szPrinter As String, Byval iSelection As Long) As Long
+Declare Function IPSPrintSetUpEx Lib "NIPrint.dll" (Byval lHandle As Long, Byval iCopies As Integer, Byval szPrinter As String, Byval szDefaultTray As String, Byval iSelection As Long) As Long
+Declare Function IPSPrintSetUpDuplex Lib "NIPrint.dll" (Byval lHandle As Long, Byval printDuplex As Integer) As Long
+Declare Function IPSGetMessage Lib "NIPrint.dll" (Byval iMessageNo As Long, Byval pszMessage As String) As Long
+Declare Function IPSGetVersion Lib "NIPrint.dll" (Byval szCurVer As String) As String
+Declare Function IPSCloseFormat Lib "NIPrint.dll" (Byval lHandle As Long) As Long
+Declare Function IPSTerminate Lib "NIPrint.dll" (Byval lHandle As Long) As Long
+Declare Function IPSBrowse Lib "NIPrint.dll" (Byval lHandle As Long, Byval szID As String, Byval szName As String) As Long
+Declare Function IPSFitText Lib "NIPrint.dll" (Byval strPrinterName As String, Byval strText As String,Byval iwidth As Integer, Byval height As Integer, Byval strFontName As String, Byval FontSize As Integer,Byval Attributes As Integer) As Long
+Declare Function IPSFitRichText Lib "NIPrint.dll" (Byval strPrinterName As String, Byval strServerName As String, Byval strDbPath As String, Byval strNoteID As String, Byval strRTFTag As String, Byval iWidth As Integer,Byval iHeight As Integer,Byval strFontName As String) As Long
+Declare Function IPSGetDefaultPrinter Lib "NIPrint.dll" (Byval szPrinterName As String) As Long
+Declare Function IPSFormats Lib "NIPrint.dll" (Byval lHandle As Long,Byval szID As String,Byval szFmtServer As String, Byval szFmtDB As String) As Long
+Declare Function IPSGetSelectionType Lib "niprint.dll" (Byval fmtServer As String , Byval fmtDBPath As String , Byval fmtName As String) As Long
+Declare Function IPSLabelSetup Lib "NIPrint.dll" (Byval lHandle As Long, Byval SameOrMultipleLabel As Integer, Byval LabelOption As Integer, Byval Row As Integer, Byval Col As Integer) As Long
+Declare Function IPSSetBackgroundImage Lib "NIPRINT.DLL" (Byval lhandle As Long , Byval strImagePath As String) As Long
+
+' Dynamic Table Creation
+Declare Function CreateTable Lib "NCLNRTF.DLL" (Byval nrows As Integer,Byval ncols As Integer, Byval margins As String) As Long
+Declare Function EnableBorders Lib "NCLNRTF.DLL" (Byval dwHandle As Long,Byval bBorders As Integer) As Long
+Declare Function AppendCellTextEx Lib "NCLNRTF.DLL" ( Byval dwHandle As Long, Byval row As Integer,Byval col As Integer,Byval text As String, Byval textsize As Long, Byval fontname As String,Byval isbold As Integer,Byval pointsize As Integer, Byval color As Integer ) As Long
+Declare Function AppendCellText Lib "NCLNRTF.DLL" ( Byval dwHandle As Long, Byval row As Integer,Byval col As Integer,Byval text As String, Byval textsize As Long, Byval fontname As String,Byval isbold As Integer,Byval pointsize As Integer,Byval color As Integer ) As Long
+Declare Function AppendDocumentToCell Lib "NCLNRTF.DLL" ( Byval dwHandle As Long, Byval row As Integer,Byval col As Integer,Byval servername As String, Byval dbpath As String, Byval strNoteID As String,Byval RTFTag As String) As Long
+'Declare Function SetCellProperties (Byval tble_handle as long,Byval row as integer, Byval col as integer, Byval leftborder as integer, Byval topborder as integer, Byval rightborder as integer, Byval bottomborder as integer, Byval background_color as integer) as long
+'Declare Function SetMerging (Byval tbl_handle as long, Byval startrow as integer, Byval startcol as integer, Byval endrow as integer, Byval endcol integer) as Long
+Declare Function AddTableToRichTextField Lib "NCLNRTF.DLL" (Byval dwHandle As Long, Byval servername As String, Byval dbname As String,Byval noteid As String, Byval rtfldname As String) As Long
+Declare Function DeleteTable Lib "NCLNRTF.DLL" (Byval dwHandle As Long) As Long
+
+' Dynamic Format Linking
+Declare Function CreateFormatSet Lib "NIPrint.dll" () As Long
+Declare Function AddFormat Lib "NIPrint.dll" (Byval SetHandle As Long, Byval szFmt_Svr As String, Byval szFmt_Db As String, Byval szFmt_Name As String, Byval szDocs_Svr As String, Byval szDocs_Db As String, Byval szDocs_View As String, Byval szDocs_Noteids As String, Byval PgNbring As Integer) As Long 
+Declare Function SetProgressBar Lib "NIPRINT.DLL" (Byval SetHandle As Long, ShowProgressBar As Integer) As Long
+Declare Function PreparePagesEx Lib "NIPRINT.DLL" (Byval SetHandle As Long, PrintSetup As Integer) As Long
+Declare Function PreparePages Lib "NIPRINT.DLL" (Byval SetHandle As Long) As Long
+Declare Function PrintSetup Lib "NIPrint.dll" (Byval FormatSetHandle As Long,Byval nCopies As Integer,Byval strPrinterName As String,Byval strTrayName As String, Byval Duplex As Integer) As Long
+Declare Function PreviewFormatSet Lib "NIPRINT.DLL" (Byval SetHandle As Long) As Long
+Declare Function PrintFormatSet Lib "NIPRINT.DLL" (Byval SetHandle As Long) As Long
+Declare Function GetIPF Lib "NIPRINT.DLL" (Byval FormatSetHandle As Long , Byval strIPFPath As String) As Long
+Declare Function ExportFormatSet Lib "NIPRINT.DLL" (Byval SetHandle As Long, Byval strFilePath As String, Byval ExportType As Integer) As Long
+Declare Function CloseFormatSet Lib "NIPRINT.DLL" (Byval SetHandle As Long) As Long
+
+'++LotusScript Development Environment:2:2:Initialize:1:10
+Sub Initialize
+	
+End Sub
+
+'++LotusScript Development Environment:2:1:GetFormatsDatabase:1:8
+Function GetFormatsDatabase
+	
+	Dim currentWorkspace As NotesUIWorkspace
+	Dim currentSession As NotesSession
+	Dim currentDatabase As NotesDatabase
+	
+	Dim controlView As NotesView
+	Dim controlDocument As NotesDocument
+	Dim ipFormatsDatabase As NotesDatabase
+	Dim replicaIDString As String
+	
+	' Get handle to current workspace.
+	Set currentWorkspace = New NotesUIWorkspace
+	
+	' Get handle to current database.
+	Set currentSession = New NotesSession
+	Set currentDatabase = currentSession.CurrentDatabase
+	
+	' Get handle to control document.
+	Set controlView = currentDatabase.GetView("(Control)")
+	Set controlDocument = controlview.GetFirstDocument
+	
+	'  Error if control document cannot be found.
+	If controlDocument Is Nothing Then
+		currentWorkspace.Prompt PROMPT_OK, "Error", "Control Document is not setup!"
+		Print "Control Document is not setup!"
+		Exit Function
+	End If
+	
+	' Open database on current computer with replica ID from control document.
+	Set ipFormatsDatabase = New NotesDatabase("", "")
+	replicaIDString = Replace(controlDocument.IntelliPrintUNID(0),":","")
+	ipFormatsDatabase.OpenByReplicaID "", replicaIDString
+	
+	' If database cannot be opened on current computer, check on current database's server.
+	If Not ipFormatsDatabase.IsOpen Then
+		
+		' Open database on current database's server with replica ID from control document.
+		Set ipFormatsDatabase = New NotesDatabase("", "")
+		ipFormatsDatabase.OpenByReplicaID currentDatabase.Server, replicaIDString	
+		
+		' Error if IP formats database cannot be opened.
+		If Not ipFormatsDatabase.IsOpen Then
+			currentWorkspace.Prompt PROMPT_OK, "Error", "IntelliPrint Formats database could not be located using the replica id provided in the control document!"
+			Print "IntelliPrint Formats database could not be located using the replica id provided in the control document!"
+			Exit Function		
+		End If	
+	End If	
+	
+	' Return handle to IP formats database.
+	Set GetFormatsDatabase = ipFormatsDatabase
+	
+End Function
+'++LotusScript Development Environment:2:1:GetIPTempDatabase:1:8
+Function GetIPTempDatabase As NotesDatabase
+	
+	On Error Goto ErrorHandle
+	
+	Dim currentWorkspace As NotesUIWorkspace
+	Dim currentSession As NotesSession
+	Dim currentDatabase As NotesDatabase
+	
+	Dim controlView As NotesView
+	Dim controlDocument As NotesDocument
+	Dim ipTempDatabase As NotesDatabase
+	Dim replicaIDString As String
+	
+	' Get handle to current workspace.
+	Set currentWorkspace = New NotesUIWorkspace
+	
+	' Get handle to current database.
+	Set currentSession = New NotesSession
+	Set currentDatabase = currentSession.CurrentDatabase
+	
+	' Get handle to control document.
+	Set controlView = currentDatabase.GetView("(Control)")
+	Set controlDocument = controlview.GetFirstDocument
+	
+	'  Error if control document cannot be found.
+	If controlDocument Is Nothing Then
+		currentWorkspace.Prompt PROMPT_OK, "Error", "Control Document is not setup!"
+		Print "Control Document is not setup!"
+		Exit Function
+	End If
+	
+	' Open database on current computer with replica ID from control document.
+	Set ipTempDatabase = New NotesDatabase("", "")
+	If controlDocument.HasItem("IPTempUNID") Then
+		replicaIDString = Replace(controlDocument.IPTempUNID(0),":","")
+	End If
+	ipTempDatabase.OpenByReplicaID currentDatabase.Server, replicaIDString
+	
+CheckDatabase:	
+	
+	' If the IPTemp database cannot be opened, use the current database.
+	If Not ipTempDatabase.IsOpen Then
+		Set ipTempDatabase = currentDatabase
+	End If
+	
+	' Return handle to IP temp database.
+	Set GetIPTempDatabase = ipTempDatabase
+	
+	Exit Function
+	
+ErrorHandle:
+	
+	If Err = 4265 Then		
+		Resume CheckDatabase		
+	End If
+	
+	Exit Function
+	
+End Function

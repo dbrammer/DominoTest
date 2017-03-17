@@ -1,0 +1,503 @@
+'++LotusScript Development Environment:2:5:(Options):0:74
+Option Public
+Option Declare
+
+'++LotusScript Development Environment:2:5:(Forward):0:1
+Declare Class BaseClass
+Declare Class KLERDictionary
+Declare Class KLERDictionaryForm
+Declare Class KLERDictionaryField
+Declare Class KLERCase As BaseClass
+Declare Class KLERForm As BaseClass
+Declare Class DataGroup
+Declare Class FormFields
+
+'++LotusScript Development Environment:2:5:(Declarations):0:10
+Class BaseClass
+	
+	Public Function GetAttributeValues(node As NotesDOMElementNode) As Variant
+		Dim attributes As notesdomnamednodemap
+		Dim attrlist List As String
+		Dim attribute As notesdomattributenode
+		
+		Set attributes = node.Attributes     ' Get attributes
+		
+		Dim i As Integer
+		For i = 1 To attributes.numberofentries
+     	' Loop through them
+			Set attribute = attributes.GetItem(i)
+			attrlist(attribute.AttributeName)=attribute.AttributeValue
+		Next
+		
+		GetAttributeValues=attrlist
+	End Function
+End Class
+
+Class KLERDictionary
+	Public Forms List As KLERDictionaryForm
+	Private session As NotesSession
+	Private parser As NotesDOMParser
+	Private stream As NotesStream
+	Private rootElement As NotesDOMElementNode    
+	Private klerform As KLERDictionaryForm
+	Private klerfield As KLERDictionaryField
+	Private curPI As String ' most recent processing instruction
+	
+	Sub New
+		Set session=New NotesSession
+		Set parser=session.CreateDOMParser
+		Set stream=session.CreateStream
+	End Sub
+	
+	Sub Delete
+		Delete parser
+		stream.Close
+		Delete stream
+		
+		Forall f In Forms
+			Delete f
+		End Forall
+		Erase Forms
+		
+		Set rootElement=Nothing
+	End Sub
+	
+	Sub LoadDictionaryForm(filepath As String)
+		stream.Open(filepath)
+		Set parser=session.CreateDOMParser(stream)
+		parser.Process
+		stream.Close
+		
+		Set rootElement = parser.Document.DocumentElement
+		
+		Call walkTree(rootElement)
+		
+	End Sub
+	
+	Sub walkTree ( node As notesdomnode)
+		Dim child As notesdomnode
+		Dim elementnode As notesdomnode
+		Dim attrs As notesdomnamednodemap
+		Dim a As notesdomattributenode
+		Dim piNode As Notesdomprocessinginstructionnode
+		
+		
+		If Not node.IsNull Then  
+			Select Case node.NodeType
+			Case DOMNODETYPE_DOCUMENT_NODE:        ' If it is a Document node
+				Set child = node.FirstChild   ' Get the first node
+				Dim numChildNodes As Integer
+				numChildNodes = node.NumberOfChildNodes
+				
+				While numChildNodes > 0 
+					Set child = child.NextSibling ' Get next node
+					numChildNodes = numChildNodes - 1
+					Call walkTree(child)
+				Wend
+				
+			Case DOMNODETYPE_DOCUMENTTYPE_NODE:   ' It is a <!DOCTYPE> tag
+				
+			Case DOMNODETYPE_TEXT_NODE:           ' Plain text node
+				
+			Case DOMNODETYPE_ELEMENT_NODE:        ' Most nodes are Elements
+				Set elementnode = node
+				
+				If Instr(elementnode.LocalName,"DATA_DICTIONARY_") > 0 Then
+					Set klerform=New KLERDictionaryForm
+					Set Me.Forms(Strright(elementnode.LocalName,"DATA_DICTIONARY_"))=klerform
+				End If
+				
+				If elementnode.LocalName="field" Then
+					'initialize the field object
+					Set klerfield=New KLERDictionaryField
+					klerfield.Page=Me.curPI
+				End If
+				
+				If elementnode.LocalName="MaxChars" Then
+					klerfield.MaxChars=elementnode.FirstChild.NodeValue
+					
+					' add the field to the list of form fields
+					Call klerform.AddField(klerfield)
+				End If
+				
+				Dim numAttributes As Integer, numChildren As Integer
+				numAttributes = elementnode.attributes.numberofentries
+				
+				Set attrs = elementnode.Attributes     ' Get attributes
+				
+				Dim i As Integer
+				For i = 1 To numAttributes     ' Loop through them
+					Set a = attrs.GetItem(i)
+					If a.AttributeName="name" Then
+						klerfield.FieldName=a.AttributeValue
+					End If
+				Next
+				
+				numChildren =  elementnode.NumberOfChildNodes
+				Set child = elementnode.FirstChild     ' Get child
+				While numChildren > 0
+					Call walkTree(child)
+					Set child = child.NextSibling   ' Get next child
+					numChildren = numChildren - 1
+				Wend
+				
+			Case DOMNODETYPE_COMMENT_NODE:                ' Comments
+				
+			Case DOMNODETYPE_PROCESSINGINSTRUCTION_NODE:  ' Handle PI nodes
+				Set piNode = node
+				If Not curPI=piNode.Data Then
+					curPI=piNode.Data
+					klerform.Pages(curPI)=""
+				End If
+				
+			Case DOMNODETYPE_CDATASECTION_NODE:           ' CDATA sections
+				
+			Case DOMNODETYPE_ENTITYREFERENCE_NODE:        ' Handle entities
+				
+			Case Else:
+				
+			End Select  'node.NodeType
+		End If        'Not node.IsNull
+	End Sub
+End Class
+
+Class KLERDictionaryForm
+	Public Fields List As KLERDictionaryField
+	Public Pages List As String
+	Public FieldCount As Integer
+	
+	Public Sub AddField(field As KlerDictionaryField)
+		fieldcount=fieldcount+1
+		Set Fields(Cstr(fieldcount))=field
+	End Sub
+	
+	Public Sub Delete
+		Forall f In Fields
+			Delete f
+		End Forall
+		Erase Fields
+	End Sub
+	
+End Class
+
+Class KLERDictionaryField
+	Public FieldName As String
+	Public MaxChars As Integer
+	Public Page As String
+	
+	Sub New
+	End Sub
+End Class
+
+Class KLERCase As BaseClass
+	Private session As NotesSession
+	Private thisdb As NotesDatabase
+	Private stream As NotesStream
+	Private domparser As NotesDOMParser
+	Private docNode As NotesDOMDocumentNode
+	Private node As NotesDOMElementNode
+	Private documentlist As NotesDOMNodeList
+	Private numentries As Integer
+	Public casefields List As String
+	Public caseforms List As KLERForm
+	Public sourcepath As String
+	Public dictionarypath As String
+	Private formcount As Integer
+	'Private dictionaries List As KLERDictionary
+	Private dictionary As KLERDictionary
+	
+	Sub New
+		Set session=New NotesSession
+		Set thisdb=session.CurrentDatabase
+		Set dictionary=New KLERDictionary
+	End Sub
+	
+	Sub Delete
+		If Not stream Is Nothing Then
+			stream.Close
+			Delete stream
+		End If
+		
+		Forall c In caseforms
+			Delete c
+		End Forall
+		
+		Erase caseforms
+		Erase casefields
+		
+		If Not dictionary Is Nothing Then
+			Delete dictionary
+		End If
+		
+		Set docnode=Nothing
+		Set node=Nothing
+		Set documentlist=Nothing
+		Set domparser=Nothing
+		Set thisdb=Nothing
+		Set session=Nothing
+	End Sub
+	
+	Sub LoadDictionary(formname As String)
+		Exit Sub   ' not currently using the dictionaries for anything
+		Dim filename As String
+		Dim filepath As String
+		
+		If Not Iselement(Me.Dictionary.Forms(formname)) Then
+			filepath=dictionarypath & "\data_dictionary_" & formname & ".xml"
+			filename = Dir$(filepath, 0)
+			
+			If Not filename ="" Then
+				Call Me.dictionary.LoadDictionaryForm(filepath)
+			Else
+			' throw an error
+			End If
+		End If
+	End Sub
+	
+	Sub LoadFile(sourcepath As String)
+		Me.sourcepath=sourcepath
+		Set stream=session.CreateStream
+		Set domparser=session.Createdomparser
+		Call stream.open(sourcepath)
+		
+		Call domparser.SetInput(stream)
+		domparser.Parse
+		Set docnode=domparser.Document
+		
+		Set documentlist=docnode.Getelementsbytagname("wrapper")
+		Set node=documentlist.Getitem(1)
+		Call ProcessWrapper(thisdb,node,casefields,caseforms)
+	End Sub
+	
+	Sub ProcessWrapper(thisdb As NotesDatabase,wrappernode As NotesDOMElementNode,casefields,caseforms) 
+		Dim childnode As NotesDOMNode
+		Dim nodename As String
+		Dim nodelist As NotesDOMNodeList
+		Dim formlist List As String
+		Dim formdata As String
+		Dim attributes As Variant
+		Dim i As Integer
+		Dim rtitem As NotesRichTextItem
+		Dim fieldname As String
+		Dim numchildnodes As Integer
+		Dim KLERForm As KLERForm
+		
+		Dim fieldlist List As String
+		
+		numchildnodes = wrappernode.NumberOfChildNodes
+		Set childnode = wrappernode.FirstChild 
+		While numchildnodes > 0 
+			Set childnode = childnode.NextSibling ' Get next node
+			
+			If Not childnode.IsNull Then
+				If childnode.NodeType = DOMNODETYPE_ELEMENT_NODE Then
+					'Print childnode.NodeName
+					
+					Select Case childnode.NodeName
+					Case "FORMDATA"
+						Set KLERForm=New KLERForm(session,childnode)
+						formcount=formcount+1
+						Set caseforms(Cstr(formcount))=KLERForm
+						Call Me.LoadDictionary(KLERForm.FormName)
+					Case Else
+						If Not childnode.FirstChild.IsNull Then
+							casefields(childnode.NodeName)=childnode.FirstChild.NodeValue
+						End If
+					End Select
+				End If
+			End If
+			numchildnodes = numchildnodes - 1
+		Wend
+		
+	End Sub
+	
+End Class
+
+Class KLERForm As BaseClass
+	Public formname As String
+	Public attributes As Variant
+	Public formdata As String	
+	Public DataGroups List As DataGroup
+	Private datagroupcount As Integer
+	
+	Private session As NotesSession
+	
+	Sub New(session As NotesSession,childnode As NotesDOMElementNode)
+		Set Me.session=session
+		attributes=GetAttributeValues(childnode)
+		formdata=DecodeFormData(childnode)
+		If Not formdata="" Then
+			Call ProcessFormData(formdata)
+		End If
+		Me.FormName=attributes("Form")
+	End Sub
+	
+	Sub Delete
+		Erase attributes
+		Forall d In DataGroups
+			Delete d
+		End Forall
+		Erase DataGroups
+	End Sub
+	
+	Private Sub ProcessFormData(formdata As String)
+		Dim stream As NotesStream
+		Dim domparser As NotesDOMParser
+		Dim docnode As NotesDOMDocumentNode
+		Dim documentlist As NotesDOMNodeList
+		Dim elementnode As NotesDOMElementNode
+		Dim i As Integer
+		
+		Set stream=session.CreateStream
+		Set domparser=session.Createdomparser
+		Call stream.WriteText(formdata)
+		
+		Call domparser.SetInput(stream)
+		domparser.Parse
+		stream.Truncate
+		Delete stream
+		Set docnode=domparser.Document
+		
+		Set documentlist=docnode.Getelementsbytagname("xfa:DataGroup")
+		
+		For i=1 To documentlist.NumberOfEntries
+			Set elementnode=documentlist.Getitem(i)
+			Call LoadDataGroup(elementnode,i)
+		Next
+		
+	End Sub
+	
+	Private Sub LoadDataGroup(datagroupnode As NotesDOMElementNode,index As Integer) 
+		Dim childnode As NotesDOMNode
+		Dim formnode As NotesDOMNode
+		Dim nodename As String
+		Dim nodelist As NotesDOMNodeList
+		Dim attributes As Variant
+		Dim i As Integer
+		Dim fieldname As String
+		Dim fieldlist List As String
+		Dim currentpage As String
+		Dim formfields List As String
+		Dim pages List As Variant
+		Dim datagroup As DataGroup
+		
+		Set formnode = datagroupnode.FirstChild ' first child is an empty text node
+		Set formnode = formnode.NextSibling ' Get next node
+		
+		If Not formnode.IsNull Then
+			If formnode.NodeType = DOMNODETYPE_ELEMENT_NODE Then
+				
+				' the first child element node will be the parent element to the form fields
+				' the node name is the name of the KLER form
+				'Print formnode.NodeName
+				Me.formname=formnode.NodeName
+				attributes=GetAttributeValues(formnode)
+				
+				Set datagroup=New DataGroup(formnode.NodeName)
+				Call datagroup.AddAttributes(attributes)
+				
+				Call Me.AddDataGroup(datagroup)
+				
+				
+				' cycle through the children of the formnode
+				Set childnode=formnode.FirstChild
+				
+				Do While Not childnode.IsNull
+					If childnode.NodeType = DOMNODETYPE_ELEMENT_NODE Then
+						If Not childnode.FirstChild.IsNull Then
+							formfields(childnode.NodeName)=childnode.FirstChild.NodeValue
+						End If
+					Elseif childnode.NodeType = DOMNODETYPE_PROCESSINGINSTRUCTION_NODE  Then
+						'Print childnode.NodeValue
+						
+						' when the page changes add the current page to the pages list
+						If Not currentpage="" Then
+							Call datagroup.AddPage(currentpage,formfields)
+							Erase formfields
+						End If
+						
+						currentpage=childnode.NodeValue
+						
+					End If
+					Set childnode=childnode.NextSibling
+				Loop
+				
+				' add the last page to the datagroup
+				Call datagroup.AddPage(currentpage,formfields)
+				Erase formfields
+				
+			End If
+		End If
+		
+	End Sub
+	
+	Private Sub AddDataGroup(datagroup As DataGroup)
+		datagroupcount=datagroupcount+1
+		Set DataGroups(Cstr(datagroupcount))=datagroup
+	End Sub
+	
+	Private Function DecodeFormData(node As NotesDOMElementNode) As String
+		Dim encodedstring As String
+		
+		If Not node.FirstChild.IsNull Then
+			encodedstring=node.Firstchild.Nodevalue
+			If Not encodedstring ="" Then
+				DecodeFormData=Decode(encodedstring)
+			End If
+		End If
+		
+	End Function
+	
+	Private Function Decode(DataStream As String) As String
+		Dim oUtility
+		Set oUtility = CreateObject("KlerUtility.KlerData")
+		Decode = oUtility.DecodeBuffer(DataStream)
+		Set oUtility = Nothing
+	End Function
+	
+	Private Function Encode(DataStream As String) As String
+		Dim oUtility
+		Set oUtility = CreateObject("KlerUtility.KlerData")
+		Encode = oUtility.EncodeBuffer(DataStream)
+		Set oUtility = Nothing
+	End Function
+End Class
+
+Class DataGroup
+	Public Pages List As FormFields
+	Public RecordType As String
+	Public Attributes As Variant
+	
+	Sub New(recordtype As String)
+		Me.RecordType=recordtype
+	End Sub
+	
+	Sub Delete
+		Forall p In Pages
+			Delete p
+		End Forall
+		Erase Pages
+		Erase Attributes
+	End Sub
+	
+	Sub AddAttributes(attributes As Variant)
+		Me.Attributes=attributes
+	End Sub
+	
+	Sub AddPage(page As String,formfields As Variant)
+		Dim fields As New FormFields(formfields)
+		Set Pages(page)=fields
+	End Sub
+End Class
+
+Class FormFields
+	Public FieldValues As Variant
+	
+	Sub New(formfields As Variant)
+		FieldValues=formfields
+	End Sub
+	
+	Sub Delete
+		Erase FieldValues
+	End Sub
+End Class

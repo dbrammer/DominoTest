@@ -1,0 +1,31 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='sharedfield' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='136' unid='4AA1BE4A6B1FF01F8525623D005376F8' sequence='20'>
+<created><datetime dst='true'>19950920T111139,44-04</datetime></created>
+<modified><datetime dst='true'>20170316T154244,98-05</datetime></modified>
+<revised><datetime dst='true'>20070709T115243,27-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154244,97-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154244,97-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Brian Henry/O=Enterpol</name><name>CN=Ed Funk/O=Teamhuber</name><name
+>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name='$TITLE' sign='true'><text>AllowableAuthors</text></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAAAAAAQAAAAAAAAAAAAAA
+</rawitemdata></item>
+<item name='AllowableAuthors' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='$Fields'><text>AllowableAuthors</text></item>
+<item name='$Body' summary='true' sign='true'>
+<rawitemdata type='1'>
+gQKDBAEAhf8IAAEAAAqK/wIBjQEBBQIgAgAAAAAAAAIBAAAKzgAAAAAAAAAQAAAAAADOAAAAzAAF
+AA4AQXBwcm92YWxTdGF0dXMBAAgAQXBwcm92ZWQLAq8AogB0AAUACgBBc3NpZ25lZFRvAQAAAAoC
+rwAwABoABQAQAFJlcG9ydGluZ09mZmljZXKuABYABQAKAEFzc2lnbmVkVG+uAAQAtQMBAA0AW1N1
+cGVydmlzb3JzXQAfAgEADgBbU3RhdGlzdGljaWFuXR8CrgAuAAEADQBbU3VwZXJ2aXNvcnNdAAEA
+DgBbU3RhdGlzdGljaWFuXR8CrgAEALUDXgEDAEFsbG93YWJsZUF1dGhvcnOF/wgAAQAACg==
+</rawitemdata></item>
+<item name='$Flags'><text/></item></note>
+

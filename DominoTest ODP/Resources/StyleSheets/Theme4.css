@@ -1,0 +1,108 @@
+<style type="text/css">
+ 
+  /* Used on all Forms*/
+	body {
+	background: #BCBCBC;
+	}
+	
+	/* Used for title on the Header*/
+	.TitleBarBack {  
+	font-family: Arial, Verdana, Helvetica, sans-serif;
+	font-size: 14px;	
+	line-height: 18pt;
+	font-weight: bold;
+	border-color: Black;
+	border-style: ridge;
+	background-color: #778899;
+	color:White}
+	
+	/* Used for title outline bar on the Header*/
+	.TitleDivColor {  
+	font-family: Arial, Verdana, Helvetica, sans-serif;
+	font-size: 5px;
+	line-height: 5pt;
+	font-weight: bold;
+	border-color: Black;
+	border-style: ridge;
+	background-color: #BFC9D5;
+	color: Black}
+		
+	/* Used for 1st level Tab Table*/
+	.TabTableClass {  
+	font-family: Arial, Verdana, Helvetica, sans-serif;
+	font-size: 9pt;	
+	line-height: 16pt;
+	font-weight: normal;
+	background-color: #FFFFE0;
+	border: 0px solid Black;
+	color: Black}
+	
+	/* Used for 2nd level Tab Table*/
+	.TabTableClass2 {  
+	font-family: Arial, Verdana, Helvetica, sans-serif;
+	font-size: 9pt;	
+	line-height: 16pt;
+	font-weight: normal;
+	background-color: #FFFFDF;
+	border: 0px solid Black;
+	color: Black}
+	
+	/* Used for Dark Color in Data Tables*/
+	.tdDkColor {  
+	font-family: Arial, Verdana, Helvetica, sans-serif;
+	font-size: 9pt;	
+	line-height: 16pt;
+	font-weight: bold;
+	background-color: #FFFFC8;
+	border: 2px solid Black;
+	color: Black}
+	
+	/* Needed to make the buttons look right Should be the same as tdDkColor*/
+	.buttontext {
+	font-family: Arial, Verdana, Helvetica, sans-serif;
+	font-size: 9pt;	
+	line-height: 16pt;
+	font-weight: bold;
+	background-color: #FFFFC8;
+	border: 2px solid Black;
+	color: Black}
+
+	/* Used for Light Color in Data Tables*/
+	.tdLtColor {  
+	font-family: Arial, Verdana, Helvetica, sans-serif;
+	font-size: 9pt;
+	line-height: 12pt;
+	font-weight: normal;
+	background-color: #FFFFDD;
+	border: 2px solid Black;
+	color: BLACK;
+}
+	
+	/* Used for Dark Color in Header*/
+	.htdDkColor {  
+	font-family: Arial, Verdana, Helvetica, sans-serif;
+	font-size: 9pt;
+	line-height: 12pt;
+	font-weight: bold;
+	background-color: #708090;
+	color: #DAEDF3;
+}
+	
+	/* Used for Light Color in Header*/
+	.htdLtColor {  
+	font-family: Arial, Verdana, Helvetica, sans-serif;
+	font-size: 9pt;
+	line-height: 12pt;
+	font-weight: bold;
+	background-color: #FFFFDD;
+	
+	color: BLACK;
+	border-top: 2px solid Black;
+}
+
+	/* Used for White Background for Narratives (Supplementary Report form) */
+	.narrativeColor {  
+	background-color: #FFFFFF;
+	border: 2px solid Black;
+}
+	</style>

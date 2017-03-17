@@ -1,0 +1,71 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='form' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='1266' unid='8AFE42BC5DFBF4AD862571E0004BF8E6' sequence='8'>
+<created><datetime dst='true'>20060905T084949,18-05</datetime></created>
+<modified><datetime dst='true'>20170316T154550,76-05</datetime></modified>
+<revised><datetime dst='true'>20120718T141926,02-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154550,74-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154550,74-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=David Frahm/O=Teamhuber</name><name>CN=Rodney Viessman/O=Teamhuber</name><name
+>CN=Andrew Thompson/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Andrew Thompson/O=Teamhuber</name></wassignedby>
+<item name='$Fonts'>
+<rawitemdata type='1'>
+i/8oAAEABSZBcmlhbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA==
+</rawitemdata></item>
+<item name='$NoBackgroundOverride'><text>1</text></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAgAAAAQABAP///wAQAAAA
+</rawitemdata></item>
+<item name='$SubForms'><textlist><text>LoadCSSTheme</text><text>Theme1CSS</text></textlist></item>
+<item name='$SubForm_RepIDs' sign='true'><textlist><text>0000000000000000</text><text
+>0000000000000000</text></textlist></item>
+<item name='$DesignerVersion'><text>7</text></item>
+<item name='SaveOptions' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='$PublicAccess'><text>1</text></item>
+<item name='$TITLE'><text>Style\SecondaryMenu</text></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+i/8oAAEABSZBcmlhbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0cLwAAAAAAAAAAAAEDAAAA
+AAAABQEACRQAAAB5/2wAAQD39/cAAQAAAAAAAQAAAAAAAQDv7+8AAwAZAAAAAAAAAAAAAwAAAAAA
+AAAAAAAAAAAAADlAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAD8/zoAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAA
+AAAAAAAA
+</rawitemdata></item>
+<item name='$HTMLCode' sign='true'>
+<rawitemdata type='1'>
+X/8QAAIADwAHAAAAAAAAAA==
+</rawitemdata></item>
+<item name='$Fields'><text>SaveOptions</text></item>
+<item name='$WindowTitle' sign='true'><formula>@DbTitle + " ~ " + "Occurrences"</formula></item>
+<item name='$$ScriptName' summary='false' sign='true'><text>Style\SecondaryMenu</text></item>
+<item name='$Body' sign='true'>
+<rawitemdata type='1'>
+gQKC/1oAAQAAAAAAAAAAAOwEAADsBAAAYgcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAABAAAAAJSE7AQOAOwEDgAAAAAAAQAAAAQAAACDBAEAhf82AAEAAApDaG9vc2UgZnJv
+bSBsaW5rcyBhYm92ZSB0byBhZGQgb3IgdmlldyByZWNvcmRzgQKC/1oAAgAAAAAAAAAAAKAFAACg
+BQAAYgcAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACBAAAAAJWEoAUIAKAF
+CAAAAAAAAQAAAAQAAACDBAIAhf8IAAEAAArdBgAAiv/+/1AAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAIr/
+QgCICQAFADACAAAAAAAAAgEAAAoSAAAAAAAAAAsAAAAAABIAAAAQAAAAAAAAAAAAAAADAFNhdmVP
+cHRpb25zAN4GAACK/4X/CAABAAAK3QYAAIr//v9QAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACK/ygBgAEA
+BQAwAgAAAAAAAAIBAAAK/gAAAAAAAAAGAAAAAAD+AAEAVAAIAGRibmFtZUxVAQAAAAEABwBOb0Nh
+Y2hlAB8CAQAAAAEACQAoQ29udHJvbCkAAAAAAAAAAADwPwEABgBMVVBhdGgCAAwBAAAAAAAAgwYD
+AAcADAAGAAkxUzE3UwAAkgAFAAgAZGJuYW1lTFUBAAAACgKvAHgAEgABAAUARXJyb3IAwgGuAGYA
+BQAIAGRibmFtZUxVAQABAFwARwKvAEgAEgAFAAgAZGJuYW1lTFWuADYAiwAAAAAAAAAAAPA/EAFr
+AgEAAQBcAKECAQABAFwAIgIFAAgAZGJuYW1lTFUiAq4ABAC1A64ABAC1AwMABwAKAAMACTBSAGRi
+bmFtZd4GAACK/4X/CAABAAAKgQKC/1oAAwAAAAAAAAAAAKAFAACgBQgA0AKgBXAIQAsQDuAQsBOA
+FgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAACBAAAAAJWEoAUKAKAFCgAAAGQAAQAAAAQAAACDBAMA
+zP8IAAAAAACF/wgAAQAACs3/CAAAAAAA3QYAAK3/cf8uAAAAAAADABgADAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAExvYWRDU1NUaGVtZa3/GQAOAAgAAAANAExvYWRDU1NUaGVtZQAArgLeBgAArgDM/wgA
+AAAAAIX/CAABAAAKzf8IAAAAAACBAoL/WgAEAAAAAAAAAAAAoAUAAKAFAQBiBwAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAEAAAAAlISgBQ4AoAUOAAAAAAABAAAABAAAAIME
+BACF/wgAAQAACg==
+</rawitemdata></item>
+<item name='$Flags'><text>CD</text></item></note>
+

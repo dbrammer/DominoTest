@@ -1,0 +1,26 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='sharedfield' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='14e' unid='EEF1DC429BAD6AD28525607100760542' sequence='20'>
+<created><datetime dst='true'>19940617T172905,94-04</datetime></created>
+<modified><datetime dst='true'>20170316T154245,95-05</datetime></modified>
+<revised><datetime dst='true'>20070709T115243,60-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154245,94-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154245,94-05</datetime></addedtofile></noteinfo>
+<updatedby><name>Brian Henry</name><name>CN=Ed Funk/O=Teamhuber</name><name
+>CN=Rodney Viessman/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Rodney Viessman/O=Teamhuber</name></wassignedby>
+<item name='$TITLE'><text>ReportingPersonDisplay</text></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAAAAAAAAAAAAAAAAAAAAA
+</rawitemdata></item>
+<item name='$Body' summary='true' sign='true'>
+<rawitemdata type='1'>
+gQKDBAEAhf8IAAEAAAqF/wgAAQAACor/kACAAQAFADACAAAAAAAAAgEAAApWAAAADyYAABYAAAAA
+AFYAAABUAAUAEwBBbHNvUmVwb3J0aW5nUGVyc29uAAEAAAALAq8ALgAiAAEAFAAtIFJlcG9ydGlu
+ZyBQZXJzb24gLYoAIgKuAAwAAQAAAK4ABAC1AwMAUmVwb3J0aW5nUGVyc29uRGlzcGxheYX/CAAB
+AAAK
+</rawitemdata></item>
+<item name='$Flags'><text/></item></note>
+

@@ -1,0 +1,45 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='view' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='8d6' unid='CB77E48B3F3D13108625727100024C06' sequence='5'>
+<created><datetime>20070127T182505,34-06</datetime></created>
+<modified><datetime dst='true'>20170316T154519,79-05</datetime></modified>
+<revised><datetime dst='true'>20120718T141932,89-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154519,78-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154519,78-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=Rodney Viessman/O=Teamhuber</name><name>CN=Andrew Thompson/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Andrew Thompson/O=Teamhuber</name></wassignedby>
+<item name='$FormulaClass' sign='true'><text>1</text></item>
+<item name='$Index' sign='true'><text/></item>
+<item name='$Formula' summary='true' sign='true'><formula compiled='true'>
+egACACQAAgAkMQIABgAAAAAAAAAFAAoATW9kaWZpZWRCebQCAwAFACwAJwAEAAwAAgAJAAQARGF0
+ZU1vZGlmaWVkJDEkQ29uZmxpY3QkUkVGAAQABAAAABoABQAEAEZvcm0BAAYAU2lnbk9uCgIDAAcA
+CgAEAAlMMVM=
+</formula></item>
+<item name='$Collation' summary='true'>
+<rawitemdata type='2'>
+GQABAABEAWYAAAAMAERhdGVNb2RpZmllZA==
+</rawitemdata></item>
+<item name='$ViewFormat' summary='true' sign='true'>
+<rawitemdata type='5'>
+AQACAAIAiEwAAFZDBQAMAA0AAAAAAKIAAQAACAAAAAAAAAAAAAICAAAAVkMAAAIAAgAyAAAA8QAB
+AAAIAAAAAAAAAAAAAgIAAABEYXRlTW9kaWZpZWRMYXN0IE1vZGlmaWVkJDFCeTIAAgAkAAIAJDEC
+AAYAAAAAAAAABQAKAE1vZGlmaWVkQnm0AgMABwAMAAUACTBTMEUAJgABAAAAAQEACAEAAAoBAQ4K
+AABPAK0rCQAvAAEAAAAAAAAAAABXQwEBAAgAAAAAAAAAAAAAAAAAAAAAAQAAAAAAAAD//wAAAAAA
+AAAAAAAAAAAAV0MBAQAIAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA//8AAAAAAAAAAAAAAAAAAEIA
+AAAAAAEA8vT5AAEA3uPvAAEAAAAAAAAAAAAAAAAAAQD///8AAQD///8AAAABAAAAAAABAICAgAAB
+AAAAAAAAAAgAAAAAAAEA
+</rawitemdata></item>
+<item name='$Comment' sign='true'><text/></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+i/8oAAEABSZBcmlhbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAL0cLwAAAAAAAAAAAAEDAAAA
+AAAABQEACRQAAAB5/2wAAQD39/cAAQAAAAAAAQAAAAAAAQDv7+8AAwAZAAAAAAAAAAAAAwAAAAAA
+AAAAAAAAAAAAADlAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAD8/zoAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAA
+AAAAAAAA
+</rawitemdata></item>
+<item name='$TITLE' sign='true'><text>20. Administration\10. Sign On Screens|SignOn</text></item>
+<item name='$DesignerVersion' sign='true'><text>7</text></item>
+<item name='$Flags'><text>Y</text></item></note>
+

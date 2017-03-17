@@ -1,0 +1,87 @@
+<?xml version='1.0' encoding='utf-8'?>
+<note class='form' xmlns='http://www.lotus.com/dxl' version='9.0' maintenanceversion='1.8'
+ replicaid='862580E50071C5D2'>
+<noteinfo noteid='135a' unid='E7EF96C62B9048DE852567BE004915C7' sequence='28'>
+<created><datetime dst='true'>19990730T091817,03-04</datetime></created>
+<modified><datetime dst='true'>20170316T154605,59-05</datetime></modified>
+<revised><datetime dst='true'>20120718T141912,43-05</datetime></revised>
+<lastaccessed><datetime dst='true'>20170316T154605,58-05</datetime></lastaccessed>
+<addedtofile><datetime dst='true'>20170316T154605,58-05</datetime></addedtofile></noteinfo>
+<updatedby><name>CN=James Milne/O=Enterpol</name><name>CN=Ed Funk/O=Teamhuber</name><name
+>CN=Darin Dutcher/O=Teamhuber</name><name>CN=Sondra Allen/O=Teamhuber</name><name
+>CN=Darin Dutcher/O=Teamhuber</name><name>CN=Rodney Viessman/O=Teamhuber</name><name
+>CN=Andrew Thompson/O=Teamhuber</name></updatedby>
+<wassignedby><name>CN=Andrew Thompson/O=Teamhuber</name></wassignedby>
+<item name='$TITLE' sign='true'><textlist><text>(Dialog - Select Reports)</text><text
+>SelectReports</text></textlist></item>
+<item name='$Info' sign='true'>
+<rawitemdata type='1'>
+hhgBAIAAAAAAAAAAAQAAAAAAAAAAAAAA
+</rawitemdata></item>
+<item name='$Fonts'>
+<rawitemdata type='1'>
+i/8oAAEABSJNUyBTYW5zIFNlcmlmAAAAAAAAAAAAAAAAAAAAAAAAAA==
+</rawitemdata></item>
+<item name='$$Script_O' sign='true'>
+<rawitemdata type='14'>
+AQAsAUxTT0IDABQAZW4AAAQAAAADAAAAAAAEAIgAAAAAAAAAAAAAAAAAAAAkAP//AAA4AP////9U
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAAAAAAAAAAAAAAAAAAAMAjAAAAAAAGAAIACoAMwBCADYAMQBGADcANAAAAEsCbAADAE4A
+RQBXAAAAgAAGAEQARQBMAEUAVABFAAAAAAD//woASQBOAEkAVABJAEEATABJAFoARQAAAAAA//8J
+AFQARQBSAE0ASQBOAEEAVABFAAAA//8GAE8AQgBKAEUAQwBUAAAAAAD//wAAAAAAAAUACAAAAAAA
+bTPMugQABwAAAAAAHQAAAgAAAA==
+</rawitemdata></item>
+<item name='$$FormAction6' sign='true'><formula>FIELD Append:=@DeleteField;
+FIELD ValueList:=@DeleteField;
+""</formula></item>
+<item name='Choices' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='Prompt' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='ReturnValue' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='PrintPreview' placeholder='true'>
+<rawitemdata type='0'>
+</rawitemdata></item>
+<item name='$Fields'><textlist><text>PrintPreview</text><text>ReturnValue</text><text
+>Prompt</text><text>Choices</text></textlist></item>
+<item name='$ACTIONS' sign='true'>
+<rawitemdata type='1'>
+vRwvAAAAAAAAAAAAAQMAAAAAAAAFAQAJFAAAAA==
+</rawitemdata></item>
+<item name='$V5ACTIONS' sign='true'>
+<rawitemdata type='1'>
+i/8oAAEABSJBcmlhbAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABr0cLwAAAAAAAAAAAAEDAAAA
+AAAABQEACRQAAAB5/2wAAQD39/cAAQAAAAAAAQAAAAAAAQDv7+8AAwAfAAQAAAAAAAAAAQAAAAAA
+AAAAAAAAAAAAADlAAgAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAD8/zoAAAAAAAAAAAAAAAEAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAABAAAAAAAAAAAA
+AAAAAAAA
+</rawitemdata></item>
+<item name='$$ScriptName' summary='false' sign='true'><text>SelectReports</text></item>
+<item name='$Body' sign='true'>
+<rawitemdata type='1'>
+gQKC/0YAAQAAAAAAAAAAAKAFAACgBQAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA
+AAAAAAAAADBjAAAAAAAAgwQBAIX/CAABAAAKiv8sAIoAAQUGMAIAAAAAAAACAQACCAAAAAAAAAAA
+BwAAAAAAQ2hvaWNlcwCF/wgAAQAACor/KgCKAAAFADACAAAAAAAAAgEAAggAAAAAAAAAAAYAAAAA
+AFByb21wdIX/CAABAAAKgQK3HKAFSRJODQkAAABIAAAAAAAAAAAAAAAAAAAAgv9GAAIAAAAAAAAA
+AACgBQAAoAUAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAQAAAAAA
+AIMEAgCBAroq6wWMAbMRFQoFAAAIAQAAAAAAAAAFAAAAAwAAAAAAAAAAAAAAAAAAAIMEAgCw/xQA
+AAACgAAAAAAAAAAAAAAAAIr/1ACKAgEFAiACAAAAAAAAAgUAAAgYAAAAAAB2AAsAAAAWABgAAAAW
+AAUACwBSZXR1cm5WYWx1ZQADAHYAAABkAAUACwBSZXR1cm5WYWx1ZQABAAAACgKvAEYAPAABAC8A
+WW91IG11c3Qgc2VsZWN0IG9uZSBvciBtb3JlIGl0ZW1zIGZyb20gdGhlIGxpc3QAewGuAAoAegCu
+AAQAtQMDAAcAEAAKAAkzUzRTNlMxMVNSZXR1cm5WYWx1ZQAAFAAAABIABQAHAENob2ljZXMAAwAA
+gQK6KgIGWQCzEfEAAQAACAEAAAAAAAAACQAAEAAAAAAAAAAAAAAAAAAAAACDBAIAiv9AAIABAAUA
+MAIAAAAAAAACAQAACBIAAAAAAAAACgAAAAAAEgAAABAABQAGAFByb21wdAMAZGlzcFByb21wdIEC
+uir6BeULXQ0eAQEAAAgBAAAAAAAAAA0AAAABAAAAAAAAAAAAAAAAAAAAgwQCALD/FAAAAAAgAAAA
+AAAAAAAAAAAAiv9SAIBCAQUCIAIAAAAAAAACAQAACA4AAAAAAAAADAAAABMADgAAAAwAAQABADEA
+AwBQcmludFByZXZpZXcBAA8AUHJpbnQgUHJldmlld3wxALkSAAAAAAAAAAAAAAAAAAAAAIECgwQC
+AIX/CAABAAAK
+</rawitemdata></item>
+<item name='$Flags'><text>C</text></item></note>
+
